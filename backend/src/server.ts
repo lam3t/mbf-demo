@@ -36,6 +36,7 @@ app.use('/uploads', express.static(CONFIG.UPLOAD_DIR));
 
 // API Routes
 app.use('/api', routes);
+app.use(routes);
 
 // Serve Angular static frontend build in production if present
 const possibleFrontendPaths = [
@@ -60,13 +61,15 @@ if (frontendDist) {
 // Global Error Handler
 app.use(errorHandler);
 
-// Start Server
-app.listen(CONFIG.PORT, () => {
-  console.log(`====================================================`);
-  console.log(`🚀 PA04 Backend Server running on port ${CONFIG.PORT}`);
-  console.log(`📡 API Base URL: http://localhost:${CONFIG.PORT}/api`);
-  console.log(`📁 SQLite DB: ${CONFIG.DB_PATH}`);
-  console.log(`====================================================`);
-});
+// Start Server (only when executed directly, not when imported in serverless function)
+if (require.main === module) {
+  app.listen(CONFIG.PORT, () => {
+    console.log(`====================================================`);
+    console.log(`🚀 PA04 Backend Server running on port ${CONFIG.PORT}`);
+    console.log(`📡 API Base URL: http://localhost:${CONFIG.PORT}/api`);
+    console.log(`📁 SQLite DB: ${CONFIG.DB_PATH}`);
+    console.log(`====================================================`);
+  });
+}
 
 export default app;
