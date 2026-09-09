@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: mbf-pa04-inspection-demo
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm run build && cd backend && npm run seed
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.0.0
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true

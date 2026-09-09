@@ -100,13 +100,20 @@ class SQLiteDatabase implements IDatabase {
 export const db: IDatabase = new SQLiteDatabase(CONFIG.DB_PATH);
 
 export function initDatabase(): void {
-  const schemaPath = path.resolve(__dirname, 'schema.sql');
-  if (fs.existsSync(schemaPath)) {
+  const possiblePaths = [
+    path.resolve(__dirname, 'schema.sql'),
+    path.resolve(__dirname, '../../src/db/schema.sql'),
+    path.resolve(__dirname, '../src/db/schema.sql'),
+    path.resolve(process.cwd(), 'src/db/schema.sql'),
+    path.resolve(process.cwd(), 'backend/src/db/schema.sql')
+  ];
+  const schemaPath = possiblePaths.find(p => fs.existsSync(p));
+  if (schemaPath) {
     const schemaSql = fs.readFileSync(schemaPath, 'utf8');
     db.exec(schemaSql);
-    console.log('✅ SQLite Schema initialized successfully.');
+    console.log('✅ SQLite Schema initialized successfully from:', schemaPath);
   } else {
-    console.warn('⚠️ Schema file not found at:', schemaPath);
+    console.warn('⚠️ Schema file not found in possible paths:', possiblePaths);
   }
 }
 

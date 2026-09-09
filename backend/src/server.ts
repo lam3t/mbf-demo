@@ -1,3 +1,4 @@
+import fs from 'fs';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -35,6 +36,26 @@ app.use('/uploads', express.static(CONFIG.UPLOAD_DIR));
 
 // API Routes
 app.use('/api', routes);
+
+// Serve Angular static frontend build in production if present
+const possibleFrontendPaths = [
+  path.resolve(__dirname, '../../frontend/dist/frontend/browser'),
+  path.resolve(__dirname, '../frontend/dist/frontend/browser'),
+  path.resolve(process.cwd(), 'frontend/dist/frontend/browser'),
+  path.resolve(process.cwd(), 'dist/frontend/browser')
+];
+const frontendDist = possibleFrontendPaths.find(p => fs.existsSync(p));
+
+if (frontendDist) {
+  console.log(`📦 Serving static frontend from: ${frontendDist}`);
+  app.use(express.static(frontendDist));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
 
 // Global Error Handler
 app.use(errorHandler);
