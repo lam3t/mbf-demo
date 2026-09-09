@@ -15,8 +15,11 @@ import { InspectionDetailDialogComponent } from '../inspections/components/inspe
 import { Inspection, ViolationCatalog, RecommendationTagCatalog } from '../../core/models';
 
 import * as L from 'leaflet';
-import 'leaflet.heat';
-import 'leaflet.markercluster';
+
+// Attach L globally for Leaflet plugins
+if (typeof window !== 'undefined') {
+  (window as any).L = L;
+}
 
 export interface ViolationGeoPoint {
   inspectionId: number;
@@ -151,26 +154,32 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
       maxZoom: 19
     }).addTo(this.map);
 
-    // Initialize MarkerClusterGroup
-    this.markerClusterGroup = (L as any).markerClusterGroup({
-      chunkedLoading: true,
-      spiderfyOnMaxZoom: true,
-      showCoverageOnHover: false,
-      zoomToBoundsOnClick: true,
-      maxClusterRadius: 45,
-      iconCreateFunction: (cluster: any) => {
-        const count = cluster.getChildCount();
-        let sizeClass = 'small';
-        if (count > 5) sizeClass = 'medium';
-        if (count > 10) sizeClass = 'large';
+    // Initialize MarkerClusterGroup or fallback to LayerGroup
+    const mcFn = (L as any).markerClusterGroup || (window as any)?.L?.markerClusterGroup;
+    if (typeof mcFn === 'function') {
+      this.markerClusterGroup = mcFn({
+        chunkedLoading: true,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,
+        maxClusterRadius: 45,
+        iconCreateFunction: (cluster: any) => {
+          const count = cluster.getChildCount();
+          let sizeClass = 'small';
+          if (count > 5) sizeClass = 'medium';
+          if (count > 10) sizeClass = 'large';
 
-        return L.divIcon({
-          html: `<div class="custom-cluster-marker ${sizeClass}"><span>${count}</span></div>`,
-          className: 'cluster-icon-wrap',
-          iconSize: L.point(40, 40)
-        });
-      }
-    });
+          return L.divIcon({
+            html: `<div class="custom-cluster-marker ${sizeClass}"><span>${count}</span></div>`,
+            className: 'cluster-icon-wrap',
+            iconSize: L.point(40, 40)
+          });
+        }
+      });
+    } else {
+      console.warn('Leaflet markerClusterGroup not available, using standard layerGroup fallback');
+      this.markerClusterGroup = L.layerGroup();
+    }
 
     if (this.showMarkers) {
       this.map.addLayer(this.markerClusterGroup);
@@ -198,13 +207,14 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
     this.api.get<any>('/dashboard/violations-geo', params).subscribe({
       next: (res) => {
         this.isLoading = false;
-        if (res.success) {
+        if (res.success && Array.isArray(res.data)) {
           this.points = res.data;
           this.calculateHotspotsSummary();
           this.renderMapLayers();
         }
       },
-      error: () => {
+      error: (err) => {
+        console.error('Failed to load violations geo:', err);
         this.isLoading = false;
       }
     });
@@ -238,7 +248,9 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
 
     // 1. Render Heatmap Layer
     if (this.heatLayer) {
-      this.map.removeLayer(this.heatLayer);
+      try {
+        this.map.removeLayer(this.heatLayer);
+      } catch (e) {}
       this.heatLayer = null;
     }
 
@@ -247,21 +259,39 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
       .map(p => [p.lat, p.lng, (p.severity || 1) * 0.35]);
 
     if (heatPoints.length > 0) {
-      this.heatLayer = (L as any).heatLayer(heatPoints, {
-        radius: 28,
-        blur: 18,
-        maxZoom: 16,
-        max: 1.5,
-        gradient: {
-          0.2: '#3b82f6',
-          0.4: '#10b981',
-          0.6: '#eab308',
-          0.8: '#f97316',
-          1.0: '#dc2626'
-        }
-      });
+      const heatFn = (L as any).heatLayer || (window as any)?.L?.heatLayer;
+      if (typeof heatFn === 'function') {
+        this.heatLayer = heatFn(heatPoints, {
+          radius: 32,
+          blur: 20,
+          maxZoom: 16,
+          max: 1.5,
+          gradient: {
+            0.2: '#3b82f6',
+            0.4: '#10b981',
+            0.6: '#eab308',
+            0.8: '#f97316',
+            1.0: '#dc2626'
+          }
+        });
+      } else {
+        // SVG/Circle Heatmap fallback layer
+        console.warn('Leaflet heatLayer plugin not available, using dynamic heat glow circles fallback');
+        const circleGroup = L.layerGroup();
+        heatPoints.forEach(([lat, lng, intensity]) => {
+          const color = intensity > 1.2 ? '#dc2626' : (intensity > 0.8 ? '#f97316' : (intensity > 0.5 ? '#eab308' : '#3b82f6'));
+          L.circle([lat as number, lng as number], {
+            radius: 280 * (intensity as number),
+            color: color,
+            fillColor: color,
+            fillOpacity: 0.38,
+            weight: 0
+          }).addTo(circleGroup);
+        });
+        this.heatLayer = circleGroup;
+      }
 
-      if (this.showHeatmap) {
+      if (this.showHeatmap && this.heatLayer) {
         this.map.addLayer(this.heatLayer);
       }
     }
