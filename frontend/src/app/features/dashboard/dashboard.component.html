@@ -1,0 +1,276 @@
+<div class="bi-dashboard-container">
+  <!-- Page Header -->
+  <app-page-header
+    title="Trung tâm Chỉ huy & Điều hành BI Dashboard"
+    subtitle="Tổng hợp chỉ số KPI, tỷ lệ hoàn thành mục tiêu kiểm tra và phân tích vi phạm toàn TP Hà Nội">
+    <div actions class="header-actions">
+      <div class="quarter-select-wrap">
+        <select [(ngModel)]="selectedQuarter" (change)="loadAllDashboardData()" class="quarter-select">
+          <option value="Q1/2026">Kỳ: Quý I/2026</option>
+          <option value="Q2/2026">Kỳ: Quý II/2026 (Hiện tại)</option>
+          <option value="Q3/2026">Kỳ: Quý III/2026</option>
+          <option value="Q4/2026">Kỳ: Quý IV/2026</option>
+        </select>
+      </div>
+
+      <button mat-stroked-button color="primary" (click)="handleRefresh()" [disabled]="isRefreshing" matTooltip="Tải lại chỉ số mới nhất">
+        <mat-icon [class.spin]="isRefreshing">refresh</mat-icon> Làm mới
+      </button>
+
+      <button mat-flat-button color="primary" routerLink="/map" class="btn-map">
+        <mat-icon>map</mat-icon> Bản đồ vi phạm
+      </button>
+    </div>
+  </app-page-header>
+
+  <!-- ROW 1: TOP COMMAND KPI SECTION -->
+  <div class="top-kpi-row">
+    <!-- 1. Circular Target Gauge Card -->
+    <div class="kpi-panel gauge-panel">
+      <div class="panel-header">
+        <span class="panel-title">MỤC TIÊU TOÀN THÀNH PHỐ</span>
+        <span class="badge-year">Năm 2026</span>
+      </div>
+
+      <div class="gauge-content">
+        <div class="radial-gauge-wrap">
+          <svg viewBox="0 0 100 100" class="gauge-svg">
+            <circle class="gauge-bg" cx="50" cy="50" r="42"></circle>
+            <circle 
+              class="gauge-fill" 
+              cx="50" 
+              cy="50" 
+              r="42" 
+              [style.stroke-dashoffset]="264 - (264 * (summary.taskCompletionRate || 64.3)) / 100">
+            </circle>
+          </svg>
+          <div class="gauge-center-text">
+            <span class="gauge-percent">{{ summary.taskCompletionRate || 64.3 }}%</span>
+            <span class="gauge-sublabel">Tiến độ kỳ</span>
+          </div>
+        </div>
+
+        <div class="gauge-details">
+          <div class="detail-row">
+            <span class="detail-label">Đã kiểm tra / Hoàn thành:</span>
+            <span class="detail-val text-success">{{ summary.completedCount }} <small>cơ sở</small></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Chỉ tiêu tổng kế hoạch:</span>
+            <span class="detail-val">{{ summary.targetCount | number }} <small>mục tiêu</small></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Nhiệm vụ đợt này:</span>
+            <span class="detail-val font-bold">{{ summary.totalInspections }} <small>hồ sơ</small></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Wards Status Breakdown Card -->
+    <div class="kpi-panel ward-progress-panel">
+      <div class="panel-header">
+        <span class="panel-title">TIẾN ĐỘ ĐỊA BÀN PHƯỜNG / XÃ</span>
+        <span class="badge-total">{{ summary.totalWards }} Đơn vị</span>
+      </div>
+
+      <div class="ward-stats-list">
+        <div class="ward-stat-item completed">
+          <div class="stat-icon"><mat-icon>check_circle</mat-icon></div>
+          <div class="stat-body">
+            <div class="stat-title">Đã hoàn thành 100%</div>
+            <div class="stat-num">{{ summary.completedWards }} <small>phường</small></div>
+          </div>
+        </div>
+
+        <div class="ward-stat-item in-progress">
+          <div class="stat-icon"><mat-icon>timelapse</mat-icon></div>
+          <div class="stat-body">
+            <div class="stat-title">Đang thực hiện kiểm tra</div>
+            <div class="stat-num">{{ summary.inProgressWards }} <small>phường</small></div>
+          </div>
+        </div>
+
+        <div class="ward-stat-item not-started">
+          <div class="stat-icon"><mat-icon>hourglass_empty</mat-icon></div>
+          <div class="stat-body">
+            <div class="stat-title">Chưa bắt đầu thực hiện</div>
+            <div class="stat-num">{{ summary.notStartedWards }} <small>phường</small></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ward-stacked-bar">
+        <div 
+          class="bar-segment completed" 
+          [style.width.%]="(summary.completedWards / summary.totalWards) * 100" 
+          matTooltip="Đã hoàn thành">
+        </div>
+        <div 
+          class="bar-segment in-progress" 
+          [style.width.%]="(summary.inProgressWards / summary.totalWards) * 100" 
+          matTooltip="Đang thực hiện">
+        </div>
+        <div 
+          class="bar-segment not-started" 
+          [style.width.%]="(summary.notStartedWards / summary.totalWards) * 100" 
+          matTooltip="Chưa bắt đầu">
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Key Metrics 2x2 Grid Card -->
+    <div class="kpi-panel metrics-grid-panel">
+      <div class="metrics-2x2">
+        <div class="metric-box total">
+          <div class="metric-icon-wrap"><mat-icon>assignment</mat-icon></div>
+          <div class="metric-meta">
+            <span class="metric-num">{{ summary.totalInspections }}</span>
+            <span class="metric-name">Tổng số nhiệm vụ</span>
+          </div>
+        </div>
+
+        <div class="metric-box in-progress">
+          <div class="metric-icon-wrap"><mat-icon>edit_document</mat-icon></div>
+          <div class="metric-meta">
+            <span class="metric-num">{{ summary.inProgressCount }}</span>
+            <span class="metric-name">Đang kiểm tra</span>
+          </div>
+        </div>
+
+        <div class="metric-box overdue">
+          <div class="metric-icon-wrap"><mat-icon>alarm_on</mat-icon></div>
+          <div class="metric-meta">
+            <span class="metric-num text-danger">{{ summary.overdueCount }}</span>
+            <span class="metric-name">Nhiệm vụ quá hạn</span>
+          </div>
+        </div>
+
+        <div class="metric-box suspended">
+          <div class="metric-icon-wrap"><mat-icon>gavel</mat-icon></div>
+          <div class="metric-meta">
+            <span class="metric-num text-danger">{{ summary.suspendedObjects }}</span>
+            <span class="metric-name">Đình chỉ hoạt động</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: CHARTS ANALYTICS SECTION -->
+  <div class="charts-analytics-row">
+    <!-- Left: Timeline Line Chart -->
+    <div class="chart-panel line-chart-panel">
+      <div class="panel-header">
+        <div class="header-left">
+          <mat-icon class="panel-icon">show_chart</mat-icon>
+          <span class="panel-title">TIẾN ĐỘ THỰC HIỆN KIỂM TRA THEO THỜI GIAN (14 NGÀY GẦN NHẤT)</span>
+        </div>
+        <span class="chart-subtitle">Tích lũy hồ sơ hoàn thành</span>
+      </div>
+
+      <div class="chart-wrapper">
+        <canvas #timelineCanvas id="timelineCanvas"></canvas>
+      </div>
+    </div>
+
+    <!-- Right: Compliance Groups Doughnut Chart -->
+    <div class="chart-panel doughnut-chart-panel">
+      <div class="panel-header">
+        <div class="header-left">
+          <mat-icon class="panel-icon">pie_chart</mat-icon>
+          <span class="panel-title">TỶ LỆ TUÂN THỦ THEO NHÓM</span>
+        </div>
+        <span class="chart-subtitle">Cơ sở kinh doanh</span>
+      </div>
+
+      <div class="doughnut-chart-content">
+        <div class="doughnut-canvas-wrap">
+          <canvas #complianceCanvas id="complianceCanvas"></canvas>
+        </div>
+
+        <div class="compliance-legend-list">
+          <div *ngFor="let g of complianceGroups" class="legend-item">
+            <div class="legend-color-dot" [style.background-color]="g.color"></div>
+            <div class="legend-text">
+              <span class="legend-name">{{ g.name }}</span>
+              <strong class="legend-count">{{ g.count }} cơ sở</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 3: OVERDUE RANKINGS & HOTSPOTS LEADERBOARD -->
+  <div class="rankings-panel">
+    <div class="panel-header">
+      <div class="header-left">
+        <mat-icon class="panel-icon">format_list_numbered</mat-icon>
+        <span class="panel-title">XẾP HẠNG TIẾN ĐỘ KIỂM TRA & ĐỊA BÀN CẦN ĐÔN ĐỐC</span>
+      </div>
+      <a routerLink="/plans" class="view-all-link">Xem tất cả kế hoạch <mat-icon>arrow_forward</mat-icon></a>
+    </div>
+
+    <div class="table-responsive">
+      <table class="ranking-table">
+        <thead>
+          <tr>
+            <th style="width: 60px;">Xếp hạng</th>
+            <th>Địa bàn Phường</th>
+            <th style="width: 140px; text-align: center;">Chỉ tiêu giao</th>
+            <th style="width: 140px; text-align: center;">Đã hoàn thành</th>
+            <th style="width: 140px; text-align: center;">Quá hạn</th>
+            <th style="width: 220px;">Tỷ lệ hoàn thành</th>
+            <th style="width: 160px; text-align: center;">Đánh giá</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of overdueRankings; let idx = index">
+            <td class="rank-cell">
+              <span class="rank-badge" [class.top-low]="idx === 0">#{{ idx + 1 }}</span>
+            </td>
+            <td>
+              <strong class="ward-name">{{ item.ward }}</strong>
+            </td>
+            <td style="text-align: center;">{{ item.target }} cơ sở</td>
+            <td style="text-align: center;">
+              <strong class="text-success">{{ item.completed }}</strong>
+            </td>
+            <td style="text-align: center;">
+              <span [class.text-danger]="item.overdue > 0" [class.font-bold]="item.overdue > 0">
+                {{ item.overdue }}
+              </span>
+            </td>
+            <td>
+              <div class="progress-cell">
+                <span class="progress-val">{{ item.rate }}%</span>
+                <div class="progress-track">
+                  <div 
+                    class="progress-bar" 
+                    [style.width.%]="item.rate"
+                    [ngClass]="{
+                      'bar-danger': item.rate < 40,
+                      'bar-warning': item.rate >= 40 && item.rate < 75,
+                      'bar-success': item.rate >= 75
+                    }">
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td style="text-align: center;">
+              <span class="status-pill-badge" [ngClass]="{
+                'status-danger': item.status === 'Chậm tiến độ',
+                'status-warning': item.status === 'Cảnh báo',
+                'status-normal': item.status === 'Bình thường',
+                'status-success': item.status === 'Tốt' || item.status === 'Xuất sắc'
+              }">
+                {{ item.status }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

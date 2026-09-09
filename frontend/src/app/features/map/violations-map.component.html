@@ -1,0 +1,156 @@
+<div class="violations-map-container">
+  <!-- Page Header -->
+  <app-page-header
+    title="Bản đồ Giám sát & Mật độ Vi phạm Thực địa"
+    subtitle="Bản đồ nhiệt (Heatmap) và gom cụm điểm nóng (Marker Cluster) các hành vi vi phạm trên địa bàn Hà Nội">
+    <div actions class="header-actions">
+      <button mat-stroked-button color="primary" (click)="resetView()">
+        <mat-icon>center_focus_strong</mat-icon> Về trung tâm Hà Nội
+      </button>
+      <button mat-button class="btn-reset" (click)="resetFilters()">
+        <mat-icon>refresh</mat-icon> Đặt lại bộ lọc
+      </button>
+    </div>
+  </app-page-header>
+
+  <!-- Main Map & Control Grid -->
+  <div class="map-layout-grid">
+    <!-- Left Control & Hotspot Sidebar -->
+    <div class="map-sidebar">
+      <!-- 1. Layer Visibility Controls -->
+      <div class="sidebar-section">
+        <h3 class="section-title">
+          <mat-icon>layers</mat-icon> BẬT / TẮT LỚP BẢN ĐỒ
+        </h3>
+        <div class="layer-toggles-list">
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <span class="layer-name">Bản đồ nhiệt Heatmap</span>
+              <small class="layer-hint">Hiển thị mật độ & độ đậm vi phạm</small>
+            </div>
+            <mat-slide-toggle 
+              color="primary" 
+              [(ngModel)]="showHeatmap" 
+              (change)="toggleHeatmapLayer()">
+            </mat-slide-toggle>
+          </div>
+
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <span class="layer-name">Điểm vi phạm (Cluster)</span>
+              <small class="layer-hint">Gom cụm & xem chi tiết từng cơ sở</small>
+            </div>
+            <mat-slide-toggle 
+              color="warn" 
+              [(ngModel)]="showMarkers" 
+              (change)="toggleMarkersLayer()">
+            </mat-slide-toggle>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Dynamic Filter Panel -->
+      <div class="sidebar-section">
+        <h3 class="section-title">
+          <mat-icon>filter_alt</mat-icon> BỘ LỌC DỮ LIỆU
+        </h3>
+
+        <div class="filter-controls">
+          <!-- Time Range -->
+          <div class="control-group">
+            <label class="control-label">Khoảng thời gian:</label>
+            <select [(ngModel)]="selectedTimeRange" (change)="onFilterChange()" class="sidebar-select">
+              <option *ngFor="let t of TIME_RANGES" [value]="t.value">{{ t.label }}</option>
+            </select>
+          </div>
+
+          <!-- Violation Type -->
+          <div class="control-group">
+            <label class="control-label">Loại hành vi vi phạm:</label>
+            <select [(ngModel)]="selectedViolationType" (change)="onFilterChange()" class="sidebar-select">
+              <option value="">Tất cả các loại lỗi</option>
+              <option *ngFor="let v of violationCatalog" [value]="v.code">{{ v.code }} - {{ v.name }}</option>
+            </select>
+          </div>
+
+          <!-- Ward -->
+          <div class="control-group">
+            <label class="control-label">Địa bàn Phường:</label>
+            <select [(ngModel)]="selectedWard" (change)="onFilterChange()" class="sidebar-select">
+              <option value="">Toàn thành phố Hà Nội</option>
+              <option *ngFor="let w of WARD_OPTIONS" [value]="w">{{ w }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Hotspots & Density Summary -->
+      <div class="sidebar-section hotspot-summary-section">
+        <h3 class="section-title">
+          <mat-icon>local_fire_department</mat-icon> ĐIỂM NÓNG VI PHẠM
+        </h3>
+
+        <div class="hotspot-stats-grid">
+          <div class="stat-badge total">
+            <span class="stat-num">{{ points.length }}</span>
+            <span class="stat-label">Tổng điểm vi phạm</span>
+          </div>
+
+          <div class="stat-badge severe">
+            <span class="stat-num text-danger">{{ hotspotsSummary.severe }}</span>
+            <span class="stat-label">Mức nghiêm trọng (4-5)</span>
+          </div>
+        </div>
+
+        <div class="top-hotspot-box">
+          <span class="hotspot-label">Khu vực mật độ cao nhất:</span>
+          <strong class="hotspot-ward">{{ hotspotsSummary.topWard }}</strong>
+        </div>
+
+        <!-- Quick Focus Ward Buttons -->
+        <div class="quick-wards-wrap">
+          <span class="quick-label">Phóng nhanh đến địa bàn:</span>
+          <div class="ward-chips-row">
+            <button 
+              *ngFor="let w of WARD_OPTIONS" 
+              class="ward-pill-btn" 
+              [class.active]="selectedWard === w"
+              (click)="focusWard(w)">
+              {{ w.replace('Phường ', '') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Map View -->
+    <div class="map-view-wrapper">
+      <div id="violationsLeafletMap" class="leaflet-map-canvas"></div>
+
+      <!-- Floating Heatmap Legend Overlay -->
+      <div class="map-floating-legend" *ngIf="showHeatmap">
+        <div class="legend-header">
+          <mat-icon>whatshot</mat-icon>
+          <span>Thang nhiệt độ vi phạm (Heatmap)</span>
+        </div>
+        <div class="gradient-bar"></div>
+        <div class="gradient-labels">
+          <span>Thấp</span>
+          <span>Trung bình</span>
+          <span>Nghiêm trọng (Đỏ đậm)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Dialog Modal for Marker Popup Click -->
+  <app-inspection-detail-dialog
+    [inspection]="selectedInspection"
+    [isOpen]="isDialogOpen"
+    [violationCatalog]="violationCatalog"
+    [tagCatalog]="tagCatalog"
+    (close)="closeDialog()"
+    (saved)="fetchViolationsGeo()"
+    (completed)="fetchViolationsGeo()">
+  </app-inspection-detail-dialog>
+</div>

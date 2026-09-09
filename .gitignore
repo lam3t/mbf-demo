@@ -1,0 +1,43 @@
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Angular build
+.angular/
+dist/
+tmp/
+out-tsc/
+bazel-out/
+
+# Backend
+backend/dist/
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/pa04.db
+backend/pa04.db-journal
+backend/pa04.db-wal
+backend/pa04.db-shm
+
+# IDE / OS
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+
+# Temporary Test Files
+test_export.xlsx
+evidence_test.png
+*.tmp
+
+# Environment
+.env
+.env.local
+.env.*.local

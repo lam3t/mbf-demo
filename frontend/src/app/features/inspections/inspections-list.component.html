@@ -1,0 +1,376 @@
+<div class="inspections-page-container">
+  <!-- Page Header -->
+  <app-page-header
+    title="Giám sát Thực địa"
+    subtitle="Thực thi kiểm tra theo biểu mẫu Checklist số, ghi nhận vi phạm và chốt khóa hồ sơ (RULE-03)">
+    <div actions class="header-actions">
+      <button mat-stroked-button color="primary" (click)="loadInspections(); loadRecommendations()">
+        <mat-icon>refresh</mat-icon> Làm mới dữ liệu
+      </button>
+    </div>
+  </app-page-header>
+
+  <!-- Module Navigation Tabs -->
+  <div class="module-nav-tabs">
+    <button 
+      class="nav-tab-btn" 
+      [class.active]="activeTab === 'inspections'" 
+      (click)="onTabChange('inspections')">
+      <mat-icon>assignment</mat-icon>
+      <span>Hồ sơ Kiểm tra Thực địa</span>
+      <span class="nav-counter">{{ stats.total }}</span>
+    </button>
+    <button 
+      class="nav-tab-btn" 
+      [class.active]="activeTab === 'recommendations'" 
+      (click)="onTabChange('recommendations')">
+      <mat-icon>lightbulb</mat-icon>
+      <span>Danh sách Kiến nghị & Xử lý</span>
+      <span class="nav-counter">{{ recommendationsList.length }}</span>
+    </button>
+  </div>
+
+  <!-- TAB 1: DANH SÁCH HỒ SƠ KIỂM TRA -->
+  <div *ngIf="activeTab === 'inspections'" class="tab-content-wrap">
+    <!-- Quick Statistics KPI Cards -->
+    <div class="kpi-cards-grid">
+      <div class="kpi-card total" (click)="filterStatus('')">
+        <div class="kpi-icon"><mat-icon>folder_special</mat-icon></div>
+        <div class="kpi-data">
+          <span class="kpi-num">{{ stats.total }}</span>
+          <span class="kpi-label">Tổng số hồ sơ</span>
+        </div>
+      </div>
+
+      <div class="kpi-card not-started" (click)="filterStatus('not_started')">
+        <div class="kpi-icon"><mat-icon>pending_actions</mat-icon></div>
+        <div class="kpi-data">
+          <span class="kpi-num">{{ stats.not_started }}</span>
+          <span class="kpi-label">Chưa kiểm tra</span>
+        </div>
+      </div>
+
+      <div class="kpi-card in-progress" (click)="filterStatus('in_progress')">
+        <div class="kpi-icon"><mat-icon>edit_calendar</mat-icon></div>
+        <div class="kpi-data">
+          <span class="kpi-num">{{ stats.in_progress }}</span>
+          <span class="kpi-label">Đang kiểm tra</span>
+        </div>
+      </div>
+
+      <div class="kpi-card completed" (click)="filterStatus('completed')">
+        <div class="kpi-icon"><mat-icon>verified</mat-icon></div>
+        <div class="kpi-data">
+          <span class="kpi-num">{{ stats.completed }}</span>
+          <span class="kpi-label">Đã hoàn thành / Khóa</span>
+        </div>
+      </div>
+
+      <div class="kpi-card overdue" (click)="filterStatus('overdue')">
+        <div class="kpi-icon"><mat-icon>alarm_on</mat-icon></div>
+        <div class="kpi-data">
+          <span class="kpi-num">{{ stats.overdue }}</span>
+          <span class="kpi-label">Quá hạn kiểm tra</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Tabs + Filter Controls Bar -->
+    <div class="control-panel-card">
+      <!-- Status Pills -->
+      <div class="status-pills-row">
+        <button class="status-pill" [class.active]="selectedStatus === ''" (click)="filterStatus('')">
+          Tất cả ({{ stats.total }})
+        </button>
+        <button class="status-pill info" [class.active]="selectedStatus === 'not_started'" (click)="filterStatus('not_started')">
+          Chưa kiểm tra ({{ stats.not_started }})
+        </button>
+        <button class="status-pill warning" [class.active]="selectedStatus === 'in_progress'" (click)="filterStatus('in_progress')">
+          Đang kiểm tra ({{ stats.in_progress }})
+        </button>
+        <button class="status-pill success" [class.active]="selectedStatus === 'completed'" (click)="filterStatus('completed')">
+          Đã hoàn thành / Khóa ({{ stats.completed }})
+        </button>
+        <button class="status-pill danger" [class.active]="selectedStatus === 'overdue'" (click)="filterStatus('overdue')">
+          Quá hạn ({{ stats.overdue }})
+        </button>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="filters-row">
+        <div class="search-box">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input 
+            type="text" 
+            [(ngModel)]="searchTerm" 
+            (keyup.enter)="onFilterChange()" 
+            placeholder="Tìm theo tên cơ sở, MST, CCCD..." 
+            class="search-input">
+          <button *ngIf="searchTerm" mat-icon-button (click)="searchTerm = ''; onFilterChange()" class="clear-btn">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="filter-select-wrap">
+          <select [(ngModel)]="selectedWard" (change)="onFilterChange()" class="custom-select">
+            <option value="">Tất cả các Phường</option>
+            <option *ngFor="let w of WARDS" [value]="w">{{ w }}</option>
+          </select>
+        </div>
+
+        <div class="filter-select-wrap">
+          <select [(ngModel)]="selectedQuarter" (change)="onFilterChange()" class="custom-select">
+            <option value="">Tất cả Quý</option>
+            <option *ngFor="let q of QUARTERS" [value]="q">{{ q }}</option>
+          </select>
+        </div>
+
+        <button mat-button class="btn-reset" (click)="resetFilters()" matTooltip="Xóa toàn bộ bộ lọc">
+          <mat-icon>filter_alt_off</mat-icon> Đặt lại
+        </button>
+      </div>
+    </div>
+
+    <!-- Data Table Card -->
+    <mat-card class="table-card">
+      <div class="table-responsive">
+        <table mat-table [dataSource]="filteredInspections" class="custom-table w-100">
+          <!-- ID Column -->
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef class="col-id">Mã HS</th>
+            <td mat-cell *matCellDef="let row" class="col-id">
+              <span class="id-badge">#{{ row.id }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Object Name Column -->
+          <ng-container matColumnDef="objectName">
+            <th mat-header-cell *matHeaderCellDef>Cơ sở kinh doanh</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="object-cell">
+                <div class="object-name-line">
+                  <strong class="object-name">{{ row.objectName }}</strong>
+                  <span class="type-tag" [ngClass]="row.objectType || 'enterprise'">
+                    {{ row.objectType === 'enterprise' ? 'DN' : (row.objectType === 'household' ? 'Hộ KD' : 'Cá nhân') }}
+                  </span>
+                </div>
+                <div class="object-meta">
+                  <span class="meta-code" *ngIf="row.taxCode">MST: {{ row.taxCode }}</span>
+                  <span class="meta-code" *ngIf="row.idNumber">CCCD: {{ row.idNumber }}</span>
+                  <span class="meta-address">{{ row.objectAddress }}</span>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Ward Column -->
+          <ng-container matColumnDef="ward">
+            <th mat-header-cell *matHeaderCellDef>Đơn vị Phường</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="ward-text">{{ row.ward }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Plan Quarter Column -->
+          <ng-container matColumnDef="planQuarter">
+            <th mat-header-cell *matHeaderCellDef>Kỳ Kế hoạch</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="quarter-badge">{{ row.planQuarter || 'Q1/2026' }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Violations Column -->
+          <ng-container matColumnDef="violations">
+            <th mat-header-cell *matHeaderCellDef>Lỗi vi phạm ghi nhận</th>
+            <td mat-cell *matCellDef="let row">
+              <div *ngIf="parseViolations(row.violationCodes).length === 0" class="no-violation-tag">
+                <mat-icon>check_circle</mat-icon> Không có lỗi
+              </div>
+              <div *ngIf="parseViolations(row.violationCodes).length > 0" class="violations-tags-wrap">
+                <span *ngFor="let code of parseViolations(row.violationCodes)" class="badge-violation">
+                  {{ code }}
+                </span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Evidence Files Column -->
+          <ng-container matColumnDef="evidence">
+            <th mat-header-cell *matHeaderCellDef>Bằng chứng số</th>
+            <td mat-cell *matCellDef="let row">
+              <span *ngIf="parseEvidence(row.evidenceFiles).length === 0" class="text-muted text-xs">
+                Chưa có
+              </span>
+              <span *ngIf="parseEvidence(row.evidenceFiles).length > 0" class="evidence-badge">
+                <mat-icon>photo_camera</mat-icon> {{ parseEvidence(row.evidenceFiles).length }} tệp
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Trạng thái hồ sơ</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="status-cell">
+                <span class="badge" [ngClass]="{
+                  'badge-success': row.status === 'completed',
+                  'badge-warning': row.status === 'in_progress',
+                  'badge-info': row.status === 'not_started'
+                }">
+                  <mat-icon class="badge-icon" *ngIf="row.isLocked">lock</mat-icon>
+                  {{ row.status === 'completed' ? 'Đã hoàn thành' : (row.status === 'in_progress' ? 'Đang kiểm tra' : 'Chưa kiểm tra') }}
+                </span>
+
+                <span class="badge badge-danger" *ngIf="row.isOverdue && row.status !== 'completed'">
+                  <mat-icon class="badge-icon">warning</mat-icon> Quá hạn
+                </span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="text-right">Thao tác</th>
+            <td mat-cell *matCellDef="let row" class="text-right">
+              <button 
+                mat-stroked-button 
+                [color]="row.isLocked ? 'basic' : 'primary'" 
+                class="action-btn"
+                [class.locked-btn]="row.isLocked"
+                (click)="openDetailModal(row)">
+                <mat-icon>{{ row.isLocked ? 'visibility' : 'assignment_turned_in' }}</mat-icon>
+                <span>{{ row.isLocked ? 'Xem chi tiết' : 'Kiểm tra thực địa' }}</span>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" [class.row-locked]="row.isLocked"></tr>
+
+          <!-- Empty State -->
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell empty-cell" [attr.colspan]="displayedColumns.length">
+              <div class="empty-state">
+                <mat-icon class="empty-icon">search_off</mat-icon>
+                <p class="empty-title">Không tìm thấy hồ sơ kiểm tra nào phù hợp</p>
+                <p class="empty-desc">Thử thay đổi bộ lọc trạng thái hoặc từ khóa tìm kiếm</p>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- TAB 2: DANH SÁCH KIẾN NGHỊ & XỬ LÝ -->
+  <div *ngIf="activeTab === 'recommendations'" class="tab-content-wrap">
+    <!-- Recommendation Filter Bar -->
+    <div class="control-panel-card">
+      <div class="filters-row">
+        <div class="filter-select-wrap">
+          <label class="filter-mini-label">Lĩnh vực kiến nghị:</label>
+          <select [(ngModel)]="selectedRecTag" (change)="onRecFilterChange()" class="custom-select">
+            <option value="">Tất cả các lĩnh vực</option>
+            <option *ngFor="let t of tagCatalog" [value]="t.code">{{ t.name }}</option>
+          </select>
+        </div>
+
+        <div class="filter-select-wrap">
+          <label class="filter-mini-label">Địa bàn Phường:</label>
+          <select [(ngModel)]="selectedRecWard" (change)="onRecFilterChange()" class="custom-select">
+            <option value="">Tất cả các Phường</option>
+            <option *ngFor="let w of WARDS" [value]="w">{{ w }}</option>
+          </select>
+        </div>
+
+        <button mat-button class="btn-reset" (click)="selectedRecTag = ''; selectedRecWard = ''; onRecFilterChange()">
+          <mat-icon>filter_alt_off</mat-icon> Đặt lại
+        </button>
+      </div>
+    </div>
+
+    <!-- Recommendations Table -->
+    <mat-card class="table-card">
+      <div class="table-responsive">
+        <table mat-table [dataSource]="filteredRecommendations" class="custom-table w-100">
+          <ng-container matColumnDef="objectName">
+            <th mat-header-cell *matHeaderCellDef>Đối tượng kinh doanh</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="object-cell">
+                <strong class="object-name">{{ row.objectName }}</strong>
+                <span class="meta-address">{{ row.objectAddress }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="ward">
+            <th mat-header-cell *matHeaderCellDef>Phường</th>
+            <td mat-cell *matCellDef="let row">{{ row.ward }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="tags">
+            <th mat-header-cell *matHeaderCellDef>Lĩnh vực kiến nghị</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="recommendation-tags-wrap">
+                <span *ngFor="let tag of parseTags(row.recommendationTags)" class="rec-tag-badge" [ngClass]="tag">
+                  {{ getTagLabel(tag) }}
+                </span>
+                <span *ngIf="parseTags(row.recommendationTags).length === 0" class="text-muted text-xs">Chung</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="recommendationNote">
+            <th mat-header-cell *matHeaderCellDef>Nội dung kiến nghị / Đề xuất xử lý</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="recommendation-text">
+                {{ row.recommendationNote }}
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="completedAt">
+            <th mat-header-cell *matHeaderCellDef>Thời gian ghi nhận</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="date-text">{{ row.completedAt ? (row.completedAt | date:'dd/MM/yyyy HH:mm') : '—' }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="text-right">Thao tác</th>
+            <td mat-cell *matCellDef="let row" class="text-right">
+              <button mat-stroked-button color="primary" class="action-btn" (click)="openDetailById(row.id)">
+                <mat-icon>visibility</mat-icon> Xem hồ sơ
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="recommendationColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: recommendationColumns;"></tr>
+
+          <!-- Empty State -->
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell empty-cell" [attr.colspan]="recommendationColumns.length">
+              <div class="empty-state">
+                <mat-icon class="empty-icon">lightbulb_outline</mat-icon>
+                <p class="empty-title">Chưa có kiến nghị nào được ghi nhận</p>
+                <p class="empty-desc">Các kiến nghị xuất hiện sau khi cán bộ thực hiện kiểm tra và nhập nội dung đề xuất xử lý.</p>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Detailed Modal Component -->
+  <app-inspection-detail-dialog
+    [inspection]="selectedInspection"
+    [isOpen]="isDialogOpen"
+    [violationCatalog]="violationCatalog"
+    [tagCatalog]="tagCatalog"
+    (close)="closeDialog()"
+    (saved)="onInspectionSaved($event)"
+    (completed)="onInspectionCompleted($event)">
+  </app-inspection-detail-dialog>
+</div>

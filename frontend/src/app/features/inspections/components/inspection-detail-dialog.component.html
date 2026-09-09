@@ -1,0 +1,431 @@
+<div class="modal-backdrop" *ngIf="isOpen && inspection">
+  <div class="modal-container" [class.is-locked]="isLocked">
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="header-info">
+        <div class="header-badges">
+          <span class="badge" [ngClass]="{
+            'badge-success': inspection.status === 'completed',
+            'badge-warning': inspection.status === 'in_progress',
+            'badge-info': inspection.status === 'not_started'
+          }">
+            <mat-icon class="badge-icon" *ngIf="inspection.isLocked">lock</mat-icon>
+            {{ inspection.status === 'completed' ? 'Đã hoàn thành / Khóa hồ sơ' : (inspection.status === 'in_progress' ? 'Đang thực hiện' : 'Chưa kiểm tra') }}
+          </span>
+          <span class="badge badge-danger" *ngIf="inspection.isOverdue && inspection.status !== 'completed'">
+            <mat-icon class="badge-icon">warning</mat-icon> Quá hạn kiểm tra
+          </span>
+          <span class="id-tag">Mã HS: #{{ inspection.id }}</span>
+        </div>
+        <h2 class="header-title">{{ inspection.objectName }}</h2>
+        <p class="header-subtitle">
+          <mat-icon>location_on</mat-icon> {{ inspection.objectAddress }} — <strong>{{ inspection.ward }}</strong>
+        </p>
+      </div>
+      <button mat-icon-button (click)="onClose()" class="close-btn" matTooltip="Đóng cửa sổ">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- RULE-03 Lock Notice Banner -->
+    <div *ngIf="isLocked" class="locked-banner">
+      <div class="locked-banner-icon">
+        <mat-icon>lock</mat-icon>
+      </div>
+      <div class="locked-banner-content">
+        <h4>HỒ SƠ ĐÃ ĐƯỢC CHỐT KẾT QUẢ VÀ KHÓA DỮ LIỆU (RULE-03)</h4>
+        <p>
+          Hồ sơ này đã kết thúc kiểm tra vào lúc <strong>{{ inspection.completedAt | date:'dd/MM/yyyy HH:mm' }}</strong>. 
+          Toàn bộ checklist, mã lỗi vi phạm, bằng chứng số và kiến nghị đã được niêm phong vĩnh viễn, không thể chỉnh sửa.
+        </p>
+      </div>
+    </div>
+
+    <!-- Alert Messages -->
+    <div *ngIf="successMessage" class="alert-banner alert-success">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ successMessage }}</span>
+    </div>
+    <div *ngIf="errorMessage" class="alert-banner alert-error">
+      <mat-icon>error</mat-icon>
+      <span>{{ errorMessage }}</span>
+    </div>
+
+    <!-- Scrollable Modal Body -->
+    <div class="modal-body">
+      <!-- 0. Object Summary Card -->
+      <div class="info-strip">
+        <div class="info-item">
+          <span class="info-label">Mã số thuế / CCCD</span>
+          <span class="info-val font-mono">{{ inspection.taxCode || inspection.idNumber || 'Chưa cập nhật' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Người đại diện</span>
+          <span class="info-val">{{ inspection.representative || 'Chưa cập nhật' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Loại hình</span>
+          <span class="info-val">
+            <span class="type-badge" [ngClass]="inspection.objectType || 'enterprise'">
+              {{ inspection.objectType === 'enterprise' ? 'Doanh nghiệp' : (inspection.objectType === 'household' ? 'Hộ kinh doanh' : 'Cá nhân') }}
+            </span>
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Kế hoạch kỳ</span>
+          <span class="info-val font-semibold">{{ inspection.planQuarter || 'Kế hoạch năm 2026' }}</span>
+        </div>
+      </div>
+
+      <!-- SECTION 1: Checklist tiêu chuẩn -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <div class="section-num">1</div>
+            <div>
+              <h3 class="section-title">Checklist Tiêu chí Pháp luật Thực địa</h3>
+              <p class="section-desc">Đánh giá từng tiêu chí thực tế tại cơ sở kinh doanh</p>
+            </div>
+          </div>
+          <div class="checklist-summary">
+            <span class="score-badge" [class.all-pass]="!hasViolations" [class.has-fail]="hasViolations">
+              {{ passedCount }}/{{ checklist.length }} Đạt yêu cầu
+            </span>
+          </div>
+        </div>
+
+        <div class="checklist-grid">
+          <div *ngFor="let item of checklist; let i = index" class="checklist-item-card" [class.failed]="!item.passed">
+            <div class="criterion-main">
+              <div class="criterion-index">{{ i + 1 }}</div>
+              <div class="criterion-text">
+                <div class="criterion-title">{{ item.title }}</div>
+                <div class="criterion-desc">{{ item.desc }}</div>
+              </div>
+            </div>
+
+            <div class="criterion-actions">
+              <div class="toggle-switch-group" [class.disabled]="isLocked">
+                <button 
+                  type="button"
+                  class="toggle-btn pass" 
+                  [class.active]="item.passed" 
+                  [disabled]="isLocked"
+                  (click)="toggleChecklist(item, true)">
+                  <mat-icon>check</mat-icon>
+                  <span>Đạt</span>
+                </button>
+                <button 
+                  type="button"
+                  class="toggle-btn fail" 
+                  [class.active]="!item.passed" 
+                  [disabled]="isLocked"
+                  (click)="toggleChecklist(item, false)">
+                  <mat-icon>close</mat-icon>
+                  <span>Không đạt</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: Áp mã vi phạm (Hiện khi có tiêu chí không đạt) -->
+      <div class="section-card violation-section" *ngIf="hasViolations">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <div class="section-num warning">2</div>
+            <div>
+              <h3 class="section-title text-danger">Ghi nhận Lỗi Vi phạm & Mức độ Xử lý</h3>
+              <p class="section-desc">Áp dụng mã hành vi vi phạm căn cứ theo các tiêu chí không đạt</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Severity Selection -->
+        <div class="severity-box">
+          <label class="severity-label">Mức độ nghiêm trọng của vi phạm:</label>
+          <div class="severity-options">
+            <label class="severity-option" [class.active]="severity === 1" [class.disabled]="isLocked">
+              <input type="radio" name="severity" [value]="1" [(ngModel)]="severity" [disabled]="isLocked">
+              <span class="severity-indicator level-1"></span>
+              <span class="severity-text"><strong>Mức 1: Nhẹ</strong> (Nhắc nhở / Hướng dẫn khắc phục)</span>
+            </label>
+            <label class="severity-option" [class.active]="severity === 2" [class.disabled]="isLocked">
+              <input type="radio" name="severity" [value]="2" [(ngModel)]="severity" [disabled]="isLocked">
+              <span class="severity-indicator level-2"></span>
+              <span class="severity-text"><strong>Mức 2: Trung bình</strong> (Lập biên bản vi phạm hành chính)</span>
+            </label>
+            <label class="severity-option" [class.active]="severity === 3" [class.disabled]="isLocked">
+              <input type="radio" name="severity" [value]="3" [(ngModel)]="severity" [disabled]="isLocked">
+              <span class="severity-indicator level-3"></span>
+              <span class="severity-text"><strong>Mức 3: Nghiêm trọng</strong> (Đình chỉ / Đề xuất thu hồi GP)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Violation Catalog Multi-select -->
+        <div class="violation-catalog-wrap">
+          <label class="catalog-label">Danh mục mã vi phạm áp dụng (chọn các mã phù hợp):</label>
+          <div class="violation-chips-grid">
+            <div 
+              *ngFor="let item of violationCatalog" 
+              class="violation-card" 
+              [class.selected]="isViolationSelected(item.code)"
+              [class.disabled]="isLocked"
+              (click)="toggleViolation(item.code)">
+              <div class="violation-check">
+                <mat-icon>{{ isViolationSelected(item.code) ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+              </div>
+              <div class="violation-info">
+                <span class="violation-code">{{ item.code }}</span>
+                <span class="violation-name">{{ item.name }}</span>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="selectedViolationCodes.length > 0" class="selected-summary">
+            Đã chọn <strong>{{ selectedViolationCodes.length }}</strong> mã vi phạm: 
+            <span class="chip-mini" *ngFor="let code of selectedViolationCodes">{{ code }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: Bằng chứng số & Biên bản hiện trường -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <div class="section-num">{{ hasViolations ? '3' : '2' }}</div>
+            <div>
+              <h3 class="section-title">Bằng chứng số & Biên bản hiện trường</h3>
+              <p class="section-desc">Đính kèm ảnh chụp hiện trường, biên bản scan (.jpg, .png, .pdf tối đa 5MB)</p>
+            </div>
+          </div>
+          <span class="evidence-count-badge">{{ evidenceList.length }} tệp đã đính kèm</span>
+        </div>
+
+        <!-- Upload Dropzone -->
+        <div *ngIf="!isLocked" class="upload-zone">
+          <input type="file" #fileInput (change)="onFileSelected($event)" accept=".jpg,.jpeg,.png,.pdf" style="display: none">
+          <div class="upload-box" (click)="fileInput.click()">
+            <mat-icon class="upload-icon">cloud_upload</mat-icon>
+            <div class="upload-text">
+              <strong>Nhấn để chọn tệp tải lên</strong> hoặc kéo thả file ảnh / tài liệu vào đây
+            </div>
+            <div class="upload-hint">Định dạng hỗ trợ: JPG, PNG, PDF (Dung lượng tối đa 5MB/file)</div>
+          </div>
+          <mat-progress-bar *ngIf="isUploading" mode="indeterminate" class="mt-2"></mat-progress-bar>
+          <div *ngIf="uploadError" class="upload-error-msg">
+            <mat-icon>error_outline</mat-icon> {{ uploadError }}
+          </div>
+        </div>
+
+        <!-- Evidence Gallery -->
+        <div class="evidence-gallery" *ngIf="evidenceList.length > 0">
+          <div *ngFor="let file of evidenceList; let i = index" class="evidence-item">
+            <!-- Image item -->
+            <div *ngIf="!isPdf(file)" class="image-thumb" (click)="openImagePreview(file)">
+              <img [src]="file" alt="Bằng chứng hiện trường" (error)="$any($event.target).src = 'assets/icons/image-placeholder.svg'">
+              <div class="thumb-overlay">
+                <mat-icon>zoom_in</mat-icon>
+              </div>
+            </div>
+
+            <!-- PDF item -->
+            <div *ngIf="isPdf(file)" class="pdf-thumb">
+              <mat-icon class="pdf-icon">picture_as_pdf</mat-icon>
+              <span class="pdf-name">{{ getFileName(file) }}</span>
+              <a [href]="file" target="_blank" class="pdf-open-btn" matTooltip="Mở tệp PDF">
+                <mat-icon>open_in_new</mat-icon>
+              </a>
+            </div>
+
+            <!-- Remove Button -->
+            <button *ngIf="!isLocked" class="remove-evidence-btn" (click)="removeEvidence(i)" matTooltip="Xóa file này">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="evidenceList.length === 0 && isLocked" class="empty-evidence-notice">
+          Chưa có tệp bằng chứng số nào được đính kèm trong hồ sơ này.
+        </div>
+      </div>
+
+      <!-- SECTION 4: Kiến nghị & Thẻ lĩnh vực -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <div class="section-num">{{ hasViolations ? '4' : '3' }}</div>
+            <div>
+              <h3 class="section-title">Kiến nghị, Đề xuất & Thẻ Lĩnh vực</h3>
+              <p class="section-desc">Ghi nhận nội dung kiến nghị xử lý và phân loại theo lĩnh vực chuyên môn</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tag Selection -->
+        <div class="tags-group">
+          <label class="tags-label">Chọn các lĩnh vực kiến nghị liên quan:</label>
+          <div class="tag-chips-wrap">
+            <button 
+              type="button"
+              *ngFor="let tag of tagCatalog" 
+              class="tag-chip-btn"
+              [class.active]="isTagSelected(tag.code)"
+              [class.disabled]="isLocked"
+              [disabled]="isLocked"
+              (click)="toggleTag(tag.code)">
+              <mat-icon class="tag-icon">{{ isTagSelected(tag.code) ? 'check' : 'label' }}</mat-icon>
+              <span>{{ tag.name }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Recommendation Note Textarea -->
+        <div class="form-group mt-3">
+          <label class="field-label">Nội dung kiến nghị / Biện pháp đề xuất:</label>
+          <textarea 
+            class="custom-textarea" 
+            [(ngModel)]="recommendationNote" 
+            [disabled]="isLocked"
+            rows="4" 
+            placeholder="Ghi rõ nội dung phát hiện, yêu cầu khắc phục, kiến nghị xử phạt hoặc chuyển cơ quan chức năng phối hợp...">
+          </textarea>
+        </div>
+      </div>
+
+      <!-- SECTION 5: Tọa độ & Định vị Thực địa -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <div class="section-num">{{ hasViolations ? '5' : '4' }}</div>
+            <div>
+              <h3 class="section-title">Vị trí & Tọa độ Thực địa (GPS)</h3>
+              <p class="section-desc">Xác định tọa độ kiểm tra thực tế và tự động nhận diện địa bàn Phường</p>
+            </div>
+          </div>
+          <div class="gps-actions" *ngIf="!isLocked">
+            <button mat-stroked-button color="primary" class="btn-gps" (click)="useCurrentLocation()">
+              <mat-icon>my_location</mat-icon> Lấy GPS hiện tại
+            </button>
+            <button mat-button class="btn-sample" (click)="useSampleLocation()">
+              <mat-icon>place</mat-icon> Điền tọa độ mẫu
+            </button>
+          </div>
+        </div>
+
+        <div class="coordinates-grid">
+          <div class="coord-input-wrap">
+            <label class="coord-label">Vĩ độ (Latitude):</label>
+            <input 
+              type="number" 
+              step="0.000001" 
+              class="coord-input" 
+              [(ngModel)]="lat" 
+              (ngModelChange)="onCoordinateChange()"
+              [disabled]="isLocked" 
+              placeholder="VD: 20.998400">
+          </div>
+          <div class="coord-input-wrap">
+            <label class="coord-label">Kinh độ (Longitude):</label>
+            <input 
+              type="number" 
+              step="0.000001" 
+              class="coord-input" 
+              [(ngModel)]="lng" 
+              (ngModelChange)="onCoordinateChange()"
+              [disabled]="isLocked" 
+              placeholder="VD: 105.829100">
+          </div>
+        </div>
+
+        <!-- Nearest Ward Detection Match Result -->
+        <div class="ward-detection-result" *ngIf="detectedWard">
+          <div class="detection-icon-wrap" [class.matched]="isWardMatched()" [class.mismatched]="!isWardMatched()">
+            <mat-icon>{{ isWardMatched() ? 'verified' : 'location_searching' }}</mat-icon>
+          </div>
+          <div class="detection-info">
+            <div class="detection-title">
+              Địa bàn nhận diện theo GPS: <strong>{{ detectedWard }}</strong>
+              <span class="distance-text">(cách tâm phường ~{{ detectedDistanceMeters }}m)</span>
+            </div>
+            <div class="detection-status" [class.text-success]="isWardMatched()" [class.text-warning]="!isWardMatched()">
+              {{ isWardMatched() ? '✅ Trùng khớp với địa bàn được phân công kiểm tra (' + inspection.ward + ')' : '⚠️ Chú ý: Tọa độ gần trung tâm ' + detectedWard + ' hơn địa bàn phân công (' + inspection.ward + ')' }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <div class="footer-left">
+        <span *ngIf="isLocked" class="lock-indicator-text">
+          <mat-icon>lock</mat-icon> Chế độ chỉ đọc (Đã khóa theo RULE-03)
+        </span>
+      </div>
+
+      <div class="footer-actions">
+        <button mat-button class="btn-cancel" (click)="onClose()">
+          {{ isLocked ? 'Đóng cửa sổ' : 'Hủy bỏ' }}
+        </button>
+
+        <button 
+          *ngIf="!isLocked"
+          mat-stroked-button 
+          color="primary" 
+          class="btn-save-draft"
+          [disabled]="isSubmitting"
+          (click)="saveDraft()">
+          <mat-icon>save</mat-icon> Lưu tạm kết quả
+        </button>
+
+        <button 
+          *ngIf="!isLocked"
+          mat-flat-button 
+          color="warn" 
+          class="btn-complete"
+          [disabled]="isSubmitting"
+          (click)="confirmComplete()">
+          <mat-icon>lock</mat-icon> Kết thúc kiểm tra & Khóa hồ sơ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Complete Modal -->
+  <div class="confirm-overlay" *ngIf="showConfirmComplete">
+    <div class="confirm-dialog">
+      <div class="confirm-icon-wrap">
+        <mat-icon>gavel</mat-icon>
+      </div>
+      <h3 class="confirm-title">Xác nhận Kết thúc Kiểm tra?</h3>
+      <div class="confirm-body">
+        <p>
+          Hệ thống sẽ cập nhật trạng thái hồ sơ sang <strong>Đã hoàn thành</strong> và kích hoạt cơ chế 
+          <strong>KHÓA DỮ LIỆU VĨNH VIỄN (RULE-03)</strong>.
+        </p>
+        <div class="confirm-warning-box">
+          <mat-icon>warning</mat-icon>
+          <span>Sau bước này, không một tài khoản nào có thể chỉnh sửa checklist, mã lỗi hoặc tải thêm bằng chứng vào hồ sơ này.</span>
+        </div>
+      </div>
+      <div class="confirm-footer">
+        <button mat-button (click)="cancelConfirm()" [disabled]="isSubmitting">Hủy / Quay lại</button>
+        <button mat-flat-button color="warn" (click)="executeComplete()" [disabled]="isSubmitting">
+          <mat-icon>check_circle</mat-icon> Đồng ý Chốt & Khóa hồ sơ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Fullscreen Preview Modal -->
+  <div class="image-preview-overlay" *ngIf="previewImageUrl" (click)="closeImagePreview()">
+    <div class="preview-content" (click)="$event.stopPropagation()">
+      <img [src]="previewImageUrl" alt="Xem ảnh bằng chứng">
+      <button class="preview-close-btn" (click)="closeImagePreview()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>
