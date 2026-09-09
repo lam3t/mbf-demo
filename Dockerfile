@@ -1,4 +1,4 @@
-# Multi-stage build for PA04 Monorepo (Angular 18 + Node.js Express + SQLite)
+# Multi-stage build for TNT Monorepo (Angular 18 + Node.js Express + SQLite)
 FROM node:22-alpine AS builder
 
 WORKDIR /app

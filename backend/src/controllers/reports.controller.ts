@@ -75,7 +75,7 @@ export class ReportsController {
       const items = db.prepare(query).all(...params) as any[];
 
       const workbook = new ExcelJS.Workbook();
-      workbook.creator = 'PA04 - Hệ thống Quản lý Kiểm tra';
+      workbook.creator = 'TNT - Hệ thống Quản lý Kiểm tra';
       workbook.created = new Date();
 
       const worksheet = workbook.addWorksheet('Báo cáo Kiến nghị');
@@ -242,7 +242,7 @@ export class ReportsController {
       const items = db.prepare(query).all(...params) as any[];
 
       const workbook = new ExcelJS.Workbook();
-      workbook.creator = 'PA04 - Hệ thống Quản lý Kiểm tra';
+      workbook.creator = 'TNT - Hệ thống Quản lý Kiểm tra';
       const worksheet = workbook.addWorksheet('Tổng kết Quý');
 
       // Title

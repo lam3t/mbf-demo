@@ -18,10 +18,10 @@ export function runSeed(skipInit: boolean = false) {
   `);
 
   const users = [
-    { id: 1, username: 'admin', fullName: 'Quản trị viên Hệ thống', role: 'admin', unit: 'PA04 - Quản trị' },
-    { id: 2, username: 'leader', fullName: 'Đ/c Nguyễn Văn An - Lãnh đạo PA04', role: 'leader_pa04', unit: 'Phòng PA04' },
-    { id: 3, username: 'officer1', fullName: 'Đ/c Trần Thị Bình - Cán bộ PA04', role: 'officer_pa04', unit: 'Phòng PA04' },
-    { id: 4, username: 'ward1', fullName: 'Đ/c Lê Văn Cường - Cán bộ Phường Hoàn Kiếm', role: 'officer_ward', unit: 'Phường Hoàn Kiếm' }
+    { id: 1, username: 'admin', fullName: 'Quản trị viên Hệ thống', role: 'admin', unit: 'TNT - Quản trị' },
+    { id: 2, username: 'leader', fullName: 'Nguyễn Văn An - Lãnh đạo TNT', role: 'leader_tnt', unit: 'Phòng TNT' },
+    { id: 3, username: 'officer1', fullName: 'Trần Thị Bình - Cán bộ TNT', role: 'officer_tnt', unit: 'Phòng TNT' },
+    { id: 4, username: 'ward1', fullName: 'Lê Văn Cường - Cán bộ Phường Hoàn Kiếm', role: 'officer_ward', unit: 'Phường Hoàn Kiếm' }
   ];
 
   for (const u of users) {
@@ -57,7 +57,7 @@ export function runSeed(skipInit: boolean = false) {
     { id: 1, code: 'THUE', name: 'Thuế' },
     { id: 2, code: 'DAT_DAI', name: 'Đất đai' },
     { id: 3, code: 'MOI_TRUONG', name: 'Môi trường' },
-    { id: 4, code: 'ANTT', name: 'An ninh trật tự' }
+    { id: 4, code: 'ANTT', name: 'Trật tự đô thị' }
   ];
 
   for (const t of tags) {
@@ -453,9 +453,9 @@ export function runSeed(skipInit: boolean = false) {
     VALUES (?, ?, ?, ?, ?, ?, datetime('now', '-1 days'))
   `);
 
-  insertAudit.run(1, 1, 'SEED_DATABASE', 'SYSTEM', 0, JSON.stringify({ message: 'Khởi tạo dữ liệu mẫu hệ thống demo PA04' }));
+  insertAudit.run(1, 1, 'SEED_DATABASE', 'SYSTEM', 0, JSON.stringify({ message: 'Khởi tạo dữ liệu mẫu hệ thống demo TNT' }));
   insertAudit.run(2, 4, 'CREATE_PLAN', 'PLANS', 1, JSON.stringify({ quarter: 'Q2/2026', ward: 'Phường Hoàn Kiếm' }));
-  insertAudit.run(3, 2, 'APPROVE_PLAN', 'PLANS', 1, JSON.stringify({ approvedBy: 'leader_pa04', itemsCount: 4 }));
+  insertAudit.run(3, 2, 'APPROVE_PLAN', 'PLANS', 1, JSON.stringify({ approvedBy: 'leader_tnt', itemsCount: 4 }));
   console.log('✅ Seeded audit logs');
 
   console.log('🎉 Database seeding completed successfully!');

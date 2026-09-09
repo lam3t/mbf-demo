@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: mbf-pa04-inspection-demo
+    name: mbf-tnt-inspection-demo
     runtime: node
     plan: free
     region: singapore

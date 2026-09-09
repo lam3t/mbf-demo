@@ -16,24 +16,24 @@ router.post('/', auditLogger('CREATE_PLAN', 'PLANS'), PlansController.create);
 router.put('/:id/items', auditLogger('UPDATE_PLAN_ITEMS', 'PLANS'), PlansController.updateItems);
 router.post('/:id/submit', auditLogger('SUBMIT_PLAN', 'PLANS'), PlansController.submit);
 
-// Approve / Reject (PA04 Roles)
+// Approve / Reject (TNT Roles)
 router.post(
   '/:id/approve',
-  roleGuard('admin', 'leader_pa04', 'officer_pa04'),
+  roleGuard('admin', 'leader_tnt', 'officer_tnt'),
   auditLogger('APPROVE_PLAN', 'PLANS'),
   PlansController.approve
 );
 
 router.post(
   '/:id/reject',
-  roleGuard('admin', 'leader_pa04', 'officer_pa04'),
+  roleGuard('admin', 'leader_tnt', 'officer_tnt'),
   auditLogger('REJECT_PLAN', 'PLANS'),
   PlansController.reject
 );
 
 router.post(
   '/approve-bulk',
-  roleGuard('admin', 'leader_pa04', 'officer_pa04'),
+  roleGuard('admin', 'leader_tnt', 'officer_tnt'),
   auditLogger('APPROVE_BULK_PLANS', 'PLANS'),
   PlansController.approveBulk
 );

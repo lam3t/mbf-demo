@@ -8,7 +8,7 @@ router.post('/login', AuthController.login);
 router.get('/login', (req, res) => {
   res.json({
     status: 'ok',
-    message: 'PA04 Authentication Endpoint is active. Send a POST request with { username, password } to login.',
+    message: 'TNT Authentication Endpoint is active. Send a POST request with { username, password } to login.',
     uiLoginUrl: 'https://mbf-demo-nine.vercel.app/login'
   });
 });

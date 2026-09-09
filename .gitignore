@@ -16,10 +16,13 @@ bazel-out/
 backend/dist/
 backend/uploads/*
 !backend/uploads/.gitkeep
-backend/pa04.db
-backend/pa04.db-journal
-backend/pa04.db-wal
-backend/pa04.db-shm
+backend/*.db
+backend/*.db-journal
+backend/*.db-wal
+backend/*.db-shm
+*.db
+*.db-wal
+*.db-shm
 
 # IDE / OS
 .idea/

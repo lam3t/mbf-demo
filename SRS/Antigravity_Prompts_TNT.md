@@ -1,9 +1,9 @@
 # BỘ PROMPT CHO ANTIGRAVITY
-## Vibe-coding ứng dụng demo PA04 — Angular + Node.js
+## Vibe-coding ứng dụng demo TNT — Angular + Node.js
 
 **Cách dùng:** Chạy tuần tự từng prompt theo đúng thứ tự trong 1 workspace của Antigravity. Sau mỗi prompt, kiểm tra kết quả (chạy thử) trước khi sang prompt tiếp theo. Mỗi prompt đã được viết để agent có đủ ngữ cảnh mà không cần bạn giải thích lại từ đầu — bạn có thể copy-paste nguyên văn.
 
-Đính kèm cho agent (nếu Antigravity hỗ trợ đính kèm file): file `SRS_PA04_Quan_Ly_Kiem_Tra.md` và ảnh giao diện tham khảo `1788918994314_image.png`.
+Đính kèm cho agent (nếu Antigravity hỗ trợ đính kèm file): file `SRS_TNT_Quan_Ly_Kiem_Tra.md` và ảnh giao diện tham khảo `1788918994314_image.png`.
 
 ---
 
@@ -28,11 +28,11 @@ Yêu cầu:
    inspections, violation_catalog, recommendation_tag_catalog, audit_logs.
    Dùng đúng các trường mô tả trong file SRS đính kèm mục "5. MÔ HÌNH DỮ LIỆU ĐỀ XUẤT".
 5. Viết script backend/src/db/seed.ts để seed dữ liệu mẫu:
-   - 4 user demo: admin/123456 (role admin), leader/123456 (role leader_pa04),
-     officer1/123456 (role officer_pa04), ward1/123456 (role officer_ward, đơn vị "Phường Hoàn Kiếm").
+   - 4 user demo: admin/123456 (role admin), leader/123456 (role leader_tnt),
+     officer1/123456 (role officer_tnt), ward1/123456 (role officer_ward, đơn vị "Phường Hoàn Kiếm").
    - Danh mục lỗi vi phạm: Lỗi 01 - Không có giấy ĐKKD, Lỗi 02 - Vi phạm PCCC,
      Lỗi 03 - Sai địa điểm kinh doanh, Lỗi 04 - Không niêm yết giá.
-   - Danh mục lĩnh vực kiến nghị: Thuế, Đất đai, Môi trường, An ninh trật tự.
+   - Danh mục lĩnh vực kiến nghị: Thuế, Đất đai, Môi trường, Trật tự đô thị.
    - Cấu hình quota mẫu cho 5 phường (min 30, max 100 mỗi phường, quý 2/2026).
 6. Trả lời bằng cách liệt kê toàn bộ cấu trúc thư mục đã tạo và cách chạy dự án.
 
@@ -49,7 +49,7 @@ tên "CIDS". Hãy phân tích và tái tạo layout shell dùng chung cho toàn 
 /frontend theo đúng phong cách này:
 
 1. Sidebar bên trái (width ~230px, có thể thu gọn/mở rộng bằng nút mũi tên ở góc trên):
-   - Logo + tên hệ thống trên cùng: "PA04 - Hệ thống Quản lý Kiểm tra".
+   - Logo + tên hệ thống trên cùng: "TNT - Hệ thống Quản lý Kiểm tra".
    - Menu chính dạng icon + label, có nhóm menu cha/con thu gọn (accordion),
      nền xanh nhạt (#EAF1FF) cho item đang active, chữ xanh đậm (#1A56DB).
    - Các mục menu: Dashboard, Quản lý đối tượng, Lập kế hoạch & Phê duyệt,
@@ -177,13 +177,13 @@ BACKEND:
    dựa vào quota_configs.
 5. POST /api/plans/:id/submit — chuyển draft → pending. Chặn nếu thời điểm hiện tại đã qua
    cutoff_configs của quý đó (trả lỗi 400 kèm message rõ ràng).
-6. POST /api/plans/:id/approve — chỉ role leader_pa04/officer_pa04, chuyển pending → approved,
+6. POST /api/plans/:id/approve — chỉ role leader_tnt/officer_tnt, chuyển pending → approved,
    ghi approvedBy/approvedAt, đồng thời sinh bản ghi inspections (status=not_started) cho từng
    object trong plan để chuẩn bị cho Phân hệ C.
 7. POST /api/plans/:id/reject — body bắt buộc {reason}, chuyển pending → rejected (hoặc về draft
    để phường sửa lại — chọn 1 trong 2 theo SRS: "quay về Bản nháp"), lưu reason.
 8. GET /api/plans/pending-grid — trả toàn bộ plan_items đang pending dạng phẳng (mỗi dòng là
-   1 object) để hiển thị lưới phê duyệt hàng loạt cho PA04.
+   1 object) để hiển thị lưới phê duyệt hàng loạt cho TNT.
 9. POST /api/plans/approve-bulk — nhận mảng planItemIds, duyệt hàng loạt các item thuộc
    nhiều plan cùng lúc (nếu nghiệp vụ yêu cầu duyệt theo object thay vì theo cả plan, hãy tách
    nhỏ hơn: cho phép approve từng object riêng trong 1 plan, cập nhật trạng thái object đó).
@@ -197,12 +197,12 @@ FRONTEND (module "Lập kế hoạch & Phê duyệt", chỉ hiển thị menu ph
    giống hệt phong cách bảng "Danh sách báo giá" trong ảnh tham khảo — cột: Tên kế hoạch
    (VD "Kế hoạch Quý II/2026 - Phường Hoàn Kiếm"), Đơn vị, Số lượng đối tượng, Ngày trình,
    Trạng thái, Thao tác.
-3. Trang "Ma trận phê duyệt" (cho role leader_pa04/officer_pa04): bảng dạng lưới liệt kê
+3. Trang "Ma trận phê duyệt" (cho role leader_tnt/officer_tnt): bảng dạng lưới liệt kê
    từng object đang pending kèm checkbox chọn nhiều dòng, nút "Duyệt các mục đã chọn" và
    nút "Từ chối" (mở dialog bắt nhập lý do, validate not-empty trước khi submit).
 
 Test case: tạo giỏ kế hoạch dưới quota tối thiểu → banner cảnh báo vàng; trình duyệt thành
-công; đăng nhập leader_pa04 vào ma trận phê duyệt, duyệt hàng loạt; kiểm tra bảng inspections
+công; đăng nhập leader_tnt vào ma trận phê duyệt, duyệt hàng loạt; kiểm tra bảng inspections
 đã có bản ghi mới tương ứng.
 ```
 
@@ -340,7 +340,7 @@ Chạy thử toàn bộ luồng theo kịch bản demo trên và báo lại nế
 
 ## GHI CHÚ KHI DÙNG BỘ PROMPT NÀY
 
-- Luôn đính kèm lại file `SRS_PA04_Quan_Ly_Kiem_Tra.md` ở các prompt quan trọng (0, 3, 4, 5, 6) nếu Antigravity không tự nhớ ngữ cảnh giữa các phiên.
+- Luôn đính kèm lại file `SRS_TNT_Quan_Ly_Kiem_Tra.md` ở các prompt quan trọng (0, 3, 4, 5, 6) nếu Antigravity không tự nhớ ngữ cảnh giữa các phiên.
 - Nếu agent đề xuất dùng NestJS thay Express, hoặc PrimeNG thay Angular Material — đều chấp nhận được, không ảnh hưởng đến yêu cầu nghiệp vụ, chỉ cần giữ đúng danh sách API/màn hình.
 - Nếu muốn rút gọn thời gian dựng demo hơn nữa, có thể gộp Prompt 3+4 hoặc 5+6 làm một, nhưng nên giữ thứ tự: Nền tảng & Auth → Đối tượng → Kế hoạch/Duyệt → Thực địa → Dashboard/Bản đồ → Hoàn thiện.
 - Sau mỗi prompt, nên yêu cầu thêm: "Chạy thử ứng dụng và chụp/mô tả lại giao diện đã tạo để tôi xác nhận trước khi sang bước tiếp theo" nếu Antigravity hỗ trợ preview.

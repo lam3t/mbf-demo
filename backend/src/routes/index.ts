@@ -19,7 +19,7 @@ const router = Router();
 router.get('/', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'PA04 Inspection Management Backend API',
+    service: 'TNT Inspection Management Backend API',
     version: '1.0.0',
     timestamp: new Date().toISOString()
   });
@@ -28,7 +28,7 @@ router.get('/', (req, res) => {
 router.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'PA04 Inspection Management Backend',
+    service: 'TNT Inspection Management Backend',
     timestamp: new Date().toISOString()
   });
 });

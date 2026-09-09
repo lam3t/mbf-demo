@@ -247,7 +247,7 @@ export class PlansController {
         WHERE id = ?
       `).run(userId, id);
 
-      res.json({ success: true, message: 'Đã trình duyệt kế hoạch lên Lãnh đạo PA04 thành công.' });
+      res.json({ success: true, message: 'Đã trình duyệt kế hoạch lên Lãnh đạo TNT thành công.' });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
     }

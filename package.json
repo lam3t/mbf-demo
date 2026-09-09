@@ -1,7 +1,7 @@
 {
-  "name": "pa04-monorepo",
+  "name": "tnt-monorepo",
   "version": "1.0.0",
-  "description": "PA04 Inspection Management Demo Monorepo (Angular 18 + Node.js Express)",
+  "description": "TNT Inspection Management Demo Monorepo (Angular 18 + Node.js Express)",
   "engines": {
     "node": "22.x"
   },

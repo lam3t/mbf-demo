@@ -110,7 +110,7 @@ export class ObjectsController {
       let lockedByWard: string | null = null;
       if (plan) {
         lockedByWard = plan.ward;
-      } else if (obj.ward && currentUserWard && !currentUserWard.includes(obj.ward) && !currentUserWard.includes('PA04')) {
+      } else if (obj.ward && currentUserWard && !currentUserWard.includes(obj.ward) && !currentUserWard.includes('TNT')) {
         // Also if object belongs to another ward
         lockedByWard = obj.ward;
       }
@@ -463,7 +463,7 @@ export class ObjectsController {
 
       const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
-      res.setHeader('Content-Disposition', 'attachment; filename="Mau_Import_Doi_Tuong_PA04.xlsx"');
+      res.setHeader('Content-Disposition', 'attachment; filename="Mau_Import_Doi_Tuong_TNT.xlsx"');
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.send(buf);
     } catch (err: any) {

@@ -31,7 +31,7 @@ import { AuthService } from '../../core/services/auth.service';
           <div class="brand-shield-logo">
             <mat-icon>shield</mat-icon>
           </div>
-          <h1 class="portal-title">PA04 - HÀ NỘI</h1>
+          <h1 class="portal-title">TNT - HÀ NỘI</h1>
           <p class="portal-sub">Hệ thống Quản lý Đăng ký & Kiểm tra Cơ sở Kinh doanh</p>
           <span class="portal-version-tag">PHIÊN BẢN QUÝ II/2026</span>
         </div>
@@ -126,7 +126,7 @@ import { AuthService } from '../../core/services/auth.service';
                   <mat-icon>verified_user</mat-icon>
                 </div>
                 <div class="acc-info">
-                  <strong class="acc-role">2. Lãnh đạo PA04</strong>
+                  <strong class="acc-role">2. Lãnh đạo TNT</strong>
                   <span class="acc-name">leader / 123456</span>
                   <small class="acc-unit">Phê duyệt kế hoạch</small>
                 </div>
@@ -141,7 +141,7 @@ import { AuthService } from '../../core/services/auth.service';
                   <mat-icon>badge</mat-icon>
                 </div>
                 <div class="acc-info">
-                  <strong class="acc-role">3. Cán bộ PA04</strong>
+                  <strong class="acc-role">3. Cán bộ TNT</strong>
                   <span class="acc-name">officer1 / 123456</span>
                   <small class="acc-unit">Thực địa & Giám sát</small>
                 </div>

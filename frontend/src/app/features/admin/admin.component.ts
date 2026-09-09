@@ -108,7 +108,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
       <div class="tab-view-container" *ngIf="activeTab === 'users'">
         <app-page-header
           title="Quản lý Người dùng & Cán bộ"
-          [subtitle]="'Tổng số ' + users.length + ' tài khoản cán bộ công an trên hệ thống'"
+          [subtitle]="'Tổng số ' + users.length + ' tài khoản cán bộ trên hệ thống'"
           [actions]="userHeaderActions"
           (actionClick)="handleUserHeaderAction($event)"
         ></app-page-header>
@@ -148,8 +148,8 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
               <tr>
                 <th style="width: 35%;">Chức năng / Phân hệ nghiệp vụ</th>
                 <th class="text-center">Admin Hệ thống</th>
-                <th class="text-center">Lãnh đạo PA04</th>
-                <th class="text-center">Cán bộ PA04</th>
+                <th class="text-center">Lãnh đạo TNT</th>
+                <th class="text-center">Cán bộ TNT</th>
                 <th class="text-center">Cán bộ Xã / Phường</th>
               </tr>
             </thead>
@@ -700,8 +700,8 @@ export class AdminComponent implements OnInit {
   userStatusTabs: StatusTabItem[] = [
     { key: 'all', label: 'Tất cả', count: 4, color: 'gray' },
     { key: 'admin', label: 'Quản trị viên', count: 1, color: 'red' },
-    { key: 'leader_pa04', label: 'Lãnh đạo PA04', count: 1, color: 'purple' },
-    { key: 'officer_pa04', label: 'Cán bộ PA04', count: 1, color: 'blue' },
+    { key: 'leader_tnt', label: 'Lãnh đạo TNT', count: 1, color: 'purple' },
+    { key: 'officer_tnt', label: 'Cán bộ TNT', count: 1, color: 'blue' },
     { key: 'officer_ward', label: 'Cán bộ Phường', count: 1, color: 'green' }
   ];
 
@@ -716,8 +716,8 @@ export class AdminComponent implements OnInit {
       width: '18%',
       badgeMapping: {
         admin: { label: 'Quản trị viên', cssClass: 'badge-danger' },
-        leader_pa04: { label: 'Lãnh đạo PA04', cssClass: 'badge-approved' },
-        officer_pa04: { label: 'Cán bộ PA04', cssClass: 'badge-in_progress' },
+        leader_tnt: { label: 'Lãnh đạo TNT', cssClass: 'badge-approved' },
+        officer_tnt: { label: 'Cán bộ TNT', cssClass: 'badge-in_progress' },
         officer_ward: { label: 'Cán bộ Phường', cssClass: 'badge-new' }
       }
     },

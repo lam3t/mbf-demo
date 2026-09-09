@@ -1,6 +1,6 @@
-# PA04 - Hệ thống Quản lý Đăng ký và Kiểm tra Tổ chức, Cá nhân Kinh doanh
+# TNT - Hệ thống Quản lý Đăng ký và Kiểm tra Tổ chức, Cá nhân Kinh doanh
 
-> **Demo Full-Stack Monorepo** phục vụ Phòng An ninh Kinh tế (PA04) - Công an TP Hà Nội và Công an các xã/phường trên địa bàn Thủ đô.
+> **Demo Full-Stack Monorepo** phục vụ Đơn vị TNT và Cán bộ các xã/phường trên địa bàn TP Hà Nội.
 > Xây dựng theo đầy đủ yêu cầu nghiệp vụ trong tài liệu SRS (FR-A, FR-B, FR-C, FR-D và các quy tắc kiểm soát nghiệp vụ RULE-01, RULE-02, RULE-03).
 
 ---
@@ -27,7 +27,7 @@ npm run install:all
 ```bash
 npm run seed
 ```
-> Lệnh này sẽ khởi tạo CSDL SQLite `backend/pa04.db` và nạp sẵn:
+> Lệnh này sẽ khởi tạo CSDL SQLite `backend/tnt.db` và nạp sẵn:
 > - **4 Tài khoản demo**: `admin`, `leader`, `officer1`, `ward1` (mật khẩu chung: `123456`).
 > - **4 Danh mục vi phạm** (`L01` đến `L04`) & **4 Thẻ lĩnh vực kiến nghị** (`THUE`, `DAT_DAI`, `MOI_TRUONG`, `ANTT`).
 > - **Cấu hình Quota Quý II/2026** cho 5 phường (Min: 30, Max: 100 cơ sở) & **Hạn chốt sổ Cut-off**.
@@ -52,9 +52,9 @@ Hệ thống tự động chạy trên 2 cổng:
 | Tên đăng nhập | Mật khẩu | Vai trò (Role) | Đơn vị phụ trách | Quyền hạn chính |
 | :--- | :---: | :--- | :--- | :--- |
 | `ward1` | `123456` | `officer_ward` | Phường Hoàn Kiếm | Nhập đối tượng, cảnh báo trùng, lập giỏ kế hoạch, kiểm tra thực địa |
-| `officer1` | `123456` | `officer_pa04` | Phòng PA04 - Hà Nội | Rà soát kế hoạch toàn thành phố, ma trận phê duyệt, giám sát thực địa |
-| `leader` | `123456` | `leader_pa04` | Lãnh đạo PA04 | Phê duyệt kế hoạch, chỉ huy điều hành BI Dashboard, xem bản đồ nhiệt |
-| `admin` | `123456` | `admin` | PA04 - Quản trị | Quản trị tài khoản, phân quyền, cấu hình Quota/Cut-off, Audit Logs |
+| `officer1` | `123456` | `officer_tnt` | Phòng TNT - Hà Nội | Rà soát kế hoạch toàn thành phố, ma trận phê duyệt, giám sát thực địa |
+| `leader` | `123456` | `leader_tnt` | Lãnh đạo TNT | Phê duyệt kế hoạch, chỉ huy điều hành BI Dashboard, xem bản đồ nhiệt |
+| `admin` | `123456` | `admin` | TNT - Quản trị | Quản trị tài khoản, phân quyền, cấu hình Quota/Cut-off, Audit Logs |
 
 *(Tại trang [http://localhost:4200/login](http://localhost:4200/login), đã tích hợp sẵn **4 nút Đăng nhập nhanh**, bấm 1 click để chuyển đổi tức thì giữa các vai trò).*
 
@@ -76,17 +76,17 @@ Dưới đây là thứ tự các bước thao tác để trình diễn trọn v
    - Xem góc trên: **Banner Quota** cảnh báo màu vàng (Chưa đạt chỉ tiêu tối thiểu 30 cơ sở).
    - Xem đồng hồ đếm ngược **Hạn chốt sổ Cut-off Quý II/2026**.
    - Bấm nút **"Thêm đối tượng vào giỏ"** $\rightarrow$ Tích chọn các cơ sở kinh doanh đưa vào giỏ kế hoạch.
-   - Bấm **"Trình duyệt Kế hoạch lên PA04"** $\rightarrow$ Kế hoạch chuyển trạng thái sang `pending` (Chờ phê duyệt).
+   - Bấm **"Trình duyệt Kế hoạch lên TNT"** $\rightarrow$ Kế hoạch chuyển trạng thái sang `pending` (Chờ phê duyệt).
 
-### 🔹 BƯỚC 3: Lãnh đạo PA04 Phê duyệt Kế hoạch (Ma trận Phê duyệt)
-1. Bấm avatar góc phải $\rightarrow$ Đăng xuất $\rightarrow$ Bấm nút **"Lãnh đạo PA04 (leader)"**.
+### 🔹 BƯỚC 3: Lãnh đạo TNT Phê duyệt Kế hoạch (Ma trận Phê duyệt)
+1. Bấm avatar góc phải $\rightarrow$ Đăng xuất $\rightarrow$ Bấm nút **"Lãnh đạo TNT (leader)"**.
 2. Vào menu **"Lập kế hoạch & Phê duyệt"** (`/plans`):
-   - Chuyển sang chế độ **"Ma trận Phê duyệt PA04"** (`?view=matrix`).
+   - Chuyển sang chế độ **"Ma trận Phê duyệt TNT"** (`?view=matrix`).
    - Danh sách hiển thị toàn bộ cơ sở từ các phường đang chờ duyệt.
    - Tích chọn các cơ sở $\rightarrow$ Bấm **"Duyệt các mục đã chọn"** $\rightarrow$ Trạng thái chuyển sang `approved`, đồng thời hệ thống tự động sinh các bản ghi hồ sơ kiểm tra thực địa (`status = 'not_started'`).
 
 ### 🔹 BƯỚC 4: Kiểm tra Thực địa, Áp mã Vi phạm & Khóa Hồ sơ RULE-03 (Phân hệ C)
-1. Chuyển sang tài khoản **"Cán bộ Phường (ward1)"** hoặc **"Chuyên viên PA04 (officer1)"**.
+1. Chuyển sang tài khoản **"Cán bộ Phường (ward1)"** hoặc **"Chuyên viên TNT (officer1)"**.
 2. Vào menu **"Giám sát thực địa"** (`/inspections`):
    - Mở 1 hồ sơ ở trạng thái *Chưa kiểm tra* $\rightarrow$ Bấm **"Kiểm tra thực địa"**.
    - Trong biểu mẫu Checklist: Bấm *"Không đạt"* ở tiêu chí PCCC và Niêm yết giá $\rightarrow$ Khối *"Ghi nhận Lỗi Vi phạm & Mức độ"* tự động mở ra.
@@ -97,7 +97,7 @@ Dưới đây là thứ tự các bước thao tác để trình diễn trọn v
    - Mở lại hồ sơ vừa hoàn thành $\rightarrow$ Banner **"HỒ SƠ ĐÃ ĐƯỢC CHỐT KẾT QUẢ VÀ KHÓA DỮ LIỆU (RULE-03)"** hiển thị, toàn bộ dữ liệu ở chế độ chỉ đọc.
 
 ### 🔹 BƯỚC 5: BI Dashboard, Bản đồ Nhiệt Heatmap & Xuất Báo cáo (Phân hệ D)
-1. Đăng nhập lại với tài khoản **"Lãnh đạo PA04 (leader)"**.
+1. Đăng nhập lại với tài khoản **"Lãnh đạo TNT (leader)"**.
 2. Vào **"Dashboard"** (`/dashboard`):
    - Xem **Radial Gauge** tròn lớn hiển thị tỷ lệ % hoàn thành so với mục tiêu 9,960 cơ sở toàn thành phố.
    - Xem biểu đồ đường Line Chart tiến độ theo ngày và biểu đồ tròn Donut Chart tỷ lệ tuân thủ pháp luật.
@@ -123,7 +123,7 @@ Dưới đây là thứ tự các bước thao tác để trình diễn trọn v
 | | `/api/plans/:id/quota-check` | `GET` | Kiểm tra định ngạch Quota (min/max) |
 | | `/api/plans/:id/submit` | `POST` | Trình duyệt kế hoạch (Kiểm tra Cut-off time) |
 | | `/api/plans/:id/approve` | `POST` | Phê duyệt kế hoạch $\rightarrow$ Tự động sinh Inspections |
-| | `/api/plans/approve-bulk` | `POST` | Phê duyệt hàng loạt từ ma trận PA04 |
+| | `/api/plans/approve-bulk` | `POST` | Phê duyệt hàng loạt từ ma trận TNT |
 | **Inspections** | `/api/inspections` | `GET` | Danh sách hồ sơ kiểm tra (tự tính `isOverdue` > 30 ngày) |
 | | `/api/inspections/:id` | `GET/PUT` | Chi tiết & Cập nhật checklist (**Chặn 403 nếu locked - RULE-03**) |
 | | `/api/inspections/:id/evidence` | `POST` | Upload file ảnh/scan bằng chứng (Multer 5MB) |

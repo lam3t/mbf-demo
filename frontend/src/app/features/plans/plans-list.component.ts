@@ -73,11 +73,11 @@ import { Plan, BusinessObject } from '../../core/models';
           type="button"
           class="subnav-btn"
           [class.active]="activeView === 'matrix'"
-          *ngIf="isPA04 || isAdmin"
+          *ngIf="isTNT || isAdmin"
           (click)="switchView('matrix')"
         >
           <mat-icon>fact_check</mat-icon>
-          <span>3. Ma trận Phê duyệt (PA04)</span>
+          <span>3. Ma trận Phê duyệt (TNT)</span>
           <span class="badge-pending-count" *ngIf="pendingGridList.length > 0">{{ pendingGridList.length }}</span>
         </button>
       </div>
@@ -123,7 +123,7 @@ import { Plan, BusinessObject } from '../../core/models';
             (click)="submitCartPlan()"
           >
             <mat-icon>send</mat-icon>
-            <span>Trình duyệt Kế hoạch lên PA04</span>
+            <span>Trình duyệt Kế hoạch lên TNT</span>
           </button>
         </div>
 
@@ -204,10 +204,10 @@ import { Plan, BusinessObject } from '../../core/models';
         ></app-data-table>
       </div>
 
-      <!-- VIEW 3: APPROVAL MATRIX (FOR PA04 LEADERS & OFFICERS) -->
+      <!-- VIEW 3: APPROVAL MATRIX (FOR TNT LEADERS & OFFICERS) -->
       <div class="view-container" *ngIf="activeView === 'matrix'">
         <app-page-header
-          title="Ma trận Phê duyệt Kế hoạch (PA04)"
+          title="Ma trận Phê duyệt Kế hoạch (TNT)"
           [subtitle]="'Đang có ' + pendingGridList.length + ' cơ sở kiểm tra thuộc các phường chờ phê duyệt'"
           [actions]="matrixHeaderActions"
           (actionClick)="handleMatrixHeaderAction($event)"
@@ -724,7 +724,7 @@ export class PlansListComponent implements OnInit {
     { id: 'view_detail', label: 'Xem chi tiết kế hoạch', icon: 'visibility' },
     {
       id: 'submit_plan',
-      label: 'Trình duyệt lên PA04',
+      label: 'Trình duyệt lên TNT',
       icon: 'send',
       color: '#059669',
       hidden: (row) => row.status !== 'draft'
@@ -734,7 +734,7 @@ export class PlansListComponent implements OnInit {
       label: 'Phê duyệt kế hoạch',
       icon: 'task_alt',
       color: '#1a56db',
-      hidden: (row) => row.status !== 'pending' || (!this.isPA04 && !this.isAdmin)
+      hidden: (row) => row.status !== 'pending' || (!this.isTNT && !this.isAdmin)
     },
     {
       id: 'reject_plan',
@@ -742,7 +742,7 @@ export class PlansListComponent implements OnInit {
       icon: 'close',
       color: '#dc2626',
       dividerBefore: true,
-      hidden: (row) => row.status !== 'pending' || (!this.isPA04 && !this.isAdmin)
+      hidden: (row) => row.status !== 'pending' || (!this.isTNT && !this.isAdmin)
     }
   ];
 
@@ -770,7 +770,7 @@ export class PlansListComponent implements OnInit {
     // Default view based on role
     if (this.isWardOfficer) {
       this.activeView = 'cart';
-    } else if (this.isPA04) {
+    } else if (this.isTNT) {
       this.activeView = 'matrix';
     } else {
       this.activeView = 'list';
@@ -791,9 +791,9 @@ export class PlansListComponent implements OnInit {
     return this.currentUser?.role === 'officer_ward';
   }
 
-  get isPA04(): boolean {
+  get isTNT(): boolean {
     const r = this.currentUser?.role;
-    return r === 'leader_pa04' || r === 'officer_pa04';
+    return r === 'leader_tnt' || r === 'officer_tnt';
   }
 
   get isAdmin(): boolean {
@@ -914,7 +914,7 @@ export class PlansListComponent implements OnInit {
     this.api.post<any>(`/plans/${this.currentDraftPlan.id}/submit`, {}).subscribe({
       next: (res) => {
         if (res.success) {
-          this.snackBar.open('Đã trình duyệt Kế hoạch Quý II/2026 lên PA04 thành công!', 'Đóng', { duration: 3000 });
+          this.snackBar.open('Đã trình duyệt Kế hoạch Quý II/2026 lên TNT thành công!', 'Đóng', { duration: 3000 });
           this.loadCartPlan();
           this.loadPlans();
         }
