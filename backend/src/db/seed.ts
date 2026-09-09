@@ -1,9 +1,11 @@
 import bcrypt from 'bcryptjs';
 import { db, initDatabase } from './connection';
 
-export function runSeed() {
+export function runSeed(skipInit: boolean = false) {
   console.log('🌱 Starting Database Seeding...');
-  initDatabase();
+  if (!skipInit) {
+    initDatabase();
+  }
 
   // Hash demo password
   const salt = bcrypt.genSaltSync(10);

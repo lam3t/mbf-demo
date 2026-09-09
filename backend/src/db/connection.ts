@@ -115,6 +115,18 @@ export function initDatabase(): void {
   } else {
     console.warn('⚠️ Schema file not found in possible paths:', possiblePaths);
   }
+
+  // Auto seed initial demo dataset if database is freshly created
+  try {
+    const userCheck = db.prepare("SELECT count(*) as count FROM users").get() as { count: number } | undefined;
+    if (!userCheck || userCheck.count === 0) {
+      console.log('📦 Database is empty, auto-running seed data...');
+      const { runSeed } = require('./seed');
+      runSeed(true);
+    }
+  } catch (err) {
+    console.warn('⚠️ Auto-seed check skipped or failed:', err);
+  }
 }
 
 export default db;
