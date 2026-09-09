@@ -15,7 +15,16 @@ import { authGuard } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// Health Check
+// API Root & Health Check
+router.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'PA04 Inspection Management Backend API',
+    version: '1.0.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
 router.get('/health', (req, res) => {
   res.json({
     status: 'ok',
