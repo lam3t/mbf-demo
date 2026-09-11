@@ -452,15 +452,17 @@ export class DashboardController {
       const limitNum = parseInt(limit as string, 10) || 5;
       const isFastest = order !== 'slowest';
 
+      const isDomainScope = (scope === 'domain' || (domainId && domainId !== 'overall' && domainId !== 'all'));
+
       let filterClause = '';
       const params: any[] = [];
 
       if (quarter) {
-        filterClause += ' AND p.quarter = ?';
+        filterClause += ' AND (p.quarter = ? OR p.quarter IS NULL OR i.planId IS NULL)';
         params.push(quarter);
       }
       if (year) {
-        filterClause += ' AND p.year = ?';
+        filterClause += ' AND (p.year = ? OR p.year IS NULL OR i.planId IS NULL)';
         params.push(parseInt(year as string, 10));
       }
       if (effectiveWard) {
@@ -470,9 +472,10 @@ export class DashboardController {
 
       let data: any[] = [];
 
-      if (scope === 'domain' && domainId && domainId !== 'all') {
+      if (isDomainScope && domainId && domainId !== 'all' && domainId !== 'overall') {
+        const domainParam = domainId.toString();
         // Query domain info
-        const domainRow = db.prepare(`SELECT * FROM inspection_domains WHERE id = ? OR code = ?`).get(domainId, domainId) as any;
+        const domainRow = db.prepare(`SELECT * FROM inspection_domains WHERE id = CAST(? AS INTEGER) OR id = ? OR code = ?`).get(domainParam, domainParam, domainParam) as any;
         const domainName = domainRow ? domainRow.name : 'Lĩnh vực';
 
         const orderSql = isFastest ? 'ORDER BY rate DESC, totalPass DESC' : 'ORDER BY rate ASC, totalFail DESC';
@@ -490,18 +493,18 @@ export class DashboardController {
           JOIN inspections i ON ci.inspectionId = i.id
           JOIN inspection_domains d ON ci.domainId = d.id
           LEFT JOIN plans p ON i.planId = p.id
-          WHERE (d.id = ? OR d.code = ?) ${filterClause}
+          WHERE (d.id = CAST(? AS INTEGER) OR d.id = ? OR d.code = ?) ${filterClause}
           GROUP BY i.ward
           ${orderSql}
           LIMIT ?
         `;
 
-        const rows = db.prepare(query).all(domainId, domainId, ...params, limitNum) as any[];
+        const rows = db.prepare(query).all(domainParam, domainParam, domainParam, ...params, limitNum) as any[];
 
         data = rows.map((w, idx) => {
           let status = 'Bình thường';
-          if (w.rate >= 90) status = 'Xuất sắc';
-          else if (w.rate >= 75) status = 'Tốt';
+          if (w.rate >= 85) status = 'Xuất sắc';
+          else if (w.rate >= 70) status = 'Tốt';
           else if (w.rate >= 50) status = 'Cảnh báo';
           else status = 'Chậm tiến độ';
 

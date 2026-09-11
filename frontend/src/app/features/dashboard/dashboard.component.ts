@@ -102,13 +102,19 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     { domainId: 4, domainCode: 'TTDT', domainName: 'Trật tự đô thị', icon: 'location_city', color: '#3b82f6', totalChecked: 66, totalPass: 59, totalFail: 7, passRate: 89.4, failRate: 10.6, completionRate: 89.4 },
     { domainId: 5, domainCode: 'THUE', domainName: 'Thuế & Nghĩa vụ tài chính', icon: 'receipt_long', color: '#8b5cf6', totalChecked: 66, totalPass: 52, totalFail: 14, passRate: 78.8, failRate: 21.2, completionRate: 78.8 }
   ];
-  domainsList: InspectionDomain[] = [];
+  domainsList: InspectionDomain[] = [
+    { id: 1, code: 'PCCC', name: 'Phòng cháy chữa cháy', icon: 'local_fire_department', color: '#ef4444' },
+    { id: 2, code: 'ATTP', name: 'An toàn thực phẩm', icon: 'restaurant', color: '#f59e0b' },
+    { id: 3, code: 'MOI_TRUONG', name: 'Bảo vệ môi trường', icon: 'eco', color: '#10b981' },
+    { id: 4, code: 'TTDT', name: 'Trật tự đô thị', icon: 'location_city', color: '#3b82f6' },
+    { id: 5, code: 'THUE', name: 'Thuế & Nghĩa vụ tài chính', icon: 'receipt_long', color: '#8b5cf6' }
+  ];
   selectedDomainForDetails: DomainStats | null = null;
   failedInspectionsForDomain: any[] = [];
   isLoadingDomainDetails = false;
 
   // Parallel Rankings (CR-04)
-  selectedRankingScope = 'overall';
+  selectedRankingScope: string | number = 'overall';
   fastestRankings: RankingItem[] = [];
   slowestRankings: RankingItem[] = [];
   isLoadingRankings = false;
@@ -430,12 +436,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   loadRankings(): void {
     this.isLoadingRankings = true;
-    const isDomain = this.selectedRankingScope !== 'overall';
+    const isDomain = this.selectedRankingScope !== 'overall' && this.selectedRankingScope !== 'all' && this.selectedRankingScope !== '';
     const wardParam = this.currentWard ? this.currentWard.name : undefined;
+    const domainVal = isDomain ? this.selectedRankingScope.toString() : undefined;
 
     const paramsFastest: any = {
       scope: isDomain ? 'domain' : 'overall',
-      domainId: isDomain ? this.selectedRankingScope : undefined,
+      domainId: domainVal,
       order: 'fastest',
       limit: 5,
       quarter: this.selectedQuarter,
@@ -444,7 +451,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const paramsSlowest: any = {
       scope: isDomain ? 'domain' : 'overall',
-      domainId: isDomain ? this.selectedRankingScope : undefined,
+      domainId: domainVal,
       order: 'slowest',
       limit: 5,
       quarter: this.selectedQuarter,
@@ -454,9 +461,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     // Fastest
     this.api.get<any>('/dashboard/ranking', paramsFastest).subscribe({
       next: (res) => {
-        if (res?.success) {
+        if (res?.success && Array.isArray(res.data)) {
           this.fastestRankings = res.data;
         }
+      },
+      error: (err) => {
+        console.error('Failed to load fastest rankings:', err);
       }
     });
 
@@ -464,12 +474,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.api.get<any>('/dashboard/ranking', paramsSlowest).subscribe({
       next: (res) => {
         this.isLoadingRankings = false;
-        if (res?.success) {
+        if (res?.success && Array.isArray(res.data)) {
           this.slowestRankings = res.data;
         }
       },
-      error: () => {
+      error: (err) => {
         this.isLoadingRankings = false;
+        console.error('Failed to load slowest rankings:', err);
       }
     });
   }
@@ -505,11 +516,19 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getScopeTitle(): string {
-    if (this.selectedRankingScope === 'overall') {
+    if (this.selectedRankingScope === 'overall' || this.selectedRankingScope === 'all') {
       return 'Tổng thể (Tất cả lĩnh vực)';
     }
-    const found = this.domainsList.find(d => d.id.toString() === this.selectedRankingScope || d.code === this.selectedRankingScope);
+    const found = this.domainsList.find(d => d.id.toString() === this.selectedRankingScope.toString() || d.code === this.selectedRankingScope.toString());
     return found ? `${found.code} - ${found.name}` : 'Theo lĩnh vực';
+  }
+
+  getRankingScopeLabel(): string {
+    if (this.selectedRankingScope === 'overall' || this.selectedRankingScope === 'all') {
+      return 'Toàn diện (Tổng thể)';
+    }
+    const found = this.domainsList.find(d => d.id.toString() === this.selectedRankingScope.toString() || d.code === this.selectedRankingScope.toString());
+    return found ? found.name : 'Lĩnh vực chuyên môn';
   }
 
   handleRefresh(): void {

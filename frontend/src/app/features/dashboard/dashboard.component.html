@@ -280,7 +280,7 @@
             <mat-icon class="ranking-icon">leaderboard</mat-icon>
             <div>
               <h4 class="ranking-title">Bảng Xếp Hạng Đơn Vị</h4>
-              <span class="ranking-sub">{{ activeRankingTab === 'slowest' ? 'Top 5 đơn vị cần đôn đốc tiến độ' : 'Top 5 đơn vị dẫn đầu hoàn thành' }}</span>
+              <span class="ranking-sub">{{ selectedRankingScope === 'overall' || selectedRankingScope === 'all' ? (activeRankingTab === 'slowest' ? 'Top 5 đơn vị cần đôn đốc tiến độ' : 'Top 5 đơn vị dẫn đầu hoàn thành') : ('Lĩnh vực: ' + getRankingScopeLabel() + ' - ' + (activeRankingTab === 'slowest' ? 'Tỷ lệ đạt thấp nhất' : 'Tỷ lệ đạt cao nhất')) }}</span>
             </div>
           </div>
 
@@ -324,8 +324,8 @@
               <tr>
                 <th style="width: 50px;">Hạng</th>
                 <th>Phường / Đơn vị</th>
-                <th style="width: 90px; text-align: center;">Chỉ tiêu</th>
-                <th style="width: 110px; text-align: center;">Tồn đọng/Lỗi</th>
+                <th style="width: 90px; text-align: center;">{{ selectedRankingScope === 'overall' || selectedRankingScope === 'all' ? 'Chỉ tiêu' : 'Tiêu chí' }}</th>
+                <th style="width: 110px; text-align: center;">{{ selectedRankingScope === 'overall' || selectedRankingScope === 'all' ? 'Tồn đọng/Lỗi' : 'Không đạt' }}</th>
                 <th style="width: 140px;">Tỷ lệ đạt</th>
                 <th style="width: 100px; text-align: center;">Trạng thái</th>
               </tr>
@@ -353,7 +353,7 @@
                   </div>
                 </td>
                 <td style="text-align: center;">
-                  <span class="pill-badge" [ngClass]="item.rate < 50 ? 'pill-danger' : 'pill-warning'">
+                  <span class="pill-badge" [ngClass]="item.rate >= 75 ? 'pill-success' : (item.rate >= 50 ? 'pill-warning' : 'pill-danger')">
                     {{ item.status }}
                   </span>
                 </td>
@@ -372,8 +372,8 @@
               <tr>
                 <th style="width: 50px;">Hạng</th>
                 <th>Phường / Đơn vị</th>
-                <th style="width: 90px; text-align: center;">Chỉ tiêu</th>
-                <th style="width: 110px; text-align: center;">Hoàn thành</th>
+                <th style="width: 90px; text-align: center;">{{ selectedRankingScope === 'overall' || selectedRankingScope === 'all' ? 'Chỉ tiêu' : 'Tiêu chí' }}</th>
+                <th style="width: 110px; text-align: center;">{{ selectedRankingScope === 'overall' || selectedRankingScope === 'all' ? 'Hoàn thành' : 'Đạt chuẩn' }}</th>
                 <th style="width: 140px;">Tỷ lệ đạt</th>
                 <th style="width: 100px; text-align: center;">Đánh giá</th>
               </tr>
@@ -401,7 +401,7 @@
                   </div>
                 </td>
                 <td style="text-align: center;">
-                  <span class="pill-badge pill-success">{{ item.status }}</span>
+                  <span class="pill-badge" [ngClass]="item.rate >= 75 ? 'pill-success' : (item.rate >= 50 ? 'pill-warning' : 'pill-danger')">{{ item.status }}</span>
                 </td>
               </tr>
               <tr *ngIf="fastestRankings.length === 0">
