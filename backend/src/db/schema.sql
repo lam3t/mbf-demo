@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS system_configs (
 
 CREATE TABLE IF NOT EXISTS alerts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  type TEXT CHECK(type IN ('overdue_inspection', 'overdue_plan', 'quota_below', 'quota_above', 'notice_letter_pending')) NOT NULL,
+  type TEXT CHECK(type IN ('overdue_inspection', 'overdue_plan', 'quota_below', 'quota_above', 'notice_letter_pending', 'joint_inspection', 'single_check_conflict')) NOT NULL,
   relatedEntityType TEXT NOT NULL,
   relatedEntityId INTEGER NOT NULL,
   ward TEXT,

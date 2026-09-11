@@ -390,7 +390,15 @@ export class DigitalSignDialogComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<DigitalSignDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { planId: number; planTitle?: string; quarter?: string; ward?: string },
+    @Inject(MAT_DIALOG_DATA) public data: { 
+      planId: number; 
+      planTitle?: string; 
+      quarter?: string; 
+      ward?: string;
+      resolutionMode?: 'merge_joint' | 'select_single' | 'standard';
+      jointDate?: string;
+      participatingWards?: string[];
+    },
     private api: ApiService,
     private authService: AuthService,
     private snackBar: MatSnackBar
@@ -409,7 +417,12 @@ export class DigitalSignDialogComponent implements OnInit {
       this.signingStepText = 'Đang ký số PAdES & đóng dấu thời gian TSA...';
       
       setTimeout(() => {
-        this.api.post<any>(`/plans/${this.data.planId}/sign-digital`, {}).subscribe({
+        const payload = {
+          resolutionMode: this.data.resolutionMode || 'standard',
+          jointDate: this.data.jointDate,
+          participatingWards: this.data.participatingWards
+        };
+        this.api.post<any>(`/plans/${this.data.planId}/sign-digital`, payload).subscribe({
           next: (res) => {
             if (res.success) {
               this.signState = 'success';

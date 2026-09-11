@@ -486,12 +486,33 @@ export class PlansController {
   }
 
   /**
+   * 6b. GET /api/plans/:id/cross-ward-conflicts
+   * Check if any uninspected objects in this plan are also in other wards' plans
+   */
+  static getCrossWardConflicts(req: Request, res: Response): void {
+    try {
+      const { id } = req.params;
+      const conflicts = checkCrossWardPlanConflicts(Number(id));
+      res.json({
+        success: true,
+        hasConflicts: conflicts.length > 0,
+        conflictsCount: conflicts.length,
+        conflicts
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  /**
    * 7. POST /api/plans/:id/approve - Approve single plan ("Duyệt thường" - any PA04 officer/leader)
+   * Supports resolutionMode: 'merge_joint' | 'select_single' | 'standard'
    */
   static approve(req: AuthenticatedRequest, res: Response): void {
     try {
       const { id } = req.params;
       const userId = req.user?.id || null;
+      const { resolutionMode = 'standard', jointDate, participatingWards, leaderComment } = req.body || {};
 
       const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(id) as Plan | undefined;
       if (!plan) {
@@ -499,7 +520,49 @@ export class PlansController {
         return;
       }
 
+      const conflicts = checkCrossWardPlanConflicts(Number(id));
+
       const approveTx = db.transaction(() => {
+        // Handle cross-ward conflict resolution
+        if (conflicts.length > 0) {
+          if (resolutionMode === 'merge_joint') {
+            // Option 1: Merge into 1 Joint Inspection Plan
+            for (const c of conflicts) {
+              const allWards = participatingWards && participatingWards.length > 0
+                ? participatingWards
+                : [plan.ward, c.otherWard];
+              const wardListStr = allWards.join(', ');
+              const dateStr = jointDate ? `vào ngày ${jointDate}` : 'trong quý';
+
+              const alertMsg = `PA04 đã phê duyệt Kế hoạch kiểm tra liên ngành đối với cơ sở "${c.objectName}" giữa ${wardListStr} (${dateStr}). Vui lòng phối hợp thực hiện.`;
+
+              // Notify both wards
+              db.prepare(`
+                INSERT INTO alerts (type, relatedEntityType, relatedEntityId, severity, ward, message, isRead, createdAt)
+                VALUES ('joint_inspection', 'PLANS', ?, 'info', ?, ?, 0, datetime('now'))
+              `).run(id, c.otherWard, alertMsg);
+
+              db.prepare(`
+                INSERT INTO alerts (type, relatedEntityType, relatedEntityId, severity, ward, message, isRead, createdAt)
+                VALUES ('joint_inspection', 'PLANS', ?, 'info', ?, ?, 0, datetime('now'))
+              `).run(id, plan.ward, alertMsg);
+            }
+          } else if (resolutionMode === 'select_single') {
+            // Option 2: Select this plan, reject/remove from other wards' draft/pending plans
+            for (const c of conflicts) {
+              // Delete from competing plan_items
+              db.prepare('DELETE FROM plan_items WHERE planId = ? AND objectId = ?').run(c.otherPlanId, c.objectId);
+
+              const alertMsg = `Cơ sở "${c.objectName}" đã được PA04 ưu tiên phê duyệt trong kế hoạch của ${plan.ward} (${plan.quarter}) theo nguyên tắc Single Check. Cơ sở đã được tự động loại khỏi kế hoạch của ${c.otherWard}.`;
+
+              db.prepare(`
+                INSERT INTO alerts (type, relatedEntityType, relatedEntityId, severity, ward, message, isRead, createdAt)
+                VALUES ('single_check_conflict', 'PLANS', ?, 'warning', ?, ?, 0, datetime('now'))
+              `).run(id, c.otherWard, alertMsg);
+            }
+          }
+        }
+
         // Update plan status
         db.prepare(`
           UPDATE plans 
@@ -553,7 +616,14 @@ export class PlansController {
 
       approveTx();
 
-      res.json({ success: true, message: 'Phê duyệt kế hoạch thành công (Duyệt thường). Đã tạo các hồ sơ kiểm tra thực địa.' });
+      let successMessage = 'Phê duyệt kế hoạch thành công (Duyệt thường). Đã tạo các hồ sơ kiểm tra thực địa.';
+      if (conflicts.length > 0 && resolutionMode === 'merge_joint') {
+        successMessage = 'Đã phê duyệt và thiết lập Đoàn kiểm tra liên ngành thành công! Đã gửi thông báo tới các Phường liên quan.';
+      } else if (conflicts.length > 0 && resolutionMode === 'select_single') {
+        successMessage = `Đã phê duyệt kế hoạch cho ${plan.ward}. Các cơ sở trùng lặp trong kế hoạch của phường khác đã được tự động loại bỏ.`;
+      }
+
+      res.json({ success: true, message: successMessage });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
     }
@@ -561,6 +631,7 @@ export class PlansController {
 
   /**
    * 7b. POST /api/plans/:id/sign-digital - Digital token signature approval (Leader TNT / Admin only)
+   * Supports resolutionMode: 'merge_joint' | 'select_single' | 'standard'
    */
   static signDigital(req: AuthenticatedRequest, res: Response): void {
     try {
@@ -568,12 +639,15 @@ export class PlansController {
       const userId = req.user?.id || null;
       const userRole = req.user?.role || 'leader_tnt';
       const userFullName = req.user?.fullName || 'Lãnh đạo TNT';
+      const { resolutionMode = 'standard', jointDate, participatingWards, leaderComment } = req.body || {};
 
       const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(id) as Plan | undefined;
       if (!plan) {
         res.status(404).json({ success: false, message: 'Không tìm thấy kế hoạch.' });
         return;
       }
+
+      const conflicts = checkCrossWardPlanConflicts(Number(id));
 
       // Simulated Digital Certificate Info
       const randomHex = Math.floor(10000000 + Math.random() * 90000000).toString(16).toUpperCase();
@@ -600,6 +674,42 @@ export class PlansController {
       ];
 
       const signTx = db.transaction(() => {
+        // Handle cross-ward conflict resolution
+        if (conflicts.length > 0) {
+          if (resolutionMode === 'merge_joint') {
+            for (const c of conflicts) {
+              const allWards = participatingWards && participatingWards.length > 0
+                ? participatingWards
+                : [plan.ward, c.otherWard];
+              const wardListStr = allWards.join(', ');
+              const dateStr = jointDate ? `vào ngày ${jointDate}` : 'trong quý';
+
+              const alertMsg = `PA04 đã ký số phê duyệt Kế hoạch kiểm tra liên ngành đối với cơ sở "${c.objectName}" giữa ${wardListStr} (${dateStr}). Vui lòng phối hợp thực hiện.`;
+
+              db.prepare(`
+                INSERT INTO alerts (type, relatedEntityType, relatedEntityId, severity, ward, message, isRead, createdAt)
+                VALUES ('joint_inspection', 'PLANS', ?, 'info', ?, ?, 0, datetime('now'))
+              `).run(id, c.otherWard, alertMsg);
+
+              db.prepare(`
+                INSERT INTO alerts (type, relatedEntityType, relatedEntityId, severity, ward, message, isRead, createdAt)
+                VALUES ('joint_inspection', 'PLANS', ?, 'info', ?, ?, 0, datetime('now'))
+              `).run(id, plan.ward, alertMsg);
+            }
+          } else if (resolutionMode === 'select_single') {
+            for (const c of conflicts) {
+              db.prepare('DELETE FROM plan_items WHERE planId = ? AND objectId = ?').run(c.otherPlanId, c.objectId);
+
+              const alertMsg = `Cơ sở "${c.objectName}" đã được PA04 ký số ưu tiên phê duyệt trong kế hoạch của ${plan.ward} (${plan.quarter}) theo nguyên tắc Single Check. Cơ sở đã được tự động loại khỏi kế hoạch của ${c.otherWard}.`;
+
+              db.prepare(`
+                INSERT INTO alerts (type, relatedEntityType, relatedEntityId, severity, ward, message, isRead, createdAt)
+                VALUES ('single_check_conflict', 'PLANS', ?, 'warning', ?, ?, 0, datetime('now'))
+              `).run(id, c.otherWard, alertMsg);
+            }
+          }
+        }
+
         // Insert digital_signatures record
         db.prepare(`
           INSERT INTO digital_signatures (planId, signedByUserId, signedByRole, signatureType, certificateInfo, createdAt)
@@ -645,9 +755,16 @@ export class PlansController {
 
       signTx();
 
+      let successMessage = 'Ký số điện tử và phê duyệt kế hoạch thành công! Đã tạo các hồ sơ kiểm tra thực địa.';
+      if (conflicts.length > 0 && resolutionMode === 'merge_joint') {
+        successMessage = 'Đã ký số điện tử và thiết lập Đoàn kiểm tra liên ngành thành công! Đã gửi thông báo tới các Phường liên quan.';
+      } else if (conflicts.length > 0 && resolutionMode === 'select_single') {
+        successMessage = `Đã ký số điện tử phê duyệt kế hoạch cho ${plan.ward}. Các cơ sở trùng lặp trong kế hoạch của phường khác đã được tự động loại bỏ.`;
+      }
+
       res.json({
         success: true,
-        message: 'Ký số điện tử và phê duyệt kế hoạch thành công! Đã tạo các hồ sơ kiểm tra thực địa.',
+        message: successMessage,
         certificateInfo: mockCert
       });
     } catch (err: any) {

@@ -340,13 +340,27 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  wardAlertFilter: 'all' | 'has_violations' | 'all_passed' = 'all';
+
+  get filteredWardAlerts(): WardInspectionAlertItem[] {
+    if (this.wardAlertFilter === 'has_violations') {
+      return this.wardAlerts.filter(a => a.failCount > 0);
+    } else if (this.wardAlertFilter === 'all_passed') {
+      return this.wardAlerts.filter(a => a.failCount === 0);
+    }
+    return this.wardAlerts;
+  }
+
+  setWardAlertFilter(f: 'all' | 'has_violations' | 'all_passed'): void {
+    this.wardAlertFilter = f;
+  }
+
   loadWardInspectionAlerts(): void {
     if (!this.currentWard) return;
     this.isLoadingWardAlerts = true;
     const wardParam = this.currentWard.id || encodeURIComponent(this.currentWard.name);
-    const filterParam = this.showCompletedAlerts ? 'all' : 'needs_action';
 
-    this.api.get<WardInspectionAlertsResponse>(`/wards/${wardParam}/inspection-alerts`, { filter: filterParam }).subscribe({
+    this.api.get<WardInspectionAlertsResponse>(`/wards/${wardParam}/inspection-alerts`, { filter: 'all' }).subscribe({
       next: (res) => {
         this.isLoadingWardAlerts = false;
         if (res?.success) {

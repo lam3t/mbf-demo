@@ -2540,9 +2540,62 @@
     }
   }
 
+  .ward-alert-filters {
+    display: flex;
+    align-items: center;
+
+    .alert-filter-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #f1f5f9;
+      padding: 3px;
+      border-radius: 8px;
+
+      .filter-pill-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 12px;
+        border-radius: 6px;
+        border: none;
+        background: transparent;
+        font-size: 12px;
+        font-weight: 600;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        mat-icon { font-size: 14px; width: 14px; height: 14px; }
+
+        &:hover {
+          color: #0f172a;
+          background: rgba(255, 255, 255, 0.6);
+        }
+
+        &.active {
+          background: #ffffff;
+          color: #1e3a8a;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+          font-weight: 700;
+        }
+
+        &.fail-btn.active {
+          color: #dc2626;
+          mat-icon { color: #dc2626; }
+        }
+
+        &.pass-btn.active {
+          color: #15803d;
+          mat-icon { color: #15803d; }
+        }
+      }
+    }
+  }
+
   .alert-cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
     gap: 16px;
 
     @media (max-width: 768px) {
@@ -2563,27 +2616,14 @@
 
     &.needs-notice {
       border-left: 4px solid #f97316;
-      background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
-
-      &:hover {
-        border-color: #f59e0b;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px -2px rgba(245, 158, 11, 0.12);
-      }
+      background: linear-gradient(180deg, #fffdfa 0%, #ffffff 100%);
     }
 
     &.notice-sent {
       border-left: 4px solid #10b981;
-      opacity: 0.92;
-
-      &:hover {
-        opacity: 1;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.05);
-      }
     }
 
-    &.no-violations {
+    &.card-clean-pass {
       border-left: 4px solid #3b82f6;
     }
 
@@ -2598,45 +2638,34 @@
         flex-direction: column;
         gap: 3px;
 
-        .biz-name-row {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-
-          .biz-name {
-            font-size: 14px;
-            font-weight: 800;
-            color: #0f172a;
-          }
-
-          .biz-type-badge {
-            font-size: 10px;
-            font-weight: 700;
-            background: #f1f5f9;
-            color: #475569;
-            padding: 1px 6px;
-            border-radius: 4px;
-          }
+        .biz-name {
+          font-size: 14px;
+          font-weight: 800;
+          color: #0f172a;
         }
 
         .biz-meta {
           display: flex;
           flex-wrap: wrap;
-          gap: 8px;
+          gap: 6px;
           font-size: 11.5px;
           color: #64748b;
 
-          .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 2px;
-
-            mat-icon { font-size: 13px; width: 13px; height: 13px; }
+          code {
+            background: #f1f5f9;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-weight: 600;
           }
         }
       }
 
-      .notice-status-badge-wrap {
+      .header-badges {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+
         .status-badge {
           font-size: 10.5px;
           font-weight: 800;
@@ -2662,7 +2691,7 @@
             border: 1px solid #a7f3d0;
           }
 
-          &.badge-pass-all {
+          &.badge-all-pass {
             background: #eff6ff;
             color: #2563eb;
             border: 1px solid #bfdbfe;
@@ -2674,108 +2703,75 @@
     .alert-card-body {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
 
-      .checklist-summary-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 12px;
-
-        .summary-label {
-          color: #475569;
-          font-weight: 600;
-        }
-
-        .criteria-badge {
-          font-size: 11px;
-          font-weight: 700;
-          padding: 1px 6px;
-          border-radius: 4px;
-
-          &.pass { background: #dcfce7; color: #15803d; }
-          &.fail { background: #fee2e2; color: #b91c1c; }
-        }
-      }
-
-      .failed-items-list {
-        background: #fef2f2;
-        border: 1px solid #fee2e2;
-        border-radius: 8px;
-        padding: 8px 10px;
+      .criteria-list-block {
         display: flex;
         flex-direction: column;
         gap: 6px;
-
-        .fail-item-row {
-          display: flex;
-          align-items: flex-start;
-          gap: 6px;
-          font-size: 11.5px;
-
-          .fail-domain-tag {
-            font-size: 9.5px;
-            font-weight: 800;
-            padding: 1px 4px;
-            border-radius: 3px;
-            margin-top: 1px;
-            flex-shrink: 0;
-          }
-
-          .fail-desc-wrap {
-            .fail-criteria-name {
-              color: #991b1b;
-              font-weight: 600;
-            }
-
-            .fail-note {
-              color: #b91c1c;
-              font-size: 11px;
-            }
-          }
-        }
-      }
-
-      .sent-notice-info-box {
-        background: #f0fdf4;
-        border: 1px solid #bbf7d0;
-        border-radius: 8px;
         padding: 8px 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        font-size: 11.5px;
+        border-radius: 8px;
 
-        .notice-info-header {
+        &.fail-block {
+          background: #fef2f2;
+          border: 1px solid #fee2e2;
+        }
+
+        &.pass-block {
+          background: #f8fafc;
+          border: 1px solid #f1f5f9;
+        }
+
+        .block-label {
           display: flex;
           align-items: center;
           gap: 4px;
-          color: #166534;
-          font-weight: 600;
+          font-size: 11.5px;
+          font-weight: 700;
 
-          mat-icon { font-size: 14px; width: 14px; height: 14px; color: #15803d; }
+          mat-icon { font-size: 14px; width: 14px; height: 14px; }
+
+          &.fail-label { color: #dc2626; }
+          &.pass-label { color: #166534; }
         }
 
-        .notice-note-text {
-          color: #334155;
-          font-style: italic;
-          padding-left: 18px;
-        }
+        .criteria-chips-wrap {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
 
-        .notice-file-link {
-          padding-left: 18px;
-
-          a {
-            color: #2563eb;
-            font-weight: 600;
-            text-decoration: none;
+          .crit-chip {
             display: inline-flex;
             align-items: center;
-            gap: 2px;
+            gap: 4px;
+            font-size: 11px;
+            padding: 2px 7px;
+            border-radius: 5px;
 
-            mat-icon { font-size: 13px; width: 13px; height: 13px; }
+            &.fail-chip {
+              background: #fee2e2;
+              color: #991b1b;
+              border: 1px solid #fca5a5;
 
-            &:hover { text-decoration: underline; }
+              .domain-tag {
+                font-size: 9px;
+                font-weight: 800;
+                padding: 1px 4px;
+                border-radius: 3px;
+              }
+            }
+
+            &.pass-chip {
+              background: #ffffff;
+              color: #334155;
+              border: 1px solid #e2e8f0;
+
+              .domain-tag-pass {
+                font-size: 9.5px;
+                font-weight: 700;
+                color: #16a34a;
+              }
+            }
           }
         }
       }
@@ -2789,18 +2785,19 @@
       border-top: 1px solid #f1f5f9;
       margin-top: auto;
 
-      .btn-link-detail {
-        font-size: 11.5px;
-        font-weight: 600;
-        color: #64748b;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
+      .footer-stats-left {
+        display: flex;
+        gap: 6px;
 
-        mat-icon { font-size: 14px; width: 14px; height: 14px; }
+        .criteria-badge {
+          font-size: 11px;
+          font-weight: 700;
+          padding: 2px 8px;
+          border-radius: 4px;
 
-        &:hover { color: #1e3a8a; text-decoration: underline; }
+          &.pass-count { background: #dcfce7; color: #15803d; }
+          &.fail-count { background: #fee2e2; color: #b91c1c; }
+        }
       }
 
       .footer-actions-right {
@@ -2815,19 +2812,6 @@
           mat-icon { font-size: 15px; width: 15px; height: 15px; margin-right: 4px; }
 
           &:hover { background: #c2410c; }
-        }
-
-        .btn-update-sent {
-          font-size: 11.5px;
-          font-weight: 600;
-          color: #475569;
-          border-color: #cbd5e1;
-          border-radius: 6px;
-          padding: 3px 10px;
-
-          mat-icon { font-size: 14px; width: 14px; height: 14px; margin-right: 3px; }
-
-          &:hover { background: #f8fafc; color: #0f172a; }
         }
       }
     }

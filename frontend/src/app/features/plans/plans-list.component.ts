@@ -28,6 +28,7 @@ import { PlanDetailDialogComponent } from './components/plan-detail-dialog.compo
 import { DigitalSignDialogComponent } from './components/digital-sign-dialog.component';
 import { DocumentPreviewDialogComponent } from './components/document-preview-dialog.component';
 import { CreateAdhocDialogComponent } from './components/create-adhoc-dialog.component';
+import { PlanApprovalConflictDialogComponent, ConflictResolutionResult } from './components/plan-approval-conflict-dialog.component';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models';
@@ -2031,9 +2032,63 @@ export class PlansListComponent implements OnInit {
   }
 
   openDigitalSignDialog(planId: number, planTitle?: string, quarter?: string, ward?: string): void {
+    const targetPlan = this.plans.find(p => p.id === planId);
+    const planWard = ward || targetPlan?.ward || 'Phường';
+    const planQuarter = quarter || targetPlan?.quarter || 'Q2/2026';
+    const title = planTitle || `Kế hoạch ${planQuarter} - ${planWard}`;
+
+    this.api.get<any>(`/plans/${planId}/cross-ward-conflicts`).subscribe({
+      next: (conflictRes) => {
+        if (conflictRes.success && conflictRes.hasConflicts) {
+          // Open Conflict Resolution Dialog first
+          const conflictRef = this.dialog.open(PlanApprovalConflictDialogComponent, {
+            width: '760px',
+            data: {
+              planId,
+              planTitle: title,
+              ward: planWard,
+              quarter: planQuarter,
+              conflicts: conflictRes.conflicts,
+              isDigitalSign: true
+            }
+          });
+
+          conflictRef.afterClosed().subscribe((res: ConflictResolutionResult) => {
+            if (res && res.confirmed) {
+              this.launchDigitalSignModal(planId, title, planQuarter, planWard, res.resolutionMode, res.jointDate, res.participatingWards);
+            }
+          });
+        } else {
+          // Direct digital sign
+          this.launchDigitalSignModal(planId, title, planQuarter, planWard, 'standard');
+        }
+      },
+      error: () => {
+        this.launchDigitalSignModal(planId, title, planQuarter, planWard, 'standard');
+      }
+    });
+  }
+
+  private launchDigitalSignModal(
+    planId: number,
+    planTitle: string,
+    quarter: string,
+    ward: string,
+    resolutionMode: 'merge_joint' | 'select_single' | 'standard',
+    jointDate?: string,
+    participatingWards?: string[]
+  ): void {
     const dialogRef = this.dialog.open(DigitalSignDialogComponent, {
       width: '640px',
-      data: { planId, planTitle, quarter, ward }
+      data: { 
+        planId, 
+        planTitle, 
+        quarter, 
+        ward,
+        resolutionMode,
+        jointDate,
+        participatingWards
+      }
     });
 
     dialogRef.afterClosed().subscribe((signed: boolean) => {
@@ -2101,13 +2156,60 @@ export class PlansListComponent implements OnInit {
   }
 
   approveSinglePlan(planId: number): void {
-    this.api.post<any>(`/plans/${planId}/approve`, {}).subscribe({
+    const targetPlan = this.plans.find(p => p.id === planId);
+    const planWard = targetPlan?.ward || 'Phường';
+    const planQuarter = targetPlan?.quarter || 'Q2/2026';
+    const title = `Kế hoạch ${planQuarter} - ${planWard}`;
+
+    this.api.get<any>(`/plans/${planId}/cross-ward-conflicts`).subscribe({
+      next: (conflictRes) => {
+        if (conflictRes.success && conflictRes.hasConflicts) {
+          // Open Conflict Resolution Dialog first
+          const conflictRef = this.dialog.open(PlanApprovalConflictDialogComponent, {
+            width: '760px',
+            data: {
+              planId,
+              planTitle: title,
+              ward: planWard,
+              quarter: planQuarter,
+              conflicts: conflictRes.conflicts,
+              isDigitalSign: false
+            }
+          });
+
+          conflictRef.afterClosed().subscribe((res: ConflictResolutionResult) => {
+            if (res && res.confirmed) {
+              this.executeApprovePlan(planId, res.resolutionMode, res.jointDate, res.participatingWards);
+            }
+          });
+        } else {
+          // Direct approve
+          this.executeApprovePlan(planId, 'standard');
+        }
+      },
+      error: () => {
+        this.executeApprovePlan(planId, 'standard');
+      }
+    });
+  }
+
+  private executeApprovePlan(
+    planId: number, 
+    resolutionMode: 'merge_joint' | 'select_single' | 'standard',
+    jointDate?: string,
+    participatingWards?: string[]
+  ): void {
+    const payload = { resolutionMode, jointDate, participatingWards };
+    this.api.post<any>(`/plans/${planId}/approve`, payload).subscribe({
       next: (res) => {
         if (res.success) {
-          this.snackBar.open('Đã phê duyệt kế hoạch thành công (Duyệt thường)! Đã tạo các hồ sơ kiểm tra thực địa.', 'Đóng', { duration: 3000 });
+          this.snackBar.open(res.message || 'Đã phê duyệt kế hoạch thành công!', 'Đóng', { duration: 3500 });
           this.loadPendingGrid();
           this.loadPlans();
         }
+      },
+      error: (err) => {
+        this.snackBar.open(err.error?.message || 'Lỗi khi phê duyệt kế hoạch.', 'Đóng', { duration: 4000 });
       }
     });
   }

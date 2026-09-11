@@ -268,6 +268,10 @@ export class WardsController {
       let filteredItems = items;
       if (filter === 'needs_action') {
         filteredItems = items.filter(i => i.needsNoticeLetter);
+      } else if (filter === 'has_violations') {
+        filteredItems = items.filter(i => i.failCount > 0);
+      } else if (filter === 'all_passed') {
+        filteredItems = items.filter(i => i.failCount === 0);
       } else if (filter === 'completed') {
         filteredItems = items.filter(i => !i.needsNoticeLetter);
       }

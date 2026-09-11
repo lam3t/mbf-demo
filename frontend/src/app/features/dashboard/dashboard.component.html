@@ -458,61 +458,127 @@
       </div>
     </div>
 
-    <!-- KHỐI CẢNH BÁO & NHẮC VIỆC (Mặc định hiện tối đa 5 mục gần nhất) -->
+    <!-- KHỐI CẢNH BÁO & NHẮC VIỆC: DANH SÁCH HẠNG MỤC ĐẠT / KHÔNG ĐẠT (Dashboard Phường/Xã) -->
     <div class="ward-alerts-section" *ngIf="isWardDrillDown && wardAlerts.length > 0">
       <div class="section-heading">
         <div class="heading-left">
           <div class="heading-icon-badge alert-heading-icon">
-            <mat-icon>notification_important</mat-icon>
+            <mat-icon>fact_check</mat-icon>
           </div>
           <div>
             <div class="heading-title-row">
-              <h3 class="heading-title">CẢNH BÁO & NHẮC VIỆC CẦN XỬ LÝ (Tối đa 5 mục gần nhất)</h3>
+              <h3 class="heading-title">DANH SÁCH CẢNH BÁO TIÊU CHÍ ĐẠT / KHÔNG ĐẠT TẠI {{ currentWard?.name?.toUpperCase() }}</h3>
               <span class="badge-pending-count" *ngIf="wardAlertsSummary.pendingNoticesCount > 0">
                 <mat-icon>priority_high</mat-icon> {{ wardAlertsSummary.pendingNoticesCount }} cơ sở cần gửi thông báo
               </span>
             </div>
-            <p class="heading-subtitle">Đôn đốc văn bản thông báo vi phạm cho cơ sở trên địa bàn</p>
+            <p class="heading-subtitle">Theo dõi chi tiết các hạng mục chấp hành và vi phạm theo 5 lĩnh vực chuyên môn</p>
           </div>
         </div>
 
-        <div class="heading-controls">
-          <a routerLink="/admin" [queryParams]="{ tab: 'alerts' }" class="btn-link-all-alerts">
-            <span>Xem tất cả cảnh báo</span>
-            <mat-icon>arrow_forward</mat-icon>
-          </a>
+        <!-- Filter Sub-tabs -->
+        <div class="heading-controls ward-alert-filters">
+          <div class="alert-filter-btn-group">
+            <button 
+              type="button" 
+              class="filter-pill-btn" 
+              [class.active]="wardAlertFilter === 'all'"
+              (click)="setWardAlertFilter('all')">
+              Tất cả ({{ wardAlerts.length }})
+            </button>
+            <button 
+              type="button" 
+              class="filter-pill-btn fail-btn" 
+              [class.active]="wardAlertFilter === 'has_violations'"
+              (click)="setWardAlertFilter('has_violations')">
+              <mat-icon>warning</mat-icon>
+              Có vi phạm ({{ wardAlertsSummary.totalWithViolations || 0 }})
+            </button>
+            <button 
+              type="button" 
+              class="filter-pill-btn pass-btn" 
+              [class.active]="wardAlertFilter === 'all_passed'"
+              (click)="setWardAlertFilter('all_passed')">
+              <mat-icon>check_circle</mat-icon>
+              Đạt chuẩn 100% ({{ wardAlerts.length - (wardAlertsSummary.totalWithViolations || 0) }})
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Top 5 Alert Cards -->
+      <!-- Alert Cards Grid with Detailed Pass/Fail Criteria -->
       <div class="alert-cards-grid">
         <div 
-          *ngFor="let item of wardAlerts.slice(0, maxAlertsToShow)" 
+          *ngFor="let item of filteredWardAlerts.slice(0, maxAlertsToShow)" 
           class="alert-card" 
           [class.needs-notice]="item.needsNoticeLetter"
-          [class.notice-sent]="item.hasNotice">
+          [class.notice-sent]="item.hasNotice"
+          [class.card-clean-pass]="item.failCount === 0">
           
           <div class="alert-card-header">
             <div class="business-info">
               <strong class="biz-name">{{ item.objectName }}</strong>
               <div class="biz-meta">
-                <span>MST: {{ item.objectTaxCode || 'N/A' }}</span> • 
-                <span>{{ item.objectAddress }}</span>
+                <span>MST: <code>{{ item.objectTaxCode || 'N/A' }}</code></span> • 
+                <span>{{ item.objectAddress }}</span> • 
+                <span class="text-muted">Hoàn thành: {{ item.completedAt | date:'dd/MM/yyyy' }}</span>
               </div>
             </div>
-            <span class="status-badge badge-needs-action" *ngIf="item.needsNoticeLetter">
-              <mat-icon>warning</mat-icon> CẦN GỬI THÔNG BÁO
-            </span>
-            <span class="status-badge badge-sent" *ngIf="item.hasNotice">
-              <mat-icon>check_circle</mat-icon> ĐÃ GỬI VĂN BẢN
-            </span>
+            <div class="header-badges">
+              <span class="status-badge badge-needs-action" *ngIf="item.needsNoticeLetter">
+                <mat-icon>warning</mat-icon> CẦN GỬI THÔNG BÁO
+              </span>
+              <span class="status-badge badge-sent" *ngIf="item.hasNotice">
+                <mat-icon>check_circle</mat-icon> ĐÃ GỬI VĂN BẢN ({{ item.notice?.sentAt | date:'dd/MM' }})
+              </span>
+              <span class="status-badge badge-all-pass" *ngIf="item.failCount === 0">
+                <mat-icon>verified</mat-icon> ĐẠT CHUẨN 100%
+              </span>
+            </div>
+          </div>
+
+          <div class="alert-card-body">
+            <!-- 1. Hạng mục KHÔNG ĐẠT (Vi phạm) -->
+            <div class="criteria-list-block fail-block" *ngIf="item.failItems.length > 0">
+              <div class="block-label fail-label">
+                <mat-icon>cancel</mat-icon>
+                <span>Hạng mục KHÔNG ĐẠT ({{ item.failItems.length }} lỗi):</span>
+              </div>
+              <div class="criteria-chips-wrap">
+                <span *ngFor="let f of item.failItems" class="crit-chip fail-chip" [title]="f.notes || ''">
+                  <span class="domain-tag" [style.background-color]="f.domainColor ? f.domainColor + '22' : '#fee2e2'" [style.color]="f.domainColor || '#dc2626'">
+                    {{ f.domainCode }}
+                  </span>
+                  <span>{{ f.criteriaName }}</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- 2. Hạng mục ĐẠT CHUẨN -->
+            <div class="criteria-list-block pass-block" *ngIf="item.passItems.length > 0">
+              <div class="block-label pass-label">
+                <mat-icon>check_circle</mat-icon>
+                <span>Hạng mục ĐẠT CHUẨN ({{ item.passItems.length }} tiêu chí):</span>
+              </div>
+              <div class="criteria-chips-wrap">
+                <span *ngFor="let p of item.passItems" class="crit-chip pass-chip">
+                  <span class="domain-tag-pass">✓ {{ p.domainCode }}</span>
+                  <span>{{ p.criteriaName }}</span>
+                </span>
+              </div>
+            </div>
           </div>
 
           <div class="alert-card-footer">
-            <span class="criteria-badge fail" *ngIf="item.failCount > 0">✗ {{ item.failCount }} Vi phạm</span>
-            <button *ngIf="item.needsNoticeLetter" mat-flat-button class="btn-mark-sent" (click)="openNoticeDialog(item)">
-              <mat-icon>send</mat-icon> Gửi thông báo
-            </button>
+            <div class="footer-stats-left">
+              <span class="criteria-badge pass-count">✓ {{ item.passCount }} Đạt</span>
+              <span class="criteria-badge fail-count" *ngIf="item.failCount > 0">✗ {{ item.failCount }} Vi phạm</span>
+            </div>
+            <div class="footer-actions-right">
+              <button *ngIf="item.needsNoticeLetter" mat-flat-button class="btn-mark-sent" (click)="openNoticeDialog(item)">
+                <mat-icon>send</mat-icon> Gửi thông báo vi phạm
+              </button>
+            </div>
           </div>
         </div>
       </div>

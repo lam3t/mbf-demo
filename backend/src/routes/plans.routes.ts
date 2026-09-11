@@ -38,6 +38,7 @@ router.use(authGuard);
 router.get('/', PlansController.getAll);
 router.get('/pending-grid', PlansController.getPendingGrid);
 router.get('/:id', PlansController.getById);
+router.get('/:id/cross-ward-conflicts', PlansController.getCrossWardConflicts);
 router.get('/:id/quota-check', PlansController.checkQuota);
 
 router.post('/upload-scan', scanUpload.single('file'), auditLogger('UPLOAD_PLAN_SCAN', 'PLANS'), PlansController.uploadScanDocument);
