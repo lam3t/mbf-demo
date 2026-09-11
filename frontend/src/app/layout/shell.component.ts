@@ -990,22 +990,14 @@ export class ShellComponent implements OnInit {
 
   ngOnInit(): void {
     this.currentUrl = this.router.url;
-    this.checkAutoCollapse(this.currentUrl);
+    this.isCollapsed = false;
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
         this.currentUrl = event.urlAfterRedirects || event.url;
-        this.checkAutoCollapse(this.currentUrl);
         this.updateAccordionState();
       });
     this.updateAccordionState();
-  }
-
-  checkAutoCollapse(url: string): void {
-    // Prompt 16 / CR-12: Auto-collapse sidebar on Dashboard and Map to maximize horizontal workspace
-    if (url.startsWith('/dashboard') || url.startsWith('/map')) {
-      this.isCollapsed = true;
-    }
   }
 
   toggleSidebar(): void {

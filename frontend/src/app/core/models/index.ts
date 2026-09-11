@@ -40,6 +40,7 @@ export interface BusinessObject {
   blockReason?: string;
   hasCrossWardWarning?: boolean;
   warningReason?: string;
+  crossWardWarning?: string;
   isCrossWardCandidate?: boolean;
   isDuplicateAcrossWards?: boolean;
   crossWardInfo?: any;

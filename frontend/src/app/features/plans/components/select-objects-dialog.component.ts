@@ -76,7 +76,7 @@ import { BusinessObject } from '../../../core/models';
                   <mat-icon>block</mat-icon>
                   {{ obj.blockReason ? 'Single Check (Đã khóa)' : 'Đã có kế hoạch' }}
                 </span>
-                <span *ngIf="!obj.isBlockedThisYear && obj.hasCrossWardWarning" class="warning-badge" [title]="obj.warningReason || ''">
+                <span *ngIf="!obj.isBlockedThisYear && obj.hasCrossWardWarning" class="warning-badge" [title]="obj.crossWardWarning || obj.warningReason || ''">
                   <mat-icon>group_work</mat-icon>
                   Kiểm tra liên ngành
                 </span>
@@ -89,9 +89,9 @@ import { BusinessObject } from '../../../core/models';
               <div *ngIf="obj.isBlockedThisYear && obj.blockReason" class="blocked-reason-text">
                 {{ obj.blockReason }}
               </div>
-              <div *ngIf="!obj.isBlockedThisYear && obj.hasCrossWardWarning && obj.warningReason" class="warning-reason-text">
+              <div *ngIf="!obj.isBlockedThisYear && obj.hasCrossWardWarning && (obj.crossWardWarning || obj.warningReason)" class="warning-reason-text">
                 <mat-icon>info</mat-icon>
-                <span>{{ obj.warningReason }}</span>
+                <span>{{ obj.crossWardWarning || obj.warningReason }}</span>
               </div>
             </div>
           </div>

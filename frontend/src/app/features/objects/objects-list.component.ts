@@ -158,11 +158,11 @@ export class ObjectsListComponent implements OnInit {
   showAdvancedFilter = false;
 
   wardOptions = [
-    'Phường Khương Mai',
-    'Phường Hàng Bài',
-    'Phường Mỹ Đình 1',
-    'Phường Quảng An',
-    'Phường Đồng Tâm'
+    'Phường Hoàn Kiếm',
+    'Phường Ba Đình',
+    'Phường Đống Đa',
+    'Phường Hai Bà Trưng',
+    'Phường Cầu Giấy'
   ];
 
   headerActions: PageHeaderAction[] = [
@@ -223,7 +223,8 @@ export class ObjectsListComponent implements OnInit {
 
   rowActions: TableAction[] = [
     { id: 'view', label: 'Xem chi tiết hồ sơ', icon: 'visibility' },
-    { id: 'edit', label: 'Chỉnh sửa thông tin', icon: 'edit' }
+    { id: 'edit', label: 'Chỉnh sửa thông tin', icon: 'edit' },
+    { id: 'add_to_plan', label: 'Đưa vào kế hoạch kiểm tra', icon: 'playlist_add' }
   ];
 
   constructor(
@@ -352,7 +353,53 @@ export class ObjectsListComponent implements OnInit {
       this.openEditDialog(event.row);
     } else if (event.action === 'view') {
       this.openDetailDialog(event.row);
+    } else if (event.action === 'add_to_plan') {
+      this.addToPlan(event.row);
     }
+  }
+
+  addToPlan(row: BusinessObject): void {
+    if (row.isBlockedThisYear) {
+      this.snackBar.open(row.blockReason || 'Cơ sở đã hoàn thành kiểm tra trong năm, không thể thêm vào kế hoạch mới.', 'Đóng', { duration: 4000 });
+      return;
+    }
+
+    const ward = row.ward;
+    this.api.get<any>('/plans', { quarter: 'Q2/2026', ward }).subscribe({
+      next: (res) => {
+        if (res.success && res.data.length > 0) {
+          const plan = res.data[0];
+          if (plan.status !== 'draft') {
+            this.snackBar.open(`Kế hoạch ${plan.quarter} của ${ward} đang ở trạng thái "${plan.status}", không thể chỉnh sửa.`, 'Đóng', { duration: 3500 });
+            return;
+          }
+          this.api.post<any>(`/plans/${plan.id}/items`, { objectId: row.id }).subscribe({
+            next: (addRes) => {
+              if (addRes.success) {
+                this.snackBar.open(`Đã thêm cơ sở "${row.name}" vào giỏ kế hoạch của ${ward}!`, 'Đóng', { duration: 3000 });
+                this.loadObjects();
+              }
+            },
+            error: (err) => {
+              this.snackBar.open(err.error?.message || 'Không thể thêm cơ sở vào kế hoạch.', 'Đóng', { duration: 3500 });
+            }
+          });
+        } else {
+          // Create draft plan and add
+          this.api.post<any>('/plans', { quarter: 'Q2/2026', ward, objectIds: [row.id] }).subscribe({
+            next: (createRes) => {
+              if (createRes.success) {
+                this.snackBar.open(`Đã tạo kế hoạch mới và thêm cơ sở "${row.name}" vào giỏ ${ward}!`, 'Đóng', { duration: 3000 });
+                this.loadObjects();
+              }
+            },
+            error: (err) => {
+              this.snackBar.open(err.error?.message || 'Lỗi tạo kế hoạch cho cơ sở.', 'Đóng', { duration: 3500 });
+            }
+          });
+        }
+      }
+    });
   }
 
   handleRowClick(row: BusinessObject): void {

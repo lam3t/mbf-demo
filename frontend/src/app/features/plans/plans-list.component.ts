@@ -127,6 +127,15 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
             (actionClick)="handleCartHeaderAction($event)"
           ></app-page-header>
 
+          <!-- Ward Selector for Admins / TNT Managers in Cart view -->
+          <div class="cart-ward-switcher-bar" *ngIf="isAdmin || isTNT">
+            <label><mat-icon>domain</mat-icon> Chọn địa bàn Phường thao tác:</label>
+            <select class="cids-select" [(ngModel)]="userWard" (change)="onCartWardChange()">
+              <option *ngFor="let w of availableWards" [value]="w">{{ w }}</option>
+            </select>
+            <span class="ward-switcher-hint">Đang quản lý giỏ kế hoạch của <strong>{{ userWard }}</strong></span>
+          </div>
+
           <!-- Quota & Cut-off Status Banner -->
           <div class="quota-banner-box" [ngClass]="getQuotaBannerClass()">
             <div class="banner-left">
@@ -1071,6 +1080,49 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
       }
     }
 
+    .cart-ward-switcher-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      margin-bottom: 8px;
+
+      label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #1e40af;
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+      }
+
+      .cids-select {
+        height: 36px;
+        padding: 0 12px;
+        border: 1px solid #93c5fd;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e3a8a;
+        background-color: #ffffff;
+        outline: none;
+      }
+
+      .ward-switcher-hint {
+        font-size: 12.5px;
+        color: #3b82f6;
+        margin-left: auto;
+      }
+    }
+
     .cart-toolbar {
       display: flex;
       justify-content: space-between;
@@ -1336,9 +1388,9 @@ export class PlansListComponent implements OnInit {
 
   // Current User
   currentUser: any = null;
-  userWard = 'Phường Khương Mai';
+  userWard = 'Phường Hoàn Kiếm';
   cutoffTime = '25/06/2026 17:00';
-  availableWards = ['Phường Khương Mai', 'Phường Hàng Bài', 'Phường Đồng Tâm', 'Phường Quảng An', 'Phường Bách Khoa'];
+  availableWards = ['Phường Hoàn Kiếm', 'Phường Ba Đình', 'Phường Đống Đa', 'Phường Hai Bà Trưng', 'Phường Cầu Giấy'];
 
   // 1. Cart View State
   currentDraftPlan: Plan | null = null;
@@ -1719,6 +1771,14 @@ export class PlansListComponent implements OnInit {
   }
 
   // --- Cart View Logic ---
+  onCartWardChange(): void {
+    this.selectedFile = null;
+    this.uploadedScanUrl = null;
+    this.currentDraftPlan = null;
+    this.currentCartObjects = [];
+    this.loadCartPlan();
+  }
+
   loadCartPlan(): void {
     this.api.get<any>('/plans', { quarter: 'Q2/2026', ward: this.userWard }).subscribe({
       next: (res) => {

@@ -115,10 +115,10 @@ export function runSeed(skipInit: boolean = false) {
 
   const samplePlans = [
     { id: 1, quarter: 'Q2/2026', year: 2026, ward: 'Phường Hoàn Kiếm', status: 'approved', rejectReason: null, signedDocumentUrl: '/uploads/sample_scan_hoankiem.pdf', submittedBy: 4, submittedAt: '2026-04-05 08:30:00', approvedBy: 2, approvedAt: '2026-04-06 09:15:00', dueDate: '2026-06-25 17:00:00' },
-    { id: 2, quarter: 'Q2/2026', year: 2026, ward: 'Phường Ba Đình', status: 'approved', rejectReason: null, signedDocumentUrl: '/uploads/sample_scan_badinh.pdf', submittedBy: 3, submittedAt: '2026-04-07 10:00:00', approvedBy: 2, approvedAt: '2026-04-08 14:00:00', dueDate: '2026-06-25 17:00:00' },
+    { id: 2, quarter: 'Q2/2026', year: 2026, ward: 'Phường Ba Đình', status: 'pending', rejectReason: null, signedDocumentUrl: '/uploads/sample_scan_badinh.pdf', submittedBy: 3, submittedAt: '2026-04-07 10:00:00', approvedBy: null, approvedAt: null, dueDate: '2026-06-25 17:00:00' },
     { id: 3, quarter: 'Q2/2026', year: 2026, ward: 'Phường Đống Đa', status: 'pending', rejectReason: null, signedDocumentUrl: '/uploads/sample_scan_dongda.pdf', submittedBy: 3, submittedAt: '2026-04-10 11:20:00', approvedBy: null, approvedAt: null, dueDate: '2026-06-28 17:00:00' },
-    { id: 4, quarter: 'Q2/2026', year: 2026, ward: 'Phường Hai Bà Trưng', status: 'draft', rejectReason: null, signedDocumentUrl: null, submittedBy: 3, submittedAt: null, approvedBy: null, approvedAt: null, dueDate: '2026-06-30 17:00:00' },
-    { id: 5, quarter: 'Q2/2026', year: 2026, ward: 'Phường Cầu Giấy', status: 'rejected', rejectReason: 'Số lượng đối tượng chưa đạt chỉ tiêu theo Quota tối thiểu 3 cơ sở.', signedDocumentUrl: null, submittedBy: 3, submittedAt: '2026-04-09 15:45:00', approvedBy: 2, approvedAt: '2026-04-10 08:30:00', dueDate: '2026-06-30 17:00:00' }
+    { id: 4, quarter: 'Q2/2026', year: 2026, ward: 'Phường Hai Bà Trưng', status: 'pending', rejectReason: null, signedDocumentUrl: '/uploads/sample_scan_haibatrung.pdf', submittedBy: 3, submittedAt: '2026-04-11 14:00:00', approvedBy: null, approvedAt: null, dueDate: '2026-06-30 17:00:00' },
+    { id: 5, quarter: 'Q2/2026', year: 2026, ward: 'Phường Cầu Giấy', status: 'draft', rejectReason: null, signedDocumentUrl: null, submittedBy: 3, submittedAt: null, approvedBy: null, approvedAt: null, dueDate: '2026-06-30 17:00:00' }
   ];
 
   for (const p of samplePlans) {
