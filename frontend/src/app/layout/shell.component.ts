@@ -49,14 +49,8 @@ interface NavSubItem {
         <!-- Brand Header -->
         <div class="sidebar-header">
           <div class="brand-container" *ngIf="!isCollapsed">
-            <div class="brand-logo-icon">
-              <span class="logo-text-c">C</span>
-              <span class="logo-text-ids">IDS</span>
-              <div class="logo-dots">
-                <span class="dot red"></span>
-                <span class="dot yellow"></span>
-                <span class="dot blue"></span>
-              </div>
+            <div class="brand-logo-shield">
+              <mat-icon>shield</mat-icon>
             </div>
             <div class="brand-title-box">
               <span class="brand-title">MBF - HÀ NỘI</span>
@@ -355,55 +349,43 @@ interface NavSubItem {
         gap: 10px;
         overflow: hidden;
 
-        .brand-logo-icon {
+        .brand-logo-shield {
+          width: 34px;
+          height: 34px;
+          border-radius: 8px;
+          background: linear-gradient(135deg, #1e3a8a, #2563eb);
           display: flex;
-          align-items: baseline;
-          position: relative;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 6px rgba(30, 58, 138, 0.25);
+          flex-shrink: 0;
 
-          .logo-text-c {
+          mat-icon {
             font-size: 20px;
-            font-weight: 900;
-            color: #1e3a8a;
-            letter-spacing: -0.5px;
-          }
-
-          .logo-text-ids {
-            font-size: 16px;
-            font-weight: 800;
-            color: #1a56db;
-          }
-
-          .logo-dots {
-            display: flex;
-            gap: 2px;
-            margin-left: 2px;
-            .dot {
-              width: 4px;
-              height: 4px;
-              border-radius: 50%;
-              &.red { background: #ef4444; }
-              &.yellow { background: #f59e0b; }
-              &.blue { background: #3b82f6; }
-            }
+            width: 20px;
+            height: 20px;
+            color: #ffffff;
           }
         }
 
         .brand-title-box {
           display: flex;
           flex-direction: column;
-          line-height: 1.15;
+          line-height: 1.2;
 
           .brand-title {
-            font-size: 12.5px;
-            font-weight: 700;
+            font-size: 13px;
+            font-weight: 800;
             color: #1e3a8a;
             letter-spacing: 0.3px;
+            white-space: nowrap;
           }
 
           .brand-subtitle {
-            font-size: 10.5px;
+            font-size: 11px;
             color: #64748b;
             font-weight: 500;
+            white-space: nowrap;
           }
         }
       }
