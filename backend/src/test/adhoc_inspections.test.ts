@@ -28,8 +28,7 @@ async function runTests() {
   try {
     const currentYear = new Date().getFullYear();
 
-    // 1. Setup Test Data:
-    // Object 1: Already planned in Phường B (Q3/2026)
+    // Object 1: Already inspected and completed in Phường B (Q1/2026)
     const obj1Res = db.prepare(`
       INSERT INTO business_objects (name, taxCode, address, ward, type, status)
       VALUES ('Công Ty TNHH Xây Dựng Phương Nam', '0109991111', '100 Giải Phóng', 'Phường Phương Mai', 'enterprise', 'active')
@@ -38,7 +37,7 @@ async function runTests() {
 
     const planB = db.prepare(`
       INSERT INTO plans (quarter, year, ward, status)
-      VALUES ('Q3/2026', ?, 'Phường Phương Mai', 'approved')
+      VALUES ('Q1/2026', ?, 'Phường Phương Mai', 'approved')
     `).run(currentYear);
     const planBId = Number(planB.lastInsertRowid);
 
@@ -46,6 +45,11 @@ async function runTests() {
       INSERT INTO plan_items (planId, objectId)
       VALUES (?, ?)
     `).run(planBId, objId1);
+
+    db.prepare(`
+      INSERT INTO inspections (objectId, planId, status, ward, completedAt, isLocked)
+      VALUES (?, ?, 'completed', 'Phường Phương Mai', '2026-02-10 09:00:00', 1)
+    `).run(objId1, planBId);
 
     // Object 2: Clean object in Phường Hàng Bài (no plans, no inspections)
     const obj2Res = db.prepare(`
@@ -62,9 +66,9 @@ async function runTests() {
     const objId3 = Number(obj3Res.lastInsertRowid);
 
     // -------------------------------------------------------------------------
-    // TEST 1: Ward Officer tries to propose ad-hoc inspection for Object 1 (Already in Plan B) -> BLOCKED (409)
+    // TEST 1: Ward Officer tries to propose ad-hoc inspection for Object 1 (Already completed in Phường Phương Mai) -> BLOCKED (409)
     // -------------------------------------------------------------------------
-    console.log('\n--- TEST 1: Single Check Rule Blocks Proposing Object Already Planned in Another Ward ---');
+    console.log('\n--- TEST 1: Single Check Rule Blocks Proposing Object Already Completed in Another Ward ---');
     const req1: any = {
       body: {
         objectId: objId1,
@@ -83,7 +87,7 @@ async function runTests() {
     if (!res1.body?.message.includes('Phường Phương Mai')) {
       throw new Error(`Expected message to mention locking ward 'Phường Phương Mai', got: ${res1.body?.message}`);
     }
-    console.log('✅ TEST 1 PASSED: Object planned in another ward successfully blocked with 409 Conflict.');
+    console.log('✅ TEST 1 PASSED: Object completed in another ward successfully blocked with 409 Conflict.');
 
     // -------------------------------------------------------------------------
     // TEST 2: Ward Officer proposes valid ad-hoc inspection for Object 2 -> SUCCESS (201)
@@ -109,15 +113,15 @@ async function runTests() {
     console.log('✅ TEST 2 PASSED: Ad-hoc proposal created with pending status.');
 
     // -------------------------------------------------------------------------
-    // TEST 3: Single Check Rule Locks Object 2 while Ad-hoc is Pending
+    // TEST 3: Single Check Rule Detects Active Ad-hoc Request Warning
     // -------------------------------------------------------------------------
-    console.log('\n--- TEST 3: Single Check Rule Blocks New Proposals or Plans for Pending Ad-hoc Object ---');
+    console.log('\n--- TEST 3: Single Check Rule Flags Warning for Active Ad-hoc Object ---');
     const singleCheckObj2 = checkObjectSingleCheckRule(objId2, currentYear);
-    console.log(`Single Check Blocked: ${singleCheckObj2.isBlocked}, Reason: ${singleCheckObj2.blockReason}`);
-    if (!singleCheckObj2.isBlocked || singleCheckObj2.conflictType !== 'EXISTING_ADHOC_REQUEST') {
-      throw new Error(`Expected Single Check to block Object 2 due to pending adhoc request`);
+    console.log(`Single Check Blocked: ${singleCheckObj2.isBlocked}, HasWarning: ${singleCheckObj2.hasWarning}, Reason: ${singleCheckObj2.warningReason}`);
+    if (!singleCheckObj2.hasWarning || singleCheckObj2.conflictType !== 'EXISTING_ADHOC_REQUEST') {
+      throw new Error(`Expected Single Check to flag warning for Object 2 due to active adhoc request`);
     }
-    console.log('✅ TEST 3 PASSED: Single Check rule detects active ad-hoc request conflict.');
+    console.log('✅ TEST 3 PASSED: Single Check rule detects active ad-hoc request and flags warning for coordination.');
 
     // -------------------------------------------------------------------------
     // TEST 4: GET /api/adhoc-requests returns list with ward & status filter

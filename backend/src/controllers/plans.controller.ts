@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { db } from '../db/connection';
 import { Plan } from '../types';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
-import { checkObjectSingleCheckRule } from '../utils/singleCheck';
+import { checkObjectSingleCheckRule, checkCrossWardPlanConflicts } from '../utils/singleCheck';
 
 export class PlansController {
   /**
@@ -129,7 +129,24 @@ export class PlansController {
         JOIN business_objects b ON pi.objectId = b.id
         WHERE pi.planId = ?
         ORDER BY b.id ASC
-      `).all(id);
+      `).all(id) as any[];
+
+      // Check cross-ward conflicts for inter-ward joint inspections
+      const crossWardConflicts = checkCrossWardPlanConflicts(Number(id));
+      const conflictMap = new Map<number, any>();
+      crossWardConflicts.forEach(c => {
+        conflictMap.set(c.objectId, c);
+      });
+
+      const annotatedItems = items.map(item => {
+        const conflict = conflictMap.get(item.id);
+        return {
+          ...item,
+          isDuplicateAcrossWards: !!conflict,
+          crossWardInfo: conflict || null,
+          crossWardNote: conflict ? `Đối tượng đồng thời thuộc kế hoạch ${conflict.otherQuarter} của ${conflict.otherWard} - Đề xuất đoàn kiểm tra liên ngành.` : null
+        };
+      });
 
       // Query digital signatures for this plan
       const rawSignatures = db.prepare(`
@@ -161,7 +178,9 @@ export class PlansController {
         success: true,
         data: {
           ...plan,
-          items,
+          items: annotatedItems,
+          crossWardConflicts,
+          hasCrossWardConflicts: crossWardConflicts.length > 0,
           digitalSignature,
           digitalSignatures
         }
@@ -501,12 +520,33 @@ export class PlansController {
           INSERT INTO inspections (objectId, planId, status, ward, severity, dueDate, isLocked, createdAt)
           VALUES (?, ?, 'not_started', ?, 1, ?, 0, datetime('now'))
         `);
+        const insertChecklistItem = db.prepare(`
+          INSERT INTO inspection_checklist_items (inspectionId, domainId, criteriaCode, criteriaName, result, notes)
+          VALUES (?, ?, ?, ?, 'pass', '')
+        `);
+
+        const defaultCriteria = [
+          { domainId: 1, criteriaCode: 'pccc_1', criteriaName: 'Trang bị bình chữa cháy còn hạn & tiêu lệnh PCCC' },
+          { domainId: 1, criteriaCode: 'pccc_2', criteriaName: 'Lối thoát nạn & hành lang thoát hiểm thông thoáng' },
+          { domainId: 2, criteriaCode: 'attp_1', criteriaName: 'Giấy chứng nhận cơ sở đủ điều kiện ATTP / Cam kết ATTP' },
+          { domainId: 2, criteriaCode: 'attp_2', criteriaName: 'Nguồn gốc nguyên liệu & điều kiện vệ sinh bảo quản' },
+          { domainId: 3, criteriaCode: 'env_1', criteriaName: 'Thu gom, phân loại & xử lý rác thải / nước thải đúng quy định' },
+          { domainId: 3, criteriaCode: 'env_2', criteriaName: 'Không gây ô nhiễm tiếng ồn, khói bụi vượt quy chuẩn' },
+          { domainId: 4, criteriaCode: 'ttdt_1', criteriaName: 'Không lấn chiếm lòng lề đường, vỉa hè, hành lang an toàn' },
+          { domainId: 4, criteriaCode: 'ttdt_2', criteriaName: 'Biển hiệu, bảng quảng cáo đúng quy chuẩn cấp phép' },
+          { domainId: 5, criteriaCode: 'tax_1', criteriaName: 'Đăng ký kinh doanh & niêm yết giá công khai' },
+          { domainId: 5, criteriaCode: 'tax_2', criteriaName: 'Kê khai & thực hiện đầy đủ nghĩa vụ thuế / hóa đơn' }
+        ];
 
         for (const item of items) {
           // Check if inspection already exists
-          const existingInspection = db.prepare('SELECT id FROM inspections WHERE objectId = ? AND planId = ?').get(item.objectId, id);
+          const existingInspection = db.prepare('SELECT id FROM inspections WHERE objectId = ? AND planId = ?').get(item.objectId, id) as { id: number } | undefined;
           if (!existingInspection) {
-            insertInspection.run(item.objectId, id, plan.ward, inspDueDate);
+            const inspRes = insertInspection.run(item.objectId, id, plan.ward, inspDueDate);
+            const newInspId = inspRes.lastInsertRowid;
+            for (const c of defaultCriteria) {
+              insertChecklistItem.run(newInspId, c.domainId, c.criteriaCode, c.criteriaName);
+            }
           }
         }
       });
@@ -546,14 +586,18 @@ export class PlansController {
         signedAt: new Date().toISOString()
       };
 
-      // =========================================================================
-      // TODO [PRODUCTION INTEGRATION]:
-      // 1. Tích hợp SDK Ký số thực tế: VNPT-CA / Viettel-CA / FPT-CA / SmartCA API
-      //    hoặc USB Token PKCS#11 qua Chrome Native Messaging / WebSocket Daemon.
-      // 2. Hash nội dung kế hoạch & file scan bằng SHA-256 trước khi ký số.
-      // 3. Đóng dấu thời gian chuẩn RFC 3161 (Time Stamping Authority - TSA).
-      // 4. Kiểm tra chứng thư số trực tuyến bằng OCSP / CRL.
-      // =========================================================================
+      const defaultCriteria = [
+        { domainId: 1, criteriaCode: 'pccc_1', criteriaName: 'Trang bị bình chữa cháy còn hạn & tiêu lệnh PCCC' },
+        { domainId: 1, criteriaCode: 'pccc_2', criteriaName: 'Lối thoát nạn & hành lang thoát hiểm thông thoáng' },
+        { domainId: 2, criteriaCode: 'attp_1', criteriaName: 'Giấy chứng nhận cơ sở đủ điều kiện ATTP / Cam kết ATTP' },
+        { domainId: 2, criteriaCode: 'attp_2', criteriaName: 'Nguồn gốc nguyên liệu & điều kiện vệ sinh bảo quản' },
+        { domainId: 3, criteriaCode: 'env_1', criteriaName: 'Thu gom, phân loại & xử lý rác thải / nước thải đúng quy định' },
+        { domainId: 3, criteriaCode: 'env_2', criteriaName: 'Không gây ô nhiễm tiếng ồn, khói bụi vượt quy chuẩn' },
+        { domainId: 4, criteriaCode: 'ttdt_1', criteriaName: 'Không lấn chiếm lòng lề đường, vỉa hè, hành lang an toàn' },
+        { domainId: 4, criteriaCode: 'ttdt_2', criteriaName: 'Biển hiệu, bảng quảng cáo đúng quy chuẩn cấp phép' },
+        { domainId: 5, criteriaCode: 'tax_1', criteriaName: 'Đăng ký kinh doanh & niêm yết giá công khai' },
+        { domainId: 5, criteriaCode: 'tax_2', criteriaName: 'Kê khai & thực hiện đầy đủ nghĩa vụ thuế / hóa đơn' }
+      ];
 
       const signTx = db.transaction(() => {
         // Insert digital_signatures record
@@ -582,11 +626,19 @@ export class PlansController {
           INSERT INTO inspections (objectId, planId, status, ward, severity, dueDate, isLocked, createdAt)
           VALUES (?, ?, 'not_started', ?, 1, ?, 0, datetime('now'))
         `);
+        const insertChecklistItem = db.prepare(`
+          INSERT INTO inspection_checklist_items (inspectionId, domainId, criteriaCode, criteriaName, result, notes)
+          VALUES (?, ?, ?, ?, 'pass', '')
+        `);
 
         for (const item of items) {
-          const existingInspection = db.prepare('SELECT id FROM inspections WHERE objectId = ? AND planId = ?').get(item.objectId, id);
+          const existingInspection = db.prepare('SELECT id FROM inspections WHERE objectId = ? AND planId = ?').get(item.objectId, id) as { id: number } | undefined;
           if (!existingInspection) {
-            insertInspection.run(item.objectId, id, plan.ward, inspDueDate);
+            const inspRes = insertInspection.run(item.objectId, id, plan.ward, inspDueDate);
+            const newInspId = inspRes.lastInsertRowid;
+            for (const c of defaultCriteria) {
+              insertChecklistItem.run(newInspId, c.domainId, c.criteriaCode, c.criteriaName);
+            }
           }
         }
       });

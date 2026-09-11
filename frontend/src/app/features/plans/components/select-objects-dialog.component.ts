@@ -72,9 +72,13 @@ import { BusinessObject } from '../../../core/models';
               <div class="obj-title">
                 <strong>{{ obj.name }}</strong>
                 <span class="type-badge">{{ obj.type === 'enterprise' ? 'Doanh nghiệp' : (obj.type === 'household' ? 'Hộ KD' : 'Cá nhân') }}</span>
-                <span *ngIf="obj.isBlockedThisYear" class="blocked-badge" title="{{ obj.blockReason }}">
+                <span *ngIf="obj.isBlockedThisYear" class="blocked-badge" [title]="obj.blockReason || ''">
                   <mat-icon>block</mat-icon>
                   {{ obj.blockReason ? 'Single Check (Đã khóa)' : 'Đã có kế hoạch' }}
+                </span>
+                <span *ngIf="!obj.isBlockedThisYear && obj.hasCrossWardWarning" class="warning-badge" [title]="obj.warningReason || ''">
+                  <mat-icon>group_work</mat-icon>
+                  Kiểm tra liên ngành
                 </span>
               </div>
               <div class="obj-meta">
@@ -84,6 +88,10 @@ import { BusinessObject } from '../../../core/models';
               </div>
               <div *ngIf="obj.isBlockedThisYear && obj.blockReason" class="blocked-reason-text">
                 {{ obj.blockReason }}
+              </div>
+              <div *ngIf="!obj.isBlockedThisYear && obj.hasCrossWardWarning && obj.warningReason" class="warning-reason-text">
+                <mat-icon>info</mat-icon>
+                <span>{{ obj.warningReason }}</span>
               </div>
             </div>
           </div>
@@ -252,6 +260,25 @@ import { BusinessObject } from '../../../core/models';
                   height: 12px;
                 }
               }
+
+              .warning-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 3px;
+                font-size: 10.5px;
+                background-color: #fffbeb;
+                color: #b45309;
+                border: 1px solid #fcd34d;
+                padding: 1px 6px;
+                border-radius: 4px;
+                font-weight: 600;
+
+                mat-icon {
+                  font-size: 12px;
+                  width: 12px;
+                  height: 12px;
+                }
+              }
             }
 
             .obj-meta {
@@ -266,6 +293,22 @@ import { BusinessObject } from '../../../core/models';
               color: #dc2626;
               font-weight: 500;
               margin-top: 2px;
+            }
+
+            .warning-reason-text {
+              display: flex;
+              align-items: center;
+              gap: 4px;
+              font-size: 11px;
+              color: #d97706;
+              font-weight: 500;
+              margin-top: 2px;
+
+              mat-icon {
+                font-size: 13px;
+                width: 13px;
+                height: 13px;
+              }
             }
           }
         }

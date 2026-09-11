@@ -89,11 +89,11 @@ export class InspectionsListComponent implements OnInit {
 
   // List of wards for filter dropdown
   readonly WARDS = [
-    'PhÆ°á»�ng KhÆ°Æ¡ng Mai',
-    'PhÆ°á»�ng HÃ ng BÃ i',
-    'PhÆ°á»�ng Má»?Ä�Ã¬nh 1',
-    'PhÆ°á»�ng Quáº£ng An',
-    'PhÆ°á»�ng Ä�á»“ng TÃ¢m'
+    'Phường Hoàn Kiếm',
+    'Phường Ba Đình',
+    'Phường Đống Đa',
+    'Phường Hai Bà Trưng',
+    'Phường Cầu Giấy'
   ];
 
   readonly QUARTERS = ['Q1/2026', 'Q2/2026', 'Q3/2026', 'Q4/2026'];

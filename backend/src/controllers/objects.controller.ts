@@ -89,23 +89,28 @@ export class ObjectsController {
       const data = rawData.map(item => {
         let isBlockedThisYear = false;
         let blockReason: string | null = null;
+        let hasCrossWardWarning = false;
+        let crossWardWarning: string | null = null;
 
         if (item.completedInspectionThisYear) {
           isBlockedThisYear = true;
           const formattedDate = formatDateText(item.completedInspectionThisYear);
-          blockReason = `Đã hoàn thành kiểm tra ngày ${formattedDate} (${currentYear}) - Không được kiểm tra trùng lặp.`;
+          blockReason = `Đã hoàn thành kiểm tra ngày ${formattedDate} (${currentYear}) - Không được kiểm tra trùng lặp theo quy tắc Single Check 1 năm/1 lần.`;
         } else if (item.activePlanLock) {
-          isBlockedThisYear = true;
-          blockReason = `Đã thuộc kế hoạch ${item.activePlanLock} trong năm ${currentYear} (Single Check).`;
+          hasCrossWardWarning = true;
+          crossWardWarning = `Đồng thời có trong kế hoạch ${item.activePlanLock} - Sẽ cảnh báo kiểm tra liên ngành khi phê duyệt.`;
         } else if (item.activeAdhocLock) {
-          isBlockedThisYear = true;
-          blockReason = `Đã có ${item.activeAdhocLock} trong năm ${currentYear} (Single Check).`;
+          hasCrossWardWarning = true;
+          crossWardWarning = `Đồng thời có ${item.activeAdhocLock} - Cảnh báo phối hợp liên ngành.`;
         }
 
         return {
           ...item,
           isBlockedThisYear,
-          blockReason
+          blockReason,
+          hasCrossWardWarning,
+          crossWardWarning,
+          isCrossWardCandidate: hasCrossWardWarning
         };
       });
 
@@ -161,6 +166,9 @@ export class ObjectsController {
         exists: true,
         blocked: singleCheck.isBlocked,
         blockReason: singleCheck.blockReason,
+        hasWarning: singleCheck.hasWarning || false,
+        warningReason: singleCheck.warningReason || null,
+        isCrossWardCandidate: singleCheck.isCrossWardCandidate || false,
         conflictType: singleCheck.conflictType || null,
         lockedByWard: singleCheck.planWard || null,
         planQuarter: singleCheck.planQuarter || null,

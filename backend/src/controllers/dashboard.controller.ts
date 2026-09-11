@@ -368,11 +368,11 @@ export class DashboardController {
       const params: any[] = [];
 
       if (quarter) {
-        filterClause += ' AND p.quarter = ?';
+        filterClause += ' AND (p.quarter = ? OR p.quarter IS NULL OR i.planId IS NULL)';
         params.push(quarter);
       }
       if (year) {
-        filterClause += ' AND p.year = ?';
+        filterClause += ' AND (p.year = ? OR p.year IS NULL OR i.planId IS NULL)';
         params.push(parseInt(year as string, 10));
       }
       if (effectiveWard) {
@@ -408,7 +408,7 @@ export class DashboardController {
         const totalChecked = r.totalChecked || 0;
         const totalPass = r.totalPass || 0;
         const totalFail = r.totalFail || 0;
-        const passRate = totalChecked > 0 ? Number(((totalPass / totalChecked) * 100).toFixed(1)) : 100;
+        const passRate = totalChecked > 0 ? Number(((totalPass / totalChecked) * 100).toFixed(1)) : 0;
         const failRate = totalChecked > 0 ? Number(((totalFail / totalChecked) * 100).toFixed(1)) : 0;
         const completionRate = passRate;
 

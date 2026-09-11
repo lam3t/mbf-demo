@@ -3,7 +3,10 @@ import { db } from '../db/connection';
 export interface SingleCheckResult {
   isBlocked: boolean;
   blockReason: string | null;
-  conflictType?: 'COMPLETED_INSPECTION' | 'EXISTING_PLAN' | 'EXISTING_ADHOC_REQUEST';
+  hasWarning?: boolean;
+  warningReason?: string | null;
+  isCrossWardCandidate?: boolean;
+  conflictType?: 'COMPLETED_INSPECTION' | 'EXISTING_PLAN' | 'EXISTING_ADHOC_REQUEST' | 'CROSS_WARD_UNINSPECTED';
   completedAt?: string;
   planId?: number;
   planQuarter?: string;
@@ -12,6 +15,7 @@ export interface SingleCheckResult {
   planStatus?: string;
   adhocRequestId?: number;
   adhocStatus?: string;
+  otherWard?: string;
 }
 
 export function formatQuarterText(quarter: string, year?: number): string {
@@ -38,11 +42,11 @@ export function formatDateText(dateStr?: string): string {
 }
 
 /**
- * Checks whether an object is blocked by Single Check rule in the specified year.
- * @param objectId The Business Object ID
- * @param targetYear The year to check (e.g. 2026)
- * @param excludePlanId Optional planId to exclude (e.g. when updating items in the same plan)
- * @param excludeAdhocId Optional adhocId to exclude (e.g. when updating an adhoc request)
+ * Checks whether an object is blocked or has cross-ward warning by Single Check rule in the specified year.
+ * Rule:
+ * 1. If object ALREADY COMPLETED inspection in targetYear => HARD BLOCK (isBlocked = true).
+ * 2. If object is NOT YET INSPECTED but in draft/pending/approved plan of another ward => ALLOW WITH WARNING (isBlocked = false, hasWarning = true, isCrossWardCandidate = true).
+ *    PA04 can review this warning during plan approval to coordinate an inter-ward joint inspection (kiểm tra liên ngành).
  */
 export function checkObjectSingleCheckRule(
   objectId: number,
@@ -52,7 +56,7 @@ export function checkObjectSingleCheckRule(
 ): SingleCheckResult {
   const currentYearStr = targetYear.toString();
 
-  // 1. Check if object has completed inspection in targetYear
+  // 1. Check if object has completed inspection in targetYear -> HARD BLOCK
   const inspectionStmt = db.prepare(`
     SELECT i.id, i.completedAt, i.ward, p.quarter, p.year
     FROM inspections i
@@ -76,7 +80,7 @@ export function checkObjectSingleCheckRule(
     return {
       isBlocked: true,
       conflictType: 'COMPLETED_INSPECTION',
-      blockReason: `Doanh nghiệp/đối tượng này đã hoàn thành kiểm tra${dateText}${wardText} - Không được phép thêm mới theo nguyên tắc 1 năm/1 lần.`,
+      blockReason: `Doanh nghiệp/đối tượng này đã hoàn thành kiểm tra${dateText}${wardText} - Không được phép kiểm tra trùng lặp theo nguyên tắc 1 năm/1 lần.`,
       completedAt: completed.completedAt,
       planQuarter: completed.quarter,
       planYear: completed.year || targetYear,
@@ -84,12 +88,12 @@ export function checkObjectSingleCheckRule(
     };
   }
 
-  // 2. Check if object is in any plan with status IN ('pending', 'approved') in targetYear
+  // 2. Check if object is in any plan in targetYear (exclude current plan) -> WARNING FOR INTER-WARD JOINT INSPECTION
   let planQuery = `
     SELECT p.id, p.ward, p.quarter, p.year, p.status
     FROM plan_items pi
     JOIN plans p ON pi.planId = p.id
-    WHERE pi.objectId = ? AND p.status IN ('pending', 'approved')
+    WHERE pi.objectId = ?
       AND (p.year = ? OR p.quarter LIKE ?)
   `;
   const params: any[] = [objectId, targetYear, `%${currentYearStr}%`];
@@ -112,18 +116,22 @@ export function checkObjectSingleCheckRule(
   if (existingPlan) {
     const qText = formatQuarterText(existingPlan.quarter, existingPlan.year || targetYear);
     return {
-      isBlocked: true,
+      isBlocked: false,
+      blockReason: null,
+      hasWarning: true,
+      isCrossWardCandidate: true,
       conflictType: 'EXISTING_PLAN',
-      blockReason: `Doanh nghiệp/đối tượng này đã được lên kế hoạch kiểm tra trong ${qText} bởi ${existingPlan.ward} - Không được phép thêm mới theo nguyên tắc 1 năm/1 lần.`,
+      warningReason: `Đối tượng này đồng thời có trong kế hoạch của ${existingPlan.ward} (${qText}) - Cảnh báo phối hợp đoàn kiểm tra liên ngành khi phê duyệt.`,
       planId: existingPlan.id,
       planQuarter: existingPlan.quarter,
       planYear: existingPlan.year || targetYear,
       planWard: existingPlan.ward,
-      planStatus: existingPlan.status
+      planStatus: existingPlan.status,
+      otherWard: existingPlan.ward
     };
   }
 
-  // 3. Check if object has active ad-hoc request (pending or approved) in targetYear
+  // 3. Check active ad-hoc request (pending or approved) in targetYear
   try {
     let adhocQuery = `
       SELECT id, wardRequestedBy, relatedQuarter, relatedYear, status
@@ -152,14 +160,18 @@ export function checkObjectSingleCheckRule(
       const statusText = existingAdhoc.status === 'approved' ? 'đã duyệt' : 'chờ duyệt';
       const qText = formatQuarterText(existingAdhoc.relatedQuarter, existingAdhoc.relatedYear || targetYear);
       return {
-        isBlocked: true,
+        isBlocked: false,
+        blockReason: null,
+        hasWarning: true,
+        isCrossWardCandidate: true,
         conflictType: 'EXISTING_ADHOC_REQUEST',
-        blockReason: `Doanh nghiệp/đối tượng này đã có đề xuất kiểm tra phát sinh (${statusText}) tại ${existingAdhoc.wardRequestedBy} (${qText}) - Không được phép thêm mới theo nguyên tắc 1 năm/1 lần.`,
+        warningReason: `Đối tượng này đã có đề xuất kiểm tra phát sinh (${statusText}) tại ${existingAdhoc.wardRequestedBy} (${qText}) - Đề xuất phối hợp liên ngành.`,
         adhocRequestId: existingAdhoc.id,
         adhocStatus: existingAdhoc.status,
         planQuarter: existingAdhoc.relatedQuarter,
         planYear: existingAdhoc.relatedYear || targetYear,
-        planWard: existingAdhoc.wardRequestedBy
+        planWard: existingAdhoc.wardRequestedBy,
+        otherWard: existingAdhoc.wardRequestedBy
       };
     }
   } catch (err) {
@@ -168,6 +180,50 @@ export function checkObjectSingleCheckRule(
 
   return {
     isBlocked: false,
-    blockReason: null
+    blockReason: null,
+    hasWarning: false
   };
+}
+
+/**
+ * Scans a plan to find all objects that are also in other wards' plans (for Joint Inspection Warnings upon Approval)
+ */
+export function checkCrossWardPlanConflicts(planId: number): Array<{
+  objectId: number;
+  objectName: string;
+  objectAddress: string;
+  otherPlanId: number;
+  otherWard: string;
+  otherQuarter: string;
+  otherStatus: string;
+}> {
+  const currentPlan = db.prepare('SELECT id, ward, quarter, year FROM plans WHERE id = ?').get(planId) as any;
+  if (!currentPlan) return [];
+
+  const targetYear = currentPlan.year || (currentPlan.quarter.includes('/') ? parseInt(currentPlan.quarter.split('/')[1], 10) : new Date().getFullYear());
+
+  const query = `
+    SELECT 
+      b.id as objectId,
+      b.name as objectName,
+      b.address as objectAddress,
+      p2.id as otherPlanId,
+      p2.ward as otherWard,
+      p2.quarter as otherQuarter,
+      p2.status as otherStatus
+    FROM plan_items pi1
+    JOIN business_objects b ON pi1.objectId = b.id
+    JOIN plan_items pi2 ON b.id = pi2.objectId AND pi2.planId != ?
+    JOIN plans p2 ON pi2.planId = p2.id AND p2.ward != ?
+    WHERE pi1.planId = ?
+      AND (p2.year = ? OR p2.quarter LIKE ?)
+  `;
+
+  return db.prepare(query).all(
+    planId,
+    currentPlan.ward,
+    planId,
+    targetYear,
+    `%${targetYear}%`
+  ) as any[];
 }

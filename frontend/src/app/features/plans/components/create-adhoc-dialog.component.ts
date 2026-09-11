@@ -94,6 +94,10 @@ import { BusinessObject } from '../../../core/models';
                   <mat-icon>gpp_bad</mat-icon>
                   <span>{{ obj.blockReason || 'Đã có kế hoạch/kiểm tra trong năm (Single Check)' }}</span>
                 </div>
+                <div *ngIf="!obj.isBlockedThisYear && obj.hasCrossWardWarning" class="cross-ward-warning-banner">
+                  <mat-icon>info</mat-icon>
+                  <span>{{ obj.warningReason }}</span>
+                </div>
               </div>
               <div class="item-right">
                 <span *ngIf="!obj.isBlockedThisYear" class="btn-select-pill">
@@ -147,7 +151,11 @@ import { BusinessObject } from '../../../core/models';
               </div>
             </div>
 
-            <div class="single-check-pass-badge">
+            <div *ngIf="selectedObject.hasCrossWardWarning" class="single-check-warning-badge">
+              <mat-icon>group_work</mat-icon>
+              <span>{{ selectedObject.warningReason || 'Đối tượng có trong kế hoạch của phường khác - Phối hợp đoàn kiểm tra liên ngành khi phê duyệt.' }}</span>
+            </div>
+            <div *ngIf="!selectedObject.hasCrossWardWarning" class="single-check-pass-badge">
               <mat-icon>check_circle</mat-icon>
               <span>Đối tượng hợp lệ theo Quy tắc Single Check (Chưa có kế hoạch/kiểm tra trong năm {{ currentYear }})</span>
             </div>
@@ -402,6 +410,18 @@ import { BusinessObject } from '../../../core/models';
 
             mat-icon { font-size: 14px; width: 14px; height: 14px; }
           }
+
+          .cross-ward-warning-banner {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #d97706;
+
+            mat-icon { font-size: 14px; width: 14px; height: 14px; }
+          }
         }
 
         .item-right {
@@ -536,6 +556,20 @@ import { BusinessObject } from '../../../core/models';
         color: #059669;
 
         mat-icon { font-size: 16px; width: 16px; height: 16px; color: #059669; }
+      }
+
+      .single-check-warning-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px dashed #fde68a;
+        font-size: 12px;
+        font-weight: 600;
+        color: #b45309;
+
+        mat-icon { font-size: 16px; width: 16px; height: 16px; color: #d97706; }
       }
     }
 

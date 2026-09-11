@@ -142,6 +142,14 @@ import { DocumentPreviewDialogComponent } from './document-preview-dialog.compon
             </div>
           </div>
 
+          <div *ngIf="plan.crossWardConflicts && plan.crossWardConflicts.length > 0" class="cross-ward-alert-banner">
+            <mat-icon>handshake</mat-icon>
+            <div>
+              <strong>Cảnh báo phối hợp kiểm tra liên ngành ({{ plan.crossWardConflicts.length }} đối tượng trùng):</strong>
+              <p>Có đối tượng trong danh sách đồng thời thuộc kế hoạch của phường khác. Chỉ huy / PA04 có thể phê duyệt và điều phối đoàn kiểm tra liên ngành (2 phường cùng làm).</p>
+            </div>
+          </div>
+
           <div class="objects-section">
             <h3>Danh sách cơ sở kiểm tra ({{ plan.items?.length || 0 }} đối tượng):</h3>
             <table class="items-table">
@@ -152,17 +160,30 @@ import { DocumentPreviewDialogComponent } from './document-preview-dialog.compon
                   <th>Mã số (MST/CCCD)</th>
                   <th>Tên cơ sở kinh doanh</th>
                   <th>Địa chỉ</th>
+                  <th>Ghi chú điều phối</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let it of plan.items; let i = index">
+                <tr *ngFor="let it of plan.items; let i = index" [class.cross-ward-row]="it.isDuplicateAcrossWards">
                   <td>{{ i + 1 }}</td>
                   <td>
                     <span class="type-pill">{{ it.type === 'enterprise' ? 'Doanh nghiệp' : (it.type === 'household' ? 'Hộ KD' : 'Cá nhân') }}</span>
                   </td>
                   <td><code>{{ it.taxCode || it.idNumber }}</code></td>
-                  <td><strong>{{ it.name }}</strong></td>
+                  <td>
+                    <strong>{{ it.name }}</strong>
+                    <div *ngIf="it.isDuplicateAcrossWards" class="joint-badge">
+                      <mat-icon>group_work</mat-icon>
+                      <span>Trùng kế hoạch phường khác</span>
+                    </div>
+                  </td>
                   <td>{{ it.address }}</td>
+                  <td>
+                    <span *ngIf="it.crossWardNote" class="cross-ward-note">
+                      {{ it.crossWardNote }}
+                    </span>
+                    <span *ngIf="!it.crossWardNote" class="text-muted">—</span>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -441,6 +462,29 @@ import { DocumentPreviewDialogComponent } from './document-preview-dialog.compon
       p { margin: 2px 0 0; }
     }
 
+    .cross-ward-alert-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      background-color: #fffbeb;
+      border: 1.5px solid #fde68a;
+      border-radius: 8px;
+      color: #92400e;
+      margin-bottom: 14px;
+      font-size: 12.5px;
+
+      mat-icon {
+        font-size: 22px;
+        width: 22px;
+        height: 22px;
+        color: #d97706;
+      }
+
+      strong { font-weight: 700; color: #78350f; }
+      p { margin: 3px 0 0; font-size: 12px; line-height: 1.4; color: #92400e; }
+    }
+
     .objects-section {
       h3 {
         font-size: 13.5px;
@@ -454,6 +498,35 @@ import { DocumentPreviewDialogComponent } from './document-preview-dialog.compon
         border-collapse: collapse;
         font-size: 12.5px;
         max-height: 280px;
+
+        .cross-ward-row {
+          background-color: #fffdf5;
+        }
+
+        .joint-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          margin-top: 3px;
+          padding: 1px 6px;
+          border-radius: 4px;
+          background: #fef3c7;
+          color: #b45309;
+          font-size: 10.5px;
+          font-weight: 600;
+
+          mat-icon {
+            font-size: 12px;
+            width: 12px;
+            height: 12px;
+          }
+        }
+
+        .cross-ward-note {
+          font-size: 11px;
+          color: #b45309;
+          font-weight: 500;
+        }
 
         th {
           background-color: #f8fafc;

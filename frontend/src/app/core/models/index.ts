@@ -38,6 +38,12 @@ export interface BusinessObject {
   planWard?: string;
   isBlockedThisYear?: boolean;
   blockReason?: string;
+  hasCrossWardWarning?: boolean;
+  warningReason?: string;
+  isCrossWardCandidate?: boolean;
+  isDuplicateAcrossWards?: boolean;
+  crossWardInfo?: any;
+  crossWardNote?: string;
   createdBy?: number;
   createdByName?: string;
   createdAt: string;
@@ -102,6 +108,7 @@ export interface Plan {
   totalObjects?: number;
   createdAt: string;
   items?: BusinessObject[];
+  crossWardConflicts?: any[];
   digitalSignature?: DigitalSignature;
   digitalSignatures?: DigitalSignature[];
 }

@@ -67,13 +67,13 @@ function runSingleCheckRuleTests() {
   assert(plan2Id > 0, 'Create Plan 2 (Q3/2026, Phường Ba Đình, Draft)');
 
   // 6. TEST RULE: Attempt to check Single Check rule for adding Object A to Plan 2 (Q3/2026 Ba Đình)
+  // When not yet completed, it allows cross-ward inclusion with a WARNING for inter-ward joint inspection
   const checkResultForPlan2 = checkObjectSingleCheckRule(objectAId, 2026, plan2Id);
 
-  const expectedPlannedMsg = 'Doanh nghiệp/đối tượng này đã được lên kế hoạch kiểm tra trong Quý 1/2026 bởi Phường Hoàn Kiếm - Không được phép thêm mới theo nguyên tắc 1 năm/1 lần.';
-
-  assert(checkResultForPlan2.isBlocked === true, 'Single Check blocks Object A from being added to Q3/2026 (Ba Đình)');
+  assert(checkResultForPlan2.isBlocked === false, 'Single Check does NOT hard-block uninspected Object A across wards');
+  assert(checkResultForPlan2.hasWarning === true, 'Single Check raises warning for cross-ward candidate');
+  assert(checkResultForPlan2.isCrossWardCandidate === true, 'Flagged as cross-ward candidate');
   assert(checkResultForPlan2.conflictType === 'EXISTING_PLAN', 'Conflict type is EXISTING_PLAN');
-  assert(checkResultForPlan2.blockReason === expectedPlannedMsg, 'Error message matches exact required format for planned inspection', `Expected: "${expectedPlannedMsg}"\nReceived: "${checkResultForPlan2.blockReason}"`);
 
   // 7. TEST RULE: Mark inspection in Plan 1 as completed with specific completedAt date
   const completedDate = '2026-02-15 10:30:00';
@@ -83,7 +83,7 @@ function runSingleCheckRuleTests() {
   `).run(objectAId, plan1Id, completedDate);
 
   const checkResultAfterCompleted = checkObjectSingleCheckRule(objectAId, 2026);
-  const expectedCompletedMsg = 'Doanh nghiệp/đối tượng này đã hoàn thành kiểm tra vào ngày 15/02/2026 bởi Phường Hoàn Kiếm - Không được phép thêm mới theo nguyên tắc 1 năm/1 lần.';
+  const expectedCompletedMsg = 'Doanh nghiệp/đối tượng này đã hoàn thành kiểm tra vào ngày 15/02/2026 bởi Phường Hoàn Kiếm - Không được phép kiểm tra trùng lặp theo nguyên tắc 1 năm/1 lần.';
 
   assert(checkResultAfterCompleted.isBlocked === true, 'Single Check blocks Object A after inspection completed in 2026');
   assert(checkResultAfterCompleted.conflictType === 'COMPLETED_INSPECTION', 'Conflict type is COMPLETED_INSPECTION');
