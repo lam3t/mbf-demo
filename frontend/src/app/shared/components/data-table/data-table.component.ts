@@ -156,10 +156,11 @@ export interface TableAction {
               >
                 <!-- Badge Type -->
                 <ng-container *ngIf="col.type === 'badge'">
-                  <span class="badge-status" [ngClass]="getBadgeClass(col, row[col.key])">
-                    {{ getBadgeLabel(col, row[col.key]) }}
+                  <span class="badge-status" [ngClass]="getBadgeClass(col, row[col.key], row)">
+                    {{ col.formatter ? col.formatter(row[col.key], row) : getBadgeLabel(col, row[col.key]) }}
                   </span>
                 </ng-container>
+
 
                 <!-- Currency Type -->
                 <ng-container *ngIf="col.type === 'currency'">
@@ -575,7 +576,10 @@ export class DataTableComponent implements OnChanges {
   }
 
   // Badge mapping helpers
-  getBadgeClass(col: TableColumn, value: any): string {
+  getBadgeClass(col: TableColumn, value: any, row?: any): string {
+    if (row && row.isOverdue && row.status === 'draft' && col.key === 'status') {
+      return 'badge-danger';
+    }
     if (!col.badgeMapping || !value) {
       const normalized = String(value || '').toLowerCase().replace(/[\s-]/g, '_');
       return 'badge-' + normalized;
@@ -592,3 +596,4 @@ export class DataTableComponent implements OnChanges {
     return mapping?.label || value || '-';
   }
 }
+

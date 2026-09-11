@@ -58,11 +58,13 @@ import { BusinessObject } from '../../../core/models';
             class="object-row"
             *ngFor="let obj of filteredList"
             [class.selected]="isSelected(obj.id)"
-            (click)="toggleSelect(obj.id)"
+            [class.blocked-row]="obj.isBlockedThisYear"
+            (click)="!obj.isBlockedThisYear && toggleSelect(obj)"
           >
             <mat-checkbox
               [checked]="isSelected(obj.id)"
-              (change)="toggleSelect(obj.id)"
+              [disabled]="!!obj.isBlockedThisYear"
+              (change)="toggleSelect(obj)"
               (click)="$event.stopPropagation()"
               color="primary"
             ></mat-checkbox>
@@ -70,11 +72,18 @@ import { BusinessObject } from '../../../core/models';
               <div class="obj-title">
                 <strong>{{ obj.name }}</strong>
                 <span class="type-badge">{{ obj.type === 'enterprise' ? 'Doanh nghiệp' : (obj.type === 'household' ? 'Hộ KD' : 'Cá nhân') }}</span>
+                <span *ngIf="obj.isBlockedThisYear" class="blocked-badge" title="{{ obj.blockReason }}">
+                  <mat-icon>block</mat-icon>
+                  {{ obj.blockReason ? 'Single Check (Đã khóa)' : 'Đã có kế hoạch' }}
+                </span>
               </div>
               <div class="obj-meta">
                 <span>Mã: {{ obj.taxCode || obj.idNumber }}</span>
                 <span>•</span>
                 <span>Địa chỉ: {{ obj.address }}</span>
+              </div>
+              <div *ngIf="obj.isBlockedThisYear && obj.blockReason" class="blocked-reason-text">
+                {{ obj.blockReason }}
               </div>
             </div>
           </div>
@@ -193,6 +202,12 @@ import { BusinessObject } from '../../../core/models';
           &:last-child { border-bottom: none; }
           &:hover { background-color: #f8fafc; }
           &.selected { background-color: #eff6ff; }
+          &.blocked-row {
+            background-color: #fef2f2;
+            border-left: 3px solid #ef4444;
+            cursor: not-allowed;
+            &:hover { background-color: #fee2e2; }
+          }
 
           .obj-info {
             flex: 1;
@@ -218,6 +233,25 @@ import { BusinessObject } from '../../../core/models';
                 border-radius: 4px;
                 font-weight: 600;
               }
+
+              .blocked-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 3px;
+                font-size: 10.5px;
+                background-color: #fee2e2;
+                color: #b91c1c;
+                border: 1px solid #fca5a5;
+                padding: 1px 6px;
+                border-radius: 4px;
+                font-weight: 600;
+
+                mat-icon {
+                  font-size: 12px;
+                  width: 12px;
+                  height: 12px;
+                }
+              }
             }
 
             .obj-meta {
@@ -225,6 +259,13 @@ import { BusinessObject } from '../../../core/models';
               gap: 6px;
               font-size: 11.5px;
               color: #64748b;
+            }
+
+            .blocked-reason-text {
+              font-size: 11px;
+              color: #dc2626;
+              font-weight: 500;
+              margin-top: 2px;
             }
           }
         }
@@ -348,7 +389,11 @@ export class SelectObjectsDialogComponent implements OnInit {
     return this.selectedIds.includes(id);
   }
 
-  toggleSelect(id: number): void {
+  toggleSelect(item: BusinessObject | number): void {
+    const id = typeof item === 'number' ? item : item.id;
+    const isBlocked = typeof item === 'object' ? !!item.isBlockedThisYear : false;
+    if (isBlocked) return;
+
     if (this.isSelected(id)) {
       this.selectedIds = this.selectedIds.filter(i => i !== id);
     } else {

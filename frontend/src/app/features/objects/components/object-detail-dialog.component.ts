@@ -152,77 +152,117 @@ export interface ObjectDetailResult {
             </div>
           </div>
 
-          <!-- Section: Lịch sử kiểm tra thực địa & Vi phạm -->
+          <!-- Section: Lịch sử Kế hoạch & Kiểm tra trong năm (Single Check) -->
           <div class="section-card">
             <div class="section-header space-between">
               <div class="header-left">
-                <mat-icon class="section-icon">fact_check</mat-icon>
-                <h3>Lịch sử Kiểm tra Thực địa & Xử lý Vi phạm</h3>
+                <mat-icon class="section-icon">timeline</mat-icon>
+                <h3>Lịch sử Kế hoạch & Kiểm tra trong năm (Single Check)</h3>
               </div>
-              <span class="count-pill">{{ inspections.length }} đợt kiểm tra</span>
+              <div class="year-filter-pills">
+                <button
+                  type="button"
+                  class="year-pill"
+                  [class.active]="selectedHistoryYear === currentYear"
+                  (click)="selectedHistoryYear = currentYear"
+                >
+                  Năm {{ currentYear }} (Hiện tại)
+                </button>
+                <button
+                  type="button"
+                  class="year-pill"
+                  [class.active]="selectedHistoryYear === 'all'"
+                  (click)="selectedHistoryYear = 'all'"
+                >
+                  Tất cả các năm ({{ planHistory.length }})
+                </button>
+              </div>
             </div>
 
-            <!-- Empty State -->
-            <div *ngIf="inspections.length === 0" class="empty-inspection-box">
-              <mat-icon class="empty-icon">verified_user</mat-icon>
+            <!-- Single Check Status Alert Banner -->
+            <div *ngIf="singleCheckSummary?.isBlocked" class="single-check-alert blocked">
+              <div class="alert-icon-wrap">
+                <mat-icon>{{ singleCheckSummary.conflictType === 'COMPLETED_INSPECTION' ? 'task_alt' : 'block' }}</mat-icon>
+              </div>
+              <div class="alert-content">
+                <strong>{{ singleCheckSummary.conflictType === 'COMPLETED_INSPECTION' ? 'ĐÃ HOÀN THÀNH KIỂM TRA TRONG NĂM' : 'ĐÃ ĐƯỢC LẬP KẾ HOẠCH KIỂM TRA (SINGLE CHECK)' }}</strong>
+                <p>{{ singleCheckSummary.blockReason }}</p>
+              </div>
+            </div>
+
+            <div *ngIf="!singleCheckSummary?.isBlocked" class="single-check-alert ready">
+              <div class="alert-icon-wrap">
+                <mat-icon>verified</mat-icon>
+              </div>
+              <div class="alert-content">
+                <strong>ĐỦ ĐIỀU KIỆN ĐƯA VÀO KẾ HOẠCH MỚI</strong>
+                <p>Cơ sở chưa hoàn thành kiểm tra và chưa thuộc kế hoạch kiểm tra nào trong năm {{ currentYear }}. Cán bộ có thể lập kế hoạch mới theo nguyên tắc 1 năm/1 lần.</p>
+              </div>
+            </div>
+
+            <!-- Timeline of Plan History -->
+            <div *ngIf="filteredPlanHistory.length === 0" class="empty-inspection-box">
+              <mat-icon class="empty-icon">event_available</mat-icon>
               <div class="empty-text">
-                <strong>Chưa có đợt kiểm tra thực địa nào</strong>
-                <p>Đối tượng kinh doanh này chưa phát sinh biên bản hoặc đợt kiểm tra thực địa trên hệ thống.</p>
+                <strong>Chưa ghi nhận kế hoạch kiểm tra nào</strong>
+                <p>Đối tượng kinh doanh chưa được đưa vào kế hoạch kiểm tra trong giai đoạn được chọn.</p>
               </div>
             </div>
 
-            <!-- Inspection List -->
-            <div *ngIf="inspections.length > 0" class="inspections-list">
-              <div *ngFor="let insp of inspections; let i = index" class="inspection-card" [class.locked]="insp.isLocked">
-                <div class="insp-header">
-                  <div class="insp-title-box">
-                    <span class="insp-number">#{{ insp.id }}</span>
-                    <strong class="insp-quarter">{{ insp.planQuarter || 'Kế hoạch kiểm tra' }}</strong>
-                    <span class="insp-date">{{ formatDateTime(insp.completedAt || insp.createdAt) }}</span>
-                  </div>
-                  <div class="insp-badges">
-                    <span class="badge-status" [ngClass]="getInspectionStatusClass(insp.status)">
-                      {{ getInspectionStatusLabel(insp.status) }}
-                    </span>
-                    <span *ngIf="insp.isLocked" class="locked-tag" title="Hồ sơ đã chốt & khóa theo RULE-03">
-                      <mat-icon>lock</mat-icon> Đã khóa
-                    </span>
-                  </div>
+            <div *ngIf="filteredPlanHistory.length > 0" class="timeline-container">
+              <div *ngFor="let item of filteredPlanHistory" class="timeline-item" [ngClass]="getTimelineItemClass(item)">
+                <div class="timeline-marker">
+                  <mat-icon>{{ getTimelineMarkerIcon(item) }}</mat-icon>
                 </div>
-
-                <div class="insp-body">
-                  <div class="insp-meta-row">
-                    <div class="meta-col">
-                      <span class="meta-label">Mức độ vi phạm:</span>
-                      <span class="severity-tag" [ngClass]="getSeverityClass(insp.severity)">
-                        {{ getSeverityLabel(insp.severity) }}
-                      </span>
+                <div class="timeline-card">
+                  <div class="t-card-header">
+                    <div class="t-title-row">
+                      <span class="quarter-tag">{{ formatQuarterDisplay(item.quarter, item.year) }}</span>
+                      <span class="ward-owner">Đơn vị lập: <strong>{{ item.ward }}</strong></span>
                     </div>
-                    <div class="meta-col" *ngIf="insp.ward">
-                      <span class="meta-label">Địa bàn kiểm tra:</span>
-                      <span>{{ insp.ward }}</span>
+                    <span class="badge-status" [ngClass]="getPlanStatusBadgeClass(item.planStatus)">
+                      {{ getPlanStatusLabel(item.planStatus) }}
+                    </span>
+                  </div>
+
+                  <!-- Rejection Reason if Rejected -->
+                  <div *ngIf="item.planStatus === 'rejected'" class="reject-reason-box">
+                    <mat-icon>cancel</mat-icon>
+                    <span><strong>Lý do từ chối:</strong> {{ item.rejectReason || 'Không đạt yêu cầu phê duyệt.' }}</span>
+                  </div>
+
+                  <!-- Plan Workflow Metadata -->
+                  <div class="t-card-meta">
+                    <div class="t-meta-col" *ngIf="item.submittedAt">
+                      <span class="meta-label">Trình duyệt:</span>
+                      <span>{{ formatDateTime(item.submittedAt) }} {{ item.submittedByName ? '(' + item.submittedByName + ')' : '' }}</span>
+                    </div>
+                    <div class="t-meta-col" *ngIf="item.approvedAt">
+                      <span class="meta-label">Phê duyệt:</span>
+                      <span>{{ formatDateTime(item.approvedAt) }} {{ item.approvedByName ? '(' + item.approvedByName + ')' : '' }}</span>
+                    </div>
+                    <div class="t-meta-col" *ngIf="!item.submittedAt && item.planStatus === 'draft'">
+                      <span class="meta-label">Khởi tạo:</span>
+                      <span>{{ formatDateTime(item.planCreatedAt) }}</span>
                     </div>
                   </div>
 
-                  <!-- Violation Codes -->
-                  <div class="violation-codes-box" *ngIf="getParsedList(insp.violationCodes).length > 0">
-                    <span class="meta-label">Hành vi vi phạm ghi nhận:</span>
-                    <div class="chips-row">
-                      <span *ngFor="let code of getParsedList(insp.violationCodes)" class="chip-violation">
-                        <mat-icon>warning_amber</mat-icon>
-                        {{ code }}
-                      </span>
+                  <!-- Field Inspection Record Details if present -->
+                  <div *ngIf="item.inspectionId" class="t-inspection-result">
+                    <div class="insp-status-strip" [ngClass]="getInspectionStatusClass(item.inspectionStatus)">
+                      <mat-icon>{{ item.inspectionStatus === 'completed' ? 'check_circle' : (item.inspectionStatus === 'in_progress' ? 'pending' : 'schedule') }}</mat-icon>
+                      <span>Kiểm tra thực địa: <strong>{{ getInspectionStatusLabel(item.inspectionStatus) }}</strong></span>
+                      <span *ngIf="item.inspectionCompletedAt" class="insp-date-tag">• Hoàn thành: {{ formatDateTime(item.inspectionCompletedAt) }}</span>
                     </div>
-                  </div>
 
-                  <!-- Recommendation & Tags -->
-                  <div class="recommendation-box" *ngIf="insp.recommendationNote">
-                    <span class="meta-label">Ghi chú & Đề xuất kiến nghị:</span>
-                    <p class="rec-note">{{ insp.recommendationNote }}</p>
-                    <div class="chips-row" *ngIf="getParsedList(insp.recommendationTags).length > 0">
-                      <span *ngFor="let tag of getParsedList(insp.recommendationTags)" class="chip-tag">
-                        #{{ tag }}
-                      </span>
+                    <div *ngIf="item.violationCodes && getParsedList(item.violationCodes).length > 0" class="violation-mini-row">
+                      <span class="mini-label">Vi phạm:</span>
+                      <span *ngFor="let code of getParsedList(item.violationCodes)" class="chip-violation-mini">{{ code }}</span>
+                    </div>
+
+                    <div *ngIf="item.recommendationNote" class="rec-mini-note">
+                      <mat-icon>notes</mat-icon>
+                      <span>{{ item.recommendationNote }}</span>
                     </div>
                   </div>
                 </div>
@@ -790,6 +830,299 @@ export interface ObjectDetailResult {
       }
     }
 
+    /* Timeline Styles */
+    .year-filter-pills {
+      display: flex;
+      gap: 6px;
+
+      .year-pill {
+        padding: 3px 10px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        border-radius: 14px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.15s;
+
+        &:hover { background-color: #f1f5f9; }
+        &.active {
+          background-color: #1e3a8a;
+          color: #ffffff;
+          border-color: #1e3a8a;
+        }
+      }
+    }
+
+    .single-check-alert {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin-bottom: 14px;
+
+      &.blocked {
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+
+        .alert-icon-wrap mat-icon {
+          color: #dc2626;
+          font-size: 22px;
+          width: 22px;
+          height: 22px;
+        }
+
+        strong { color: #b91c1c; }
+      }
+
+      &.ready {
+        background-color: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+
+        .alert-icon-wrap mat-icon {
+          color: #16a34a;
+          font-size: 22px;
+          width: 22px;
+          height: 22px;
+        }
+
+        strong { color: #15803d; }
+      }
+
+      .alert-content {
+        flex: 1;
+        font-size: 12px;
+        line-height: 1.4;
+
+        strong {
+          display: block;
+          font-size: 12.5px;
+          margin-bottom: 2px;
+        }
+
+        p { margin: 0; }
+      }
+    }
+
+    .timeline-container {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      padding-left: 28px;
+      gap: 14px;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 10px;
+        bottom: 10px;
+        left: 11px;
+        width: 2px;
+        background-color: #e2e8f0;
+      }
+
+      .timeline-item {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+
+        .timeline-marker {
+          position: absolute;
+          left: -28px;
+          top: 8px;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background-color: #ffffff;
+          border: 2px solid #94a3b8;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1;
+
+          mat-icon {
+            font-size: 14px;
+            width: 14px;
+            height: 14px;
+            color: #64748b;
+          }
+        }
+
+        &.item-completed .timeline-marker {
+          border-color: #16a34a;
+          background-color: #dcfce7;
+          mat-icon { color: #16a34a; }
+        }
+
+        &.item-approved .timeline-marker {
+          border-color: #2563eb;
+          background-color: #eff6ff;
+          mat-icon { color: #2563eb; }
+        }
+
+        &.item-pending .timeline-marker {
+          border-color: #d97706;
+          background-color: #fef3c7;
+          mat-icon { color: #d97706; }
+        }
+
+        &.item-rejected .timeline-marker {
+          border-color: #dc2626;
+          background-color: #fee2e2;
+          mat-icon { color: #dc2626; }
+        }
+
+        .timeline-card {
+          background-color: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 12px 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+
+          .t-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            .t-title-row {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+
+              .quarter-tag {
+                font-size: 12px;
+                font-weight: 700;
+                color: #1e3a8a;
+                background-color: #eff6ff;
+                padding: 2px 8px;
+                border-radius: 4px;
+                border: 1px solid #bfdbfe;
+              }
+
+              .ward-owner {
+                font-size: 12px;
+                color: #475569;
+                strong { color: #0f172a; }
+              }
+            }
+          }
+
+          .reject-reason-box {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            padding: 6px 10px;
+            color: #991b1b;
+            font-size: 11.5px;
+
+            mat-icon {
+              font-size: 16px;
+              width: 16px;
+              height: 16px;
+              color: #dc2626;
+            }
+          }
+
+          .t-card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            font-size: 11.5px;
+            color: #64748b;
+
+            .t-meta-col {
+              display: flex;
+              gap: 4px;
+
+              .meta-label {
+                font-weight: 600;
+                color: #475569;
+              }
+            }
+          }
+
+          .t-inspection-result {
+            margin-top: 4px;
+            padding-top: 8px;
+            border-top: 1px dashed #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+
+            .insp-status-strip {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              font-size: 12px;
+              color: #334155;
+
+              mat-icon {
+                font-size: 16px;
+                width: 16px;
+                height: 16px;
+              }
+
+              .insp-date-tag {
+                color: #64748b;
+                font-size: 11.5px;
+              }
+            }
+
+            .violation-mini-row {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              flex-wrap: wrap;
+              font-size: 11px;
+
+              .mini-label {
+                font-weight: 600;
+                color: #b91c1c;
+              }
+
+              .chip-violation-mini {
+                background-color: #fee2e2;
+                color: #dc2626;
+                padding: 1px 6px;
+                border-radius: 4px;
+                font-weight: 600;
+                border: 1px solid #fca5a5;
+              }
+            }
+
+            .rec-mini-note {
+              display: flex;
+              align-items: flex-start;
+              gap: 4px;
+              font-size: 11.5px;
+              color: #475569;
+              background-color: #f8fafc;
+              padding: 4px 8px;
+              border-radius: 4px;
+
+              mat-icon {
+                font-size: 14px;
+                width: 14px;
+                height: 14px;
+                color: #3b82f6;
+                margin-top: 2px;
+              }
+            }
+          }
+        }
+      }
+    }
+
     /* Dialog Footer */
     .dialog-footer {
       display: flex;
@@ -891,10 +1224,20 @@ export class ObjectDetailDialogComponent implements OnInit {
   isLoading = true;
   object: BusinessObject | null = null;
   inspections: Inspection[] = [];
+  planHistory: any[] = [];
+  singleCheckSummary: any = null;
   currentYear = new Date().getFullYear();
+  selectedHistoryYear: number | 'all' = this.currentYear;
 
   get isInspectedThisYear(): boolean {
-    return this.object?.lastCheckedYear === this.currentYear;
+    return this.object?.lastCheckedYear === this.currentYear || this.singleCheckSummary?.conflictType === 'COMPLETED_INSPECTION';
+  }
+
+  get filteredPlanHistory(): any[] {
+    if (this.selectedHistoryYear === 'all') {
+      return this.planHistory;
+    }
+    return this.planHistory.filter(p => (p.year || this.currentYear) === this.selectedHistoryYear);
   }
 
   constructor(
@@ -925,6 +1268,8 @@ export class ObjectDetailDialogComponent implements OnInit {
         if (res.success && res.data) {
           this.object = res.data;
           this.inspections = res.data.inspections || [];
+          this.planHistory = res.data.planHistory || [];
+          this.singleCheckSummary = res.data.singleCheckSummary || null;
         }
       },
       error: () => {
@@ -983,6 +1328,48 @@ export class ObjectDetailDialogComponent implements OnInit {
       case 'in_progress': return 'Đang thực hiện';
       case 'not_started': default: return 'Chưa bắt đầu';
     }
+  }
+
+  getPlanStatusLabel(status?: string): string {
+    switch (status) {
+      case 'approved': return 'Đã phê duyệt';
+      case 'pending': return 'Đang chờ duyệt';
+      case 'rejected': return 'Bị từ chối';
+      case 'draft': default: return 'Bản nháp';
+    }
+  }
+
+  getPlanStatusBadgeClass(status?: string): string {
+    switch (status) {
+      case 'approved': return 'badge-approved';
+      case 'pending': return 'badge-in_progress';
+      case 'rejected': return 'badge-rejected';
+      case 'draft': default: return 'badge-closed';
+    }
+  }
+
+  getTimelineItemClass(item: any): string {
+    if (item.inspectionStatus === 'completed') return 'item-completed';
+    if (item.planStatus === 'rejected') return 'item-rejected';
+    if (item.planStatus === 'approved') return 'item-approved';
+    if (item.planStatus === 'pending') return 'item-pending';
+    return 'item-draft';
+  }
+
+  getTimelineMarkerIcon(item: any): string {
+    if (item.inspectionStatus === 'completed') return 'check';
+    if (item.planStatus === 'rejected') return 'close';
+    if (item.planStatus === 'approved') return 'assignment_turned_in';
+    if (item.planStatus === 'pending') return 'hourglass_empty';
+    return 'edit';
+  }
+
+  formatQuarterDisplay(quarter?: string, year?: number): string {
+    if (!quarter) return year ? `Năm ${year}` : '';
+    if (/^Q([1-4])/i.test(quarter)) {
+      return quarter.replace(/^Q([1-4])/i, 'Quý $1');
+    }
+    return quarter;
   }
 
   getSeverityClass(severity?: number): string {
@@ -1050,3 +1437,4 @@ export class ObjectDetailDialogComponent implements OnInit {
     this.dialogRef.close({ action: 'close' });
   }
 }
+

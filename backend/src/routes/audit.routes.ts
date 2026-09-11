@@ -6,5 +6,6 @@ const router = Router();
 
 router.use(authGuard);
 router.get('/', roleGuard('admin', 'leader_tnt'), AuditController.getAll);
+router.get('/:id/diff', roleGuard('admin', 'leader_tnt'), AuditController.getDiff);
 
 export default router;

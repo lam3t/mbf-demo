@@ -24,7 +24,7 @@ import { MatIconModule } from '@angular/material/icon';
       <div class="dialog-header">
         <div class="title-box">
           <mat-icon class="header-icon">cancel</mat-icon>
-          <h2>Từ chối Kế hoạch Kiểm tra</h2>
+          <h2>{{ data.title || 'Từ chối Kế hoạch Kiểm tra' }}</h2>
         </div>
         <button mat-icon-button (click)="dialogRef.close()" class="close-btn">
           <mat-icon>close</mat-icon>
@@ -32,7 +32,10 @@ import { MatIconModule } from '@angular/material/icon';
       </div>
 
       <div class="dialog-content">
-        <p class="desc-text">
+        <p class="desc-text" *ngIf="data.message">
+          {{ data.message }}
+        </p>
+        <p class="desc-text" *ngIf="!data.message && data.planName">
           Kế hoạch <strong>{{ data.planName }}</strong> sẽ được chuyển về trạng thái <strong>Bản nháp</strong> để đơn vị phường chỉnh sửa lại.
         </p>
 
@@ -42,7 +45,7 @@ import { MatIconModule } from '@angular/material/icon';
             matInput
             rows="4"
             [(ngModel)]="reason"
-            placeholder="vd: Chưa đạt đủ chỉ tiêu Quota tối thiểu theo quy chế, danh sách có đối tượng đã kiểm tra trong năm..."
+            [placeholder]="data.placeholder || 'vd: Chưa đạt đủ điều kiện theo quy chế, danh sách có đối tượng đã kiểm tra trong năm...'"
             required
           ></textarea>
         </mat-form-field>
@@ -167,7 +170,7 @@ export class RejectDialogComponent {
 
   constructor(
     public dialogRef: MatDialogRef<RejectDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { planName: string }
+    @Inject(MAT_DIALOG_DATA) public data: { planName?: string; title?: string; message?: string; placeholder?: string }
   ) {}
 
   onConfirm(): void {

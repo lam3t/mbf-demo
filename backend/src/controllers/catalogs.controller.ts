@@ -89,4 +89,49 @@ export class CatalogsController {
       res.status(500).json({ success: false, message: err.message });
     }
   }
+
+  // Domain Catalog (PCCC, ATTP, MOI_TRUONG, TTDT, THUE)
+  static getDomains(req: Request, res: Response): void {
+    try {
+      const items = db.prepare('SELECT * FROM inspection_domains ORDER BY id ASC').all();
+      res.json({ success: true, data: items });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  static createDomain(req: Request, res: Response): void {
+    try {
+      const { code, name, icon, color } = req.body;
+      if (!code || !name) {
+        res.status(400).json({ success: false, message: 'Vui lòng cung cấp mã và tên lĩnh vực.' });
+        return;
+      }
+      const result = db.prepare('INSERT INTO inspection_domains (code, name, icon, color) VALUES (?, ?, ?, ?)').run(code, name, icon || 'category', color || '#3b82f6');
+      res.status(201).json({ success: true, id: result.lastInsertRowid });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  static updateDomain(req: Request, res: Response): void {
+    try {
+      const { id } = req.params;
+      const { code, name, icon, color } = req.body;
+      db.prepare('UPDATE inspection_domains SET code = ?, name = ?, icon = ?, color = ? WHERE id = ?').run(code, name, icon, color, id);
+      res.json({ success: true, message: 'Cập nhật lĩnh vực thành công.' });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  static deleteDomain(req: Request, res: Response): void {
+    try {
+      const { id } = req.params;
+      db.prepare('DELETE FROM inspection_domains WHERE id = ?').run(id);
+      res.json({ success: true, message: 'Đã xóa lĩnh vực.' });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
 }

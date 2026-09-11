@@ -112,10 +112,12 @@
         </div>
 
         <div class="filter-select-wrap">
-          <select [(ngModel)]="selectedWard" (change)="onFilterChange()" class="custom-select">
-            <option value="">Tất cả các Phường</option>
-            <option *ngFor="let w of WARDS" [value]="w">{{ w }}</option>
-          </select>
+          <app-ward-select
+            [(ngModel)]="selectedWard"
+            (wardChange)="onFilterChange()"
+            placeholder="Tất cả các Phường"
+            [includeAllOption]="true"
+          ></app-ward-select>
         </div>
 
         <div class="filter-select-wrap">
@@ -153,6 +155,9 @@
                   <span class="type-tag" [ngClass]="row.objectType || 'enterprise'">
                     {{ row.objectType === 'enterprise' ? 'DN' : (row.objectType === 'household' ? 'Hộ KD' : 'Cá nhân') }}
                   </span>
+                  <span *ngIf="row.isAdhoc" class="badge-adhoc" title="Kiểm tra phát sinh ngoài kế hoạch">
+                    <mat-icon class="adhoc-icon">bolt</mat-icon> Phát sinh
+                  </span>
                 </div>
                 <div class="object-meta">
                   <span class="meta-code" *ngIf="row.taxCode">MST: {{ row.taxCode }}</span>
@@ -176,6 +181,24 @@
             <th mat-header-cell *matHeaderCellDef>Kỳ Kế hoạch</th>
             <td mat-cell *matCellDef="let row">
               <span class="quarter-badge">{{ row.planQuarter || 'Q1/2026' }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Hạn hoàn thành -->
+          <ng-container matColumnDef="dueDate">
+            <th mat-header-cell *matHeaderCellDef>Hạn hoàn thành</th>
+            <td mat-cell *matCellDef="let row">
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <div *ngIf="row.dueDate" style="font-size: 12.5px; color: #334155; display: flex; align-items: center;">
+                  <mat-icon style="font-size: 14px; width: 14px; height: 14px; margin-right: 4px; color: #64748b;">event</mat-icon>
+                  <span>{{ row.dueDate | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <div *ngIf="!row.dueDate" style="font-size: 12px; color: #94a3b8;">--</div>
+                <span *ngIf="row.isOverdue && row.status !== 'completed'" class="badge badge-danger" style="display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 2px 6px; width: fit-content;">
+                  <mat-icon style="font-size: 12px; width: 12px; height: 12px;">schedule</mat-icon>
+                  <span>Quá hạn</span>
+                </span>
+              </div>
             </td>
           </ng-container>
 
@@ -277,10 +300,12 @@
 
         <div class="filter-select-wrap">
           <label class="filter-mini-label">Địa bàn Phường:</label>
-          <select [(ngModel)]="selectedRecWard" (change)="onRecFilterChange()" class="custom-select">
-            <option value="">Tất cả các Phường</option>
-            <option *ngFor="let w of WARDS" [value]="w">{{ w }}</option>
-          </select>
+          <app-ward-select
+            [(ngModel)]="selectedRecWard"
+            (wardChange)="onRecFilterChange()"
+            placeholder="Tất cả các Phường"
+            [includeAllOption]="true"
+          ></app-ward-select>
         </div>
 
         <button mat-button class="btn-reset" (click)="selectedRecTag = ''; selectedRecWard = ''; onRecFilterChange()">

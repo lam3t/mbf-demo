@@ -54,17 +54,50 @@ export interface CutoffConfig {
 
 export type PlanStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 
+export type SignatureType = 'scan' | 'digital_token';
+
+export interface DigitalCertificateInfo {
+  serialNumber: string;
+  issuer: string;
+  subject?: string;
+  validFrom?: string;
+  validTo?: string;
+  signedAt: string;
+}
+
+export interface DigitalSignature {
+  id: number;
+  planId: number;
+  signedByUserId: number;
+  signedByName?: string;
+  signedByRole: string;
+  signatureType: SignatureType;
+  signatureImageUrl?: string;
+  certificateInfo?: string | DigitalCertificateInfo;
+  createdAt: string;
+}
+
 export interface Plan {
   id: number;
   quarter: string;
+  year: number;
   ward: string;
   status: PlanStatus;
   rejectReason?: string;
+  signedDocumentUrl?: string;
+  signedDocumentUploadedAt?: string;
   submittedBy?: number;
+  submittedByName?: string;
   submittedAt?: string;
   approvedBy?: number;
+  approvedByName?: string;
   approvedAt?: string;
+  dueDate?: string;
+  isOverdue?: number;
+  totalObjects?: number;
   createdAt: string;
+  digitalSignature?: DigitalSignature;
+  digitalSignatures?: DigitalSignature[];
 }
 
 export interface PlanItem {
@@ -79,7 +112,7 @@ export type InspectionStatus = 'not_started' | 'in_progress' | 'completed';
 export interface Inspection {
   id: number;
   objectId: number;
-  planId: number;
+  planId?: number;
   checklist?: string;
   violationCodes?: string;
   evidenceFiles?: string;
@@ -90,9 +123,109 @@ export interface Inspection {
   lng?: number;
   ward: string;
   severity: number;
+  dueDate?: string;
+  isOverdue?: number;
+  isAdhoc?: number;
   completedAt?: string;
   isLocked: number;
+  checklistItems?: InspectionChecklistItem[];
   createdAt: string;
+}
+
+export type AdhocRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface AdhocInspectionRequest {
+  id: number;
+  objectId: number;
+  objectName?: string;
+  objectType?: string;
+  taxCode?: string;
+  idNumber?: string;
+  objectAddress?: string;
+  representative?: string;
+  wardRequestedBy: string;
+  reason: string;
+  status: AdhocRequestStatus;
+  rejectReason?: string;
+  requestedBy: number;
+  requestedByName?: string;
+  requestedAt: string;
+  approvedBy?: number;
+  approvedByName?: string;
+  approvedAt?: string;
+  relatedQuarter: string;
+  relatedYear: number;
+  inspectionId?: number;
+  createdAt: string;
+}
+
+export interface InspectionDomain {
+  id: number;
+  code: string;
+  name: string;
+  icon?: string;
+  color?: string;
+}
+
+export type ChecklistResult = 'pass' | 'fail';
+
+export interface InspectionChecklistItem {
+  id?: number;
+  inspectionId: number;
+  domainId: number;
+  domainCode?: string;
+  domainName?: string;
+  criteriaCode: string;
+  criteriaName: string;
+  result: ChecklistResult;
+  violationCodeId?: number;
+  notes?: string;
+  createdAt?: string;
+}
+
+export interface DomainStats {
+  domainId: number;
+  domainCode: string;
+  domainName: string;
+  icon?: string;
+  color?: string;
+  totalChecked: number;
+  totalPass: number;
+  totalFail: number;
+  passRate: number;
+  failRate: number;
+  completionRate: number;
+}
+
+export interface RankingItem {
+  rank: number;
+  ward: string;
+  target: number;
+  completed: number;
+  overdue: number;
+  rate: number;
+  status: string;
+  domainName?: string;
+}
+
+export type AlertType = 'overdue_inspection' | 'overdue_plan' | 'quota_below' | 'quota_above';
+export type AlertSeverity = 'info' | 'warning' | 'critical';
+
+export interface Alert {
+  id: number;
+  type: AlertType;
+  relatedEntityType?: string;
+  relatedEntityId?: number;
+  ward?: string;
+  message: string;
+  severity: AlertSeverity;
+  isRead: number;
+  createdAt: string;
+}
+
+export interface SystemConfig {
+  key: string;
+  value: string;
 }
 
 export interface ViolationCatalog {
@@ -116,3 +249,5 @@ export interface AuditLog {
   detail?: string;
   createdAt: string;
 }
+
+

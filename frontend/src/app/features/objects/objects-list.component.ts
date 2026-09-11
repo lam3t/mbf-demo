@@ -12,7 +12,8 @@ import {
   SearchFilterBarComponent,
   DataTableComponent,
   TableColumn,
-  TableAction
+  TableAction,
+  WardSelectComponent
 } from '../../shared/components';
 
 import { ObjectDialogComponent } from './components/object-dialog.component';
@@ -32,7 +33,8 @@ import { BusinessObject } from '../../core/models';
     PageHeaderComponent,
     StatusTabsComponent,
     SearchFilterBarComponent,
-    DataTableComponent
+    DataTableComponent,
+    WardSelectComponent
   ],
   template: `
     <div class="objects-page-container">
@@ -68,10 +70,12 @@ import { BusinessObject } from '../../core/models';
 
         <div class="filter-item">
           <label>Địa bàn Phường:</label>
-          <select class="cids-select" [(ngModel)]="selectedWard" (change)="applyFilters()">
-            <option value="">Tất cả 5 phường demo</option>
-            <option *ngFor="let w of wardOptions" [value]="w">{{ w }}</option>
-          </select>
+          <app-ward-select
+            [(ngModel)]="selectedWard"
+            (wardChange)="applyFilters()"
+            placeholder="Tất cả 5 phường demo"
+            [includeAllOption]="true"
+          ></app-ward-select>
         </div>
       </div>
 
@@ -178,7 +182,7 @@ export class ObjectsListComponent implements OnInit {
       label: 'Loại hình',
       sortable: true,
       type: 'badge',
-      width: '13%',
+      width: '14%',
       badgeMapping: {
         enterprise: { label: 'Doanh nghiệp', cssClass: 'badge-in_progress' },
         household: { label: 'Hộ kinh doanh', cssClass: 'badge-approved' },
@@ -187,41 +191,29 @@ export class ObjectsListComponent implements OnInit {
     },
     {
       key: 'identifier',
-      label: 'Mã định danh',
+      label: 'Mã định danh (MST/CCCD)',
       sortable: true,
-      width: '13%',
+      width: '16%',
       formatter: (val, row) => row.taxCode || row.idNumber || '-'
     },
     {
       key: 'name',
       label: 'Tên cơ sở / Tổ chức kinh doanh',
       sortable: true,
-      width: '24%'
-    },
-    {
-      key: 'representative',
-      label: 'Đại diện / Chủ hộ',
-      sortable: true,
-      width: '14%'
-    },
-    {
-      key: 'address',
-      label: 'Địa chỉ kinh doanh',
-      sortable: true,
-      width: '18%'
+      width: '38%'
     },
     {
       key: 'ward',
       label: 'Phường quản lý',
       sortable: true,
-      width: '12%'
+      width: '18%'
     },
     {
       key: 'status',
       label: 'Trạng thái',
       sortable: true,
       type: 'badge',
-      width: '10%',
+      width: '14%',
       badgeMapping: {
         active: { label: 'Hoạt động', cssClass: 'badge-new' },
         suspended: { label: 'Tạm ngừng', cssClass: 'badge-closed' }

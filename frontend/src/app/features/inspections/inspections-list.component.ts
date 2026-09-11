@@ -10,6 +10,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/services/api.service';
 import { Inspection, ViolationCatalog, RecommendationTagCatalog } from '../../core/models';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { WardSelectComponent } from '../../shared/components/ward-select/ward-select.component';
 import { InspectionDetailDialogComponent } from './components/inspection-detail-dialog.component';
 
 export interface RecommendationItem {
@@ -37,6 +38,7 @@ export interface RecommendationItem {
     MatSelectModule,
     MatTooltipModule,
     PageHeaderComponent,
+    WardSelectComponent,
     InspectionDetailDialogComponent
   ],
   templateUrl: './inspections-list.component.html',
@@ -80,17 +82,18 @@ export class InspectionsListComponent implements OnInit {
   selectedInspection: Inspection | null = null;
   isDialogOpen = false;
 
-  // Table Columns
-  displayedColumns = ['id', 'objectName', 'ward', 'planQuarter', 'violations', 'evidence', 'status', 'actions'];
+  // Table Columns - Streamlined for Progressive Disclosure (CR-12 / Prompt 16)
+  displayedColumns = ['id', 'objectName', 'ward', 'planQuarter', 'dueDate', 'status', 'actions'];
   recommendationColumns = ['objectName', 'ward', 'tags', 'recommendationNote', 'completedAt', 'actions'];
+
 
   // List of wards for filter dropdown
   readonly WARDS = [
-    'Phường Khương Mai',
-    'Phường Hàng Bài',
-    'Phường M�?Đình 1',
-    'Phường Quảng An',
-    'Phường Đồng Tâm'
+    'PhÆ°á»�ng KhÆ°Æ¡ng Mai',
+    'PhÆ°á»�ng HÃ ng BÃ i',
+    'PhÆ°á»�ng Má»?Ä�Ã¬nh 1',
+    'PhÆ°á»�ng Quáº£ng An',
+    'PhÆ°á»�ng Ä�á»“ng TÃ¢m'
   ];
 
   readonly QUARTERS = ['Q1/2026', 'Q2/2026', 'Q3/2026', 'Q4/2026'];

@@ -27,6 +27,26 @@
       </button>
     </div>
 
+    <!-- Overdue Alert Banner (CR-03) -->
+    <div class="overdue-banner-box" *ngIf="inspection.isOverdue && inspection.status !== 'completed'" style="background-color: #fef2f2; border-left: 5px solid #ef4444; padding: 12px 18px; margin: 12px 24px 0; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #fee2e2; border-left-width: 5px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <mat-icon style="color: #ef4444; font-size: 26px; width: 26px; height: 26px; flex-shrink: 0;">report_problem</mat-icon>
+        <div>
+          <div style="font-weight: 700; color: #991b1b; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
+            <span>HỒ SƠ ĐÃ QUÁ HẠN HOÀN THÀNH KIỂM TRA</span>
+          </div>
+          <div style="font-size: 12px; color: #b91c1c; margin-top: 2px;">
+            Hạn hoàn thành: <strong>{{ inspection.dueDate ? (inspection.dueDate | date:'dd/MM/yyyy HH:mm') : '30 ngày từ ngày duyệt' }}</strong>. Hồ sơ chưa được hoàn thành và chốt khóa theo quy định thời hạn.
+          </div>
+        </div>
+      </div>
+      <span class="badge badge-danger" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; padding: 4px 10px; font-weight: 700; white-space: nowrap;">
+        <mat-icon style="font-size: 14px; width: 14px; height: 14px;">schedule</mat-icon>
+        <span>QUÁ HẠN</span>
+      </span>
+    </div>
+
+
     <!-- RULE-03 Lock Notice Banner -->
     <div *ngIf="isLocked" class="locked-banner">
       <div class="locked-banner-icon">
@@ -77,53 +97,123 @@
         </div>
       </div>
 
-      <!-- SECTION 1: Checklist tiêu chuẩn -->
-      <div class="section-card">
+      <!-- SECTION 1: Checklist tiêu chuẩn phân loại theo 5 Lĩnh vực -->
+      <div class="section-card domain-checklist-section">
         <div class="section-header">
           <div class="section-title-wrap">
             <div class="section-num">1</div>
             <div>
-              <h3 class="section-title">Checklist Tiêu chí Pháp luật Thực địa</h3>
-              <p class="section-desc">Đánh giá từng tiêu chí thực tế tại cơ sở kinh doanh</p>
+              <h3 class="section-title">Checklist Tiêu chí Thực địa theo 5 Lĩnh vực</h3>
+              <p class="section-desc">Phân loại & đánh giá tiêu chí theo PCCC, ATTP, Môi trường, Trật tự đô thị, Thuế</p>
             </div>
           </div>
           <div class="checklist-summary">
             <span class="score-badge" [class.all-pass]="!hasViolations" [class.has-fail]="hasViolations">
-              {{ passedCount }}/{{ checklist.length }} Đạt yêu cầu
+              {{ totalPassCount }}/{{ totalItemsCount }} Tiêu chí Đạt
             </span>
           </div>
         </div>
 
-        <div class="checklist-grid">
-          <div *ngFor="let item of checklist; let i = index" class="checklist-item-card" [class.failed]="!item.passed">
-            <div class="criterion-main">
-              <div class="criterion-index">{{ i + 1 }}</div>
-              <div class="criterion-text">
-                <div class="criterion-title">{{ item.title }}</div>
-                <div class="criterion-desc">{{ item.desc }}</div>
+        <!-- Domain Sub-tabs / Filter Pills -->
+        <div class="domain-tabs-nav">
+          <button 
+            type="button" 
+            class="domain-tab-btn" 
+            [class.active]="activeDomainTab === 0"
+            (click)="activeDomainTab = 0">
+            <mat-icon>dashboard</mat-icon>
+            <span>Tất cả lĩnh vực ({{ totalPassCount }}/{{ totalItemsCount }})</span>
+          </button>
+          <button 
+            *ngFor="let g of domainGroups" 
+            type="button" 
+            class="domain-tab-btn" 
+            [class.active]="activeDomainTab === g.id"
+            [class.has-error]="getDomainFailCount(g) > 0"
+            (click)="activeDomainTab = g.id">
+            <mat-icon [style.color]="g.color">{{ g.icon }}</mat-icon>
+            <span>{{ g.code }} ({{ getDomainPassCount(g) }}/{{ g.items.length }})</span>
+          </button>
+        </div>
+
+        <!-- Domain Groups List -->
+        <div class="domain-groups-container">
+          <div 
+            *ngFor="let domain of visibleDomainGroups" 
+            class="domain-group-card"
+            [style.--domain-color]="domain.color"
+            [class.has-domain-fail]="getDomainFailCount(domain) > 0">
+            
+            <div 
+              class="domain-group-header" 
+              [style.border-left-color]="domain.color"
+              (click)="toggleDomainExpand(domain)"
+              style="cursor: pointer; user-select: none;"
+              matTooltip="Nhấp để thu gọn / mở rộng nhóm tiêu chí này">
+              <div class="domain-header-left">
+                <div class="domain-icon-circle" [style.background-color]="domain.color + '18'" [style.color]="domain.color">
+                  <mat-icon>{{ domain.icon }}</mat-icon>
+                </div>
+                <div>
+                  <div class="domain-code-badge" [style.background-color]="domain.color + '15'" [style.color]="domain.color">
+                    {{ domain.code }}
+                  </div>
+                  <h4 class="domain-group-title">{{ domain.name }}</h4>
+                </div>
+              </div>
+
+              <div class="domain-header-right">
+                <span class="domain-status-badge" [class.pass]="getDomainFailCount(domain) === 0" [class.fail]="getDomainFailCount(domain) > 0">
+                  <mat-icon>{{ getDomainFailCount(domain) === 0 ? 'check_circle' : 'error' }}</mat-icon>
+                  {{ getDomainPassCount(domain) }}/{{ domain.items.length }} Đạt
+                </span>
+                <mat-icon class="domain-expand-chevron">
+                  {{ domain.isExpanded ? 'expand_less' : 'expand_more' }}
+                </mat-icon>
               </div>
             </div>
 
-            <div class="criterion-actions">
-              <div class="toggle-switch-group" [class.disabled]="isLocked">
-                <button 
-                  type="button"
-                  class="toggle-btn pass" 
-                  [class.active]="item.passed" 
-                  [disabled]="isLocked"
-                  (click)="toggleChecklist(item, true)">
-                  <mat-icon>check</mat-icon>
-                  <span>Đạt</span>
-                </button>
-                <button 
-                  type="button"
-                  class="toggle-btn fail" 
-                  [class.active]="!item.passed" 
-                  [disabled]="isLocked"
-                  (click)="toggleChecklist(item, false)">
-                  <mat-icon>close</mat-icon>
-                  <span>Không đạt</span>
-                </button>
+            <!-- Criteria list in this domain (Collapsible Accordion - CR-12) -->
+            <div class="domain-criteria-list" *ngIf="domain.isExpanded">
+              <div 
+                *ngFor="let item of domain.items; let idx = index" 
+                class="criterion-row" 
+                [class.failed]="item.result === 'fail'">
+                
+                <div class="criterion-main">
+                  <div class="criterion-index" [style.background-color]="domain.color + '12'" [style.color]="domain.color">
+                    {{ domain.code }}-0{{ idx + 1 }}
+                  </div>
+                  <div class="criterion-text">
+                    <div class="criterion-title">{{ item.criteriaName }}</div>
+                    <div class="criterion-sub" *ngIf="item.notes">
+                      <mat-icon>info</mat-icon> <span>Ghi chú: {{ item.notes }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="criterion-actions">
+                  <div class="toggle-switch-group" [class.disabled]="isLocked">
+                    <button 
+                      type="button"
+                      class="toggle-btn pass" 
+                      [class.active]="item.result === 'pass'" 
+                      [disabled]="isLocked"
+                      (click)="toggleChecklistItem(item, 'pass')">
+                      <mat-icon>check</mat-icon>
+                      <span>Đạt</span>
+                    </button>
+                    <button 
+                      type="button"
+                      class="toggle-btn fail" 
+                      [class.active]="item.result === 'fail'" 
+                      [disabled]="isLocked"
+                      (click)="toggleChecklistItem(item, 'fail')">
+                      <mat-icon>close</mat-icon>
+                      <span>Không đạt</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

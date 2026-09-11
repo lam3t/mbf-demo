@@ -4,6 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import { CONFIG } from './config';
 import { initDatabase } from './db/connection';
+import { initDeadlineCheckerCron } from './services/deadlineChecker';
 import routes from './routes';
 import { errorHandler } from './middlewares/error.middleware';
 
@@ -11,6 +12,10 @@ const app = express();
 
 // Initialize Database Schema on start
 initDatabase();
+
+// Initialize Deadline Checker Cron
+initDeadlineCheckerCron();
+
 
 // CORS Configuration
 app.use(cors({

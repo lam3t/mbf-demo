@@ -18,7 +18,7 @@ export class InspectionsController {
         params.push(objectId);
       }
       if (status === 'overdue') {
-        whereClause += " AND i.status != 'completed' AND (julianday('now') - julianday(COALESCE(p.approvedAt, i.createdAt))) > 30";
+        whereClause += " AND i.status != 'completed' AND (i.isOverdue = 1 OR (i.dueDate IS NOT NULL AND (i.dueDate < datetime('now', 'localtime') OR i.dueDate < datetime('now'))))";
       } else if (status) {
         whereClause += ' AND i.status = ?';
         params.push(status);
@@ -41,7 +41,7 @@ export class InspectionsController {
         SELECT COUNT(*) as total 
         FROM inspections i
         JOIN business_objects b ON i.objectId = b.id
-        JOIN plans p ON i.planId = p.id
+        LEFT JOIN plans p ON i.planId = p.id
         ${whereClause}
       `);
       const countRes = countStmt.get(...params) as { total: number };
@@ -51,12 +51,12 @@ export class InspectionsController {
                b.name as objectName, b.type as objectType, b.taxCode, b.idNumber, b.address as objectAddress,
                p.quarter as planQuarter, p.approvedAt as planApprovedAt,
                CASE 
-                 WHEN i.status != 'completed' AND (julianday('now') - julianday(COALESCE(p.approvedAt, i.createdAt))) > 30 THEN 1 
+                 WHEN i.status != 'completed' AND (i.isOverdue = 1 OR (i.dueDate IS NOT NULL AND (i.dueDate < datetime('now', 'localtime') OR i.dueDate < datetime('now')))) THEN 1 
                  ELSE 0 
                END as isOverdue
         FROM inspections i
         JOIN business_objects b ON i.objectId = b.id
-        JOIN plans p ON i.planId = p.id
+        LEFT JOIN plans p ON i.planId = p.id
         ${whereClause}
         ORDER BY i.id DESC
         LIMIT ? OFFSET ?
@@ -86,19 +86,70 @@ export class InspectionsController {
         SELECT i.*, 
                b.name as objectName, b.type as objectType, b.taxCode, b.idNumber, 
                b.representative, b.address as objectAddress,
-               p.quarter as planQuarter, p.approvedAt as planApprovedAt
+               p.quarter as planQuarter, p.approvedAt as planApprovedAt,
+               CASE 
+                 WHEN i.status != 'completed' AND (i.isOverdue = 1 OR (i.dueDate IS NOT NULL AND (i.dueDate < datetime('now', 'localtime') OR i.dueDate < datetime('now')))) THEN 1 
+                 ELSE 0 
+               END as isOverdue
         FROM inspections i
         JOIN business_objects b ON i.objectId = b.id
-        JOIN plans p ON i.planId = p.id
+        LEFT JOIN plans p ON i.planId = p.id
         WHERE i.id = ?
       `;
 
-      const inspection = db.prepare(query).get(id);
+      const inspection = db.prepare(query).get(id) as any;
+
 
       if (!inspection) {
         res.status(404).json({ success: false, message: 'Không tìm thấy hồ sơ kiểm tra.' });
         return;
       }
+
+      // Query checklist items classified by domain
+      let checklistItems = db.prepare(`
+        SELECT ci.*, d.code as domainCode, d.name as domainName, d.icon as domainIcon, d.color as domainColor
+        FROM inspection_checklist_items ci
+        JOIN inspection_domains d ON ci.domainId = d.id
+        WHERE ci.inspectionId = ?
+        ORDER BY ci.domainId ASC, ci.id ASC
+      `).all(id) as any[];
+
+      if (checklistItems.length === 0) {
+        // Auto-generate default 5-domain checklist items
+        const defaultCriteria = [
+          { domainId: 1, criteriaCode: 'pccc_1', criteriaName: 'Trang bị bình chữa cháy còn hạn & tiêu lệnh PCCC' },
+          { domainId: 1, criteriaCode: 'pccc_2', criteriaName: 'Lối thoát nạn & hành lang thoát hiểm thông thoáng' },
+          { domainId: 2, criteriaCode: 'attp_1', criteriaName: 'Giấy chứng nhận cơ sở đủ điều kiện ATTP / Cam kết ATTP' },
+          { domainId: 2, criteriaCode: 'attp_2', criteriaName: 'Nguồn gốc nguyên liệu & điều kiện vệ sinh bảo quản' },
+          { domainId: 3, criteriaCode: 'env_1', criteriaName: 'Thu gom, phân loại & xử lý rác thải / nước thải đúng quy định' },
+          { domainId: 3, criteriaCode: 'env_2', criteriaName: 'Không gây ô nhiễm tiếng ồn, khói bụi vượt quy chuẩn' },
+          { domainId: 4, criteriaCode: 'ttdt_1', criteriaName: 'Không lấn chiếm lòng lề đường, vỉa hè, hành lang an toàn' },
+          { domainId: 4, criteriaCode: 'ttdt_2', criteriaName: 'Biển hiệu, bảng quảng cáo đúng quy chuẩn cấp phép' },
+          { domainId: 5, criteriaCode: 'tax_1', criteriaName: 'Đăng ký kinh doanh & niêm yết giá công khai' },
+          { domainId: 5, criteriaCode: 'tax_2', criteriaName: 'Kê khai & thực hiện đầy đủ nghĩa vụ thuế / hóa đơn' }
+        ];
+
+        const insertItem = db.prepare(`
+          INSERT INTO inspection_checklist_items (inspectionId, domainId, criteriaCode, criteriaName, result, notes)
+          VALUES (?, ?, ?, ?, 'pass', '')
+        `);
+
+        db.transaction(() => {
+          for (const c of defaultCriteria) {
+            insertItem.run(id, c.domainId, c.criteriaCode, c.criteriaName);
+          }
+        })();
+
+        checklistItems = db.prepare(`
+          SELECT ci.*, d.code as domainCode, d.name as domainName, d.icon as domainIcon, d.color as domainColor
+          FROM inspection_checklist_items ci
+          JOIN inspection_domains d ON ci.domainId = d.id
+          WHERE ci.inspectionId = ?
+          ORDER BY ci.domainId ASC, ci.id ASC
+        `).all(id) as any[];
+      }
+
+      inspection.checklistItems = checklistItems;
 
       res.json({ success: true, data: inspection });
     } catch (err: any) {
@@ -109,7 +160,7 @@ export class InspectionsController {
   static update(req: Request, res: Response): void {
     try {
       const { id } = req.params;
-      const { checklist, violationCodes, recommendationNote, recommendationTags, lat, lng, severity, status } = req.body;
+      const { checklist, checklistItems, violationCodes, recommendationNote, recommendationTags, lat, lng, severity, status } = req.body;
 
       const current = db.prepare('SELECT isLocked, status FROM inspections WHERE id = ?').get(id) as Inspection | undefined;
 
@@ -123,30 +174,54 @@ export class InspectionsController {
         return;
       }
 
-      const stmt = db.prepare(`
-        UPDATE inspections 
-        SET checklist = ?,
-            violationCodes = ?,
-            recommendationNote = ?,
-            recommendationTags = ?,
-            lat = ?,
-            lng = ?,
-            severity = ?,
-            status = ?
-        WHERE id = ?
-      `);
+      const updateTx = db.transaction(() => {
+        const stmt = db.prepare(`
+          UPDATE inspections 
+          SET checklist = ?,
+              violationCodes = ?,
+              recommendationNote = ?,
+              recommendationTags = ?,
+              lat = ?,
+              lng = ?,
+              severity = ?,
+              status = ?
+          WHERE id = ?
+        `);
 
-      stmt.run(
-        typeof checklist === 'object' ? JSON.stringify(checklist) : checklist || null,
-        typeof violationCodes === 'object' ? JSON.stringify(violationCodes) : violationCodes || null,
-        recommendationNote || '',
-        typeof recommendationTags === 'object' ? JSON.stringify(recommendationTags) : recommendationTags || null,
-        lat || null,
-        lng || null,
-        severity || 1,
-        status || 'in_progress',
-        id
-      );
+        stmt.run(
+          typeof checklist === 'object' ? JSON.stringify(checklist) : checklist || null,
+          typeof violationCodes === 'object' ? JSON.stringify(violationCodes) : violationCodes || null,
+          recommendationNote || '',
+          typeof recommendationTags === 'object' ? JSON.stringify(recommendationTags) : recommendationTags || null,
+          lat || null,
+          lng || null,
+          severity || 1,
+          status || 'in_progress',
+          id
+        );
+
+        if (Array.isArray(checklistItems)) {
+          const updateItemStmt = db.prepare(`
+            UPDATE inspection_checklist_items
+            SET result = ?, violationCodeId = ?, notes = ?
+            WHERE id = ? AND inspectionId = ?
+          `);
+          const insertItemStmt = db.prepare(`
+            INSERT INTO inspection_checklist_items (inspectionId, domainId, criteriaCode, criteriaName, result, violationCodeId, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `);
+
+          for (const item of checklistItems) {
+            if (item.id) {
+              updateItemStmt.run(item.result || 'pass', item.violationCodeId || null, item.notes || '', item.id, id);
+            } else {
+              insertItemStmt.run(id, item.domainId, item.criteriaCode, item.criteriaName, item.result || 'pass', item.violationCodeId || null, item.notes || '');
+            }
+          }
+        }
+      });
+
+      updateTx();
 
       res.json({ success: true, message: 'Cập nhật hồ sơ kiểm tra thực địa thành công.' });
     } catch (err: any) {

@@ -348,6 +348,235 @@
   }
 }
 
+/* Domain Sub-tabs Nav */
+.domain-tabs-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+
+  .domain-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    &.active {
+      background: #1e3a8a;
+      color: #ffffff;
+      border-color: #1e3a8a;
+      box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
+
+      mat-icon {
+        color: #ffffff !important;
+      }
+    }
+
+    &.has-error:not(.active) {
+      border-color: #fca5a5;
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+  }
+}
+
+/* Domain Groups Container */
+.domain-groups-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.domain-group-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+
+  &.has-domain-fail {
+    border-color: #fecaca;
+  }
+
+  .domain-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-left: 4px solid var(--domain-color, #3b82f6);
+    border-bottom: 1px solid #f1f5f9;
+
+    .domain-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .domain-icon-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        mat-icon { font-size: 18px; width: 18px; height: 18px; }
+      }
+
+      .domain-code-badge {
+        font-size: 10px;
+        font-weight: 800;
+        padding: 1px 6px;
+        border-radius: 4px;
+        display: inline-block;
+        margin-bottom: 2px;
+        text-transform: uppercase;
+      }
+
+      .domain-group-title {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+      }
+    }
+
+    .domain-header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .domain-status-badge {
+        font-size: 11.5px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+
+        mat-icon { font-size: 14px; width: 14px; height: 14px; }
+
+        &.pass {
+          background: #ecfdf5;
+          color: #059669;
+          border: 1px solid #a7f3d0;
+        }
+
+        &.fail {
+          background: #fef2f2;
+          color: #dc2626;
+          border: 1px solid #fecaca;
+        }
+      }
+
+      .domain-expand-chevron {
+        font-size: 22px;
+        width: 22px;
+        height: 22px;
+        color: #64748b;
+        transition: color 0.2s ease, transform 0.2s ease;
+      }
+    }
+
+    &:hover .domain-expand-chevron {
+      color: #1e3a8a;
+    }
+  }
+
+  .domain-criteria-list {
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .criterion-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+    }
+
+    &.failed {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+
+    .criterion-main {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      flex: 1;
+
+      .criterion-index {
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10.5px;
+        font-weight: 800;
+        letter-spacing: 0.3px;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+
+      .criterion-text {
+        .criterion-title {
+          font-size: 13px;
+          font-weight: 600;
+          color: #1e293b;
+          margin-bottom: 2px;
+        }
+
+        .criterion-sub {
+          font-size: 11px;
+          color: #64748b;
+          display: flex;
+          align-items: center;
+          gap: 3px;
+
+          mat-icon { font-size: 13px; width: 13px; height: 13px; }
+        }
+      }
+    }
+
+    .criterion-actions {
+      margin-left: 14px;
+    }
+  }
+}
+
 /* Checklist Grid */
 .checklist-grid {
   display: flex;

@@ -1,9 +1,35 @@
-<div class="bi-dashboard-container">
+<div class="bi-dashboard-container" [class.is-ward-dashboard]="isWardDrillDown">
   <!-- Page Header -->
   <app-page-header
-    title="Trung tâm Chỉ huy & Điều hành BI Dashboard"
-    subtitle="Tổng hợp chỉ số KPI, tỷ lệ hoàn thành mục tiêu kiểm tra và phân tích vi phạm toàn TP Hà Nội">
+    [title]="pageTitle"
+    [subtitle]="pageSubtitle">
     <div actions class="header-actions">
+      <!-- Back to City Button (When in Ward drill-down and not officer_ward) -->
+      <button 
+        *ngIf="isWardDrillDown && !isOfficerWard" 
+        mat-stroked-button 
+        color="warn" 
+        (click)="navigateToCityDashboard()" 
+        class="btn-back-city"
+        matTooltip="Quay lại Trung tâm Chỉ huy cấp Thành phố">
+        <mat-icon>arrow_back</mat-icon> Dashboard Thành phố
+      </button>
+
+      <!-- Quick Ward Selector (For Commander / Leaders / Admin) -->
+      <div class="ward-select-wrap" *ngIf="!isOfficerWard">
+        <select 
+          [(ngModel)]="activeWardSelectValue" 
+          (change)="onQuickWardChange()" 
+          class="ward-quick-select"
+          matTooltip="Chọn nhanh địa bàn Phường để khoan sâu dữ liệu">
+          <option value="all">🌐 Toàn Thành phố (5 Phường)</option>
+          <option *ngFor="let w of wardsList" [value]="w.id">
+            📍 {{ w.name }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Quarter Select -->
       <div class="quarter-select-wrap">
         <select [(ngModel)]="selectedQuarter" (change)="loadAllDashboardData()" class="quarter-select">
           <option value="Q1/2026">Kỳ: Quý I/2026</option>
@@ -18,259 +44,737 @@
       </button>
 
       <button mat-flat-button color="primary" routerLink="/map" class="btn-map">
-        <mat-icon>map</mat-icon> Bản đồ vi phạm
+        <mat-icon>map</mat-icon> Bản đồ đầy đủ
       </button>
     </div>
   </app-page-header>
 
-  <!-- ROW 1: TOP COMMAND KPI SECTION -->
-  <div class="top-kpi-row">
-    <!-- 1. Circular Target Gauge Card -->
-    <div class="kpi-panel gauge-panel">
-      <div class="panel-header">
-        <span class="panel-title">MỤC TIÊU TOÀN THÀNH PHỐ</span>
-        <span class="badge-year">Năm 2026</span>
+  <!-- WARD DRILL-DOWN BANNER (CR-05) -->
+  <div class="ward-drilldown-banner" *ngIf="isWardDrillDown">
+    <div class="banner-left">
+      <div class="ward-banner-icon">
+        <mat-icon>location_city</mat-icon>
       </div>
-
-      <div class="gauge-content">
-        <div class="radial-gauge-wrap">
-          <svg viewBox="0 0 100 100" class="gauge-svg">
-            <circle class="gauge-bg" cx="50" cy="50" r="42"></circle>
-            <circle 
-              class="gauge-fill" 
-              cx="50" 
-              cy="50" 
-              r="42" 
-              [style.stroke-dashoffset]="264 - (264 * (summary.taskCompletionRate || 64.3)) / 100">
-            </circle>
-          </svg>
-          <div class="gauge-center-text">
-            <span class="gauge-percent">{{ summary.taskCompletionRate || 64.3 }}%</span>
-            <span class="gauge-sublabel">Tiến độ kỳ</span>
-          </div>
-        </div>
-
-        <div class="gauge-details">
-          <div class="detail-row">
-            <span class="detail-label">Đã kiểm tra / Hoàn thành:</span>
-            <span class="detail-val text-success">{{ summary.completedCount }} <small>cơ sở</small></span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Chỉ tiêu tổng kế hoạch:</span>
-            <span class="detail-val">{{ summary.targetCount | number }} <small>mục tiêu</small></span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Nhiệm vụ đợt này:</span>
-            <span class="detail-val font-bold">{{ summary.totalInspections }} <small>hồ sơ</small></span>
-          </div>
-        </div>
+      <div>
+        <div class="banner-badge">CHẾ ĐỘ KHOAN SÂU ĐỊA BÀN (DRILL-DOWN)</div>
+        <h3 class="banner-ward-name">{{ currentWard?.name }}</h3>
+        <p class="banner-ward-desc">
+          Tọa độ trung tâm: {{ currentWard?.lat || 21.0318 }}, {{ currentWard?.lng || 105.8528 }} • 
+          Tổng số cơ sở quản lý: <strong>{{ summary.totalObjects }} cơ sở</strong> • 
+          Chỉ tiêu kế hoạch: <strong>{{ summary.targetCount }}</strong>
+        </p>
       </div>
     </div>
 
-    <!-- 2. Wards Status Breakdown Card -->
-    <div class="kpi-panel ward-progress-panel">
-      <div class="panel-header">
-        <span class="panel-title">TIẾN ĐỘ ĐỊA BÀN PHƯỜNG / XÃ</span>
-        <span class="badge-total">{{ summary.totalWards }} Đơn vị</span>
-      </div>
-
-      <div class="ward-stats-list">
-        <div class="ward-stat-item completed">
-          <div class="stat-icon"><mat-icon>check_circle</mat-icon></div>
-          <div class="stat-body">
-            <div class="stat-title">Đã hoàn thành 100%</div>
-            <div class="stat-num">{{ summary.completedWards }} <small>phường</small></div>
-          </div>
-        </div>
-
-        <div class="ward-stat-item in-progress">
-          <div class="stat-icon"><mat-icon>timelapse</mat-icon></div>
-          <div class="stat-body">
-            <div class="stat-title">Đang thực hiện kiểm tra</div>
-            <div class="stat-num">{{ summary.inProgressWards }} <small>phường</small></div>
-          </div>
-        </div>
-
-        <div class="ward-stat-item not-started">
-          <div class="stat-icon"><mat-icon>hourglass_empty</mat-icon></div>
-          <div class="stat-body">
-            <div class="stat-title">Chưa bắt đầu thực hiện</div>
-            <div class="stat-num">{{ summary.notStartedWards }} <small>phường</small></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="ward-stacked-bar">
-        <div 
-          class="bar-segment completed" 
-          [style.width.%]="(summary.completedWards / summary.totalWards) * 100" 
-          matTooltip="Đã hoàn thành">
-        </div>
-        <div 
-          class="bar-segment in-progress" 
-          [style.width.%]="(summary.inProgressWards / summary.totalWards) * 100" 
-          matTooltip="Đang thực hiện">
-        </div>
-        <div 
-          class="bar-segment not-started" 
-          [style.width.%]="(summary.notStartedWards / summary.totalWards) * 100" 
-          matTooltip="Chưa bắt đầu">
-        </div>
-      </div>
-    </div>
-
-    <!-- 3. Key Metrics 2x2 Grid Card -->
-    <div class="kpi-panel metrics-grid-panel">
-      <div class="metrics-2x2">
-        <div class="metric-box total">
-          <div class="metric-icon-wrap"><mat-icon>assignment</mat-icon></div>
-          <div class="metric-meta">
-            <span class="metric-num">{{ summary.totalInspections }}</span>
-            <span class="metric-name">Tổng số nhiệm vụ</span>
-          </div>
-        </div>
-
-        <div class="metric-box in-progress">
-          <div class="metric-icon-wrap"><mat-icon>edit_document</mat-icon></div>
-          <div class="metric-meta">
-            <span class="metric-num">{{ summary.inProgressCount }}</span>
-            <span class="metric-name">Đang kiểm tra</span>
-          </div>
-        </div>
-
-        <div class="metric-box overdue">
-          <div class="metric-icon-wrap"><mat-icon>alarm_on</mat-icon></div>
-          <div class="metric-meta">
-            <span class="metric-num text-danger">{{ summary.overdueCount }}</span>
-            <span class="metric-name">Nhiệm vụ quá hạn</span>
-          </div>
-        </div>
-
-        <div class="metric-box suspended">
-          <div class="metric-icon-wrap"><mat-icon>gavel</mat-icon></div>
-          <div class="metric-meta">
-            <span class="metric-num text-danger">{{ summary.suspendedObjects }}</span>
-            <span class="metric-name">Đình chỉ hoạt động</span>
-          </div>
-        </div>
-      </div>
+    <div class="banner-right" *ngIf="!isOfficerWard">
+      <button mat-flat-button class="btn-return-city" (click)="navigateToCityDashboard()">
+        <mat-icon>arrow_back</mat-icon> Trở về Toàn TP
+      </button>
     </div>
   </div>
 
-  <!-- ROW 2: CHARTS ANALYTICS SECTION -->
-  <div class="charts-analytics-row">
-    <!-- Left: Timeline Line Chart -->
-    <div class="chart-panel line-chart-panel">
-      <div class="panel-header">
-        <div class="header-left">
-          <mat-icon class="panel-icon">show_chart</mat-icon>
-          <span class="panel-title">TIẾN ĐỘ THỰC HIỆN KIỂM TRA THEO THỜI GIAN (14 NGÀY GẦN NHẤT)</span>
+  <!-- PROGRESSIVE DISCLOSURE PRIMARY TABS (CR-12 / Prompt 16) -->
+  <div class="dashboard-tabs-strip">
+    <button
+      type="button"
+      class="dash-tab-btn"
+      [class.active]="activeDashboardTab === 'overview'"
+      (click)="switchDashboardTab('overview')"
+    >
+      <mat-icon>insights</mat-icon>
+      <span>1. Tổng quan & Tiến độ</span>
+    </button>
+
+    <button
+      type="button"
+      class="dash-tab-btn"
+      [class.active]="activeDashboardTab === 'domains'"
+      (click)="switchDashboardTab('domains')"
+    >
+      <mat-icon>category</mat-icon>
+      <span>2. Theo 5 Lĩnh vực Chuyên môn</span>
+      <span class="badge-tab-count">5</span>
+    </button>
+
+    <button
+      type="button"
+      class="dash-tab-btn"
+      [class.active]="activeDashboardTab === 'map'"
+      (click)="switchDashboardTab('map')"
+    >
+      <mat-icon>explore</mat-icon>
+      <span>3. Bản đồ Vi phạm & Địa bàn</span>
+    </button>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TAB 1: TỔNG QUAN & TIẾN ĐỘ                                              -->
+  <!-- ========================================================================= -->
+  <div class="tab-pane-container" *ngIf="activeDashboardTab === 'overview'">
+    <!-- HÀNG 1: 4 THẺ SỐ LIỆU CỐT LÕI (CORE KPIS) + NÚT XEM THÊM CHỈ SỐ -->
+    <div class="core-kpis-section">
+      <div class="core-kpi-grid">
+        <!-- KPI 1: Tổng cơ sở quản lý -->
+        <div class="core-kpi-card card-target">
+          <div class="kpi-icon-wrap" style="background-color: #eff6ff; color: #1e3a8a;">
+            <mat-icon>storefront</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">{{ isWardDrillDown ? 'Cơ sở trên địa bàn' : 'Tổng cơ sở toàn TP' }}</span>
+            <div class="kpi-value-row">
+              <span class="kpi-main-num">{{ summary.targetCount || summary.totalObjects }}</span>
+              <span class="kpi-unit">cơ sở</span>
+            </div>
+            <span class="kpi-subtext">Chỉ tiêu kỳ: {{ summary.targetCount | number }}</span>
+          </div>
         </div>
-        <span class="chart-subtitle">Tích lũy hồ sơ hoàn thành</span>
+
+        <!-- KPI 2: Tỷ lệ hoàn thành nhiệm vụ -->
+        <div class="core-kpi-card card-progress">
+          <div class="kpi-icon-wrap" style="background-color: #ecfdf5; color: #10b981;">
+            <mat-icon>task_alt</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">Tiến độ hoàn thành</span>
+            <div class="kpi-value-row">
+              <span class="kpi-main-num text-success">{{ summary.taskCompletionRate || 0 }}%</span>
+            </div>
+            <span class="kpi-subtext">{{ summary.completedCount }} / {{ summary.totalInspections }} hồ sơ</span>
+          </div>
+        </div>
+
+        <!-- KPI 3: Nhiệm vụ quá hạn -->
+        <div class="core-kpi-card card-overdue">
+          <div class="kpi-icon-wrap" style="background-color: #fef2f2; color: #ef4444;">
+            <mat-icon>alarm_on</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">Nhiệm vụ quá hạn</span>
+            <div class="kpi-value-row">
+              <span class="kpi-main-num text-danger">{{ summary.overdueCount || 0 }}</span>
+              <span class="kpi-unit">hồ sơ</span>
+            </div>
+            <span class="kpi-subtext text-danger" *ngIf="summary.overdueCount > 0">Cần đôn đốc ngay</span>
+            <span class="kpi-subtext text-success" *ngIf="summary.overdueCount === 0">Đảm bảo đúng hạn</span>
+          </div>
+        </div>
+
+        <!-- KPI 4: Cảnh báo chưa xử lý / cần thông báo -->
+        <div class="core-kpi-card card-alert">
+          <div class="kpi-icon-wrap" style="background-color: #fffbeb; color: #f59e0b;">
+            <mat-icon>notification_important</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">Cảnh báo & Nhắc việc</span>
+            <div class="kpi-value-row">
+              <span class="kpi-main-num text-warning">{{ wardAlertsSummary.pendingNoticesCount || summary.overdueCount || 0 }}</span>
+              <span class="kpi-unit">cần xử lý</span>
+            </div>
+            <span class="kpi-subtext">Đôn đốc văn bản vi phạm</span>
+          </div>
+        </div>
       </div>
 
-      <div class="chart-wrapper">
-        <canvas #timelineCanvas id="timelineCanvas"></canvas>
-      </div>
-    </div>
-
-    <!-- Right: Compliance Groups Doughnut Chart -->
-    <div class="chart-panel doughnut-chart-panel">
-      <div class="panel-header">
-        <div class="header-left">
-          <mat-icon class="panel-icon">pie_chart</mat-icon>
-          <span class="panel-title">TỶ LỆ TUÂN THỦ THEO NHÓM</span>
-        </div>
-        <span class="chart-subtitle">Cơ sở kinh doanh</span>
+      <!-- Progressive Disclosure: Nút xem thêm các chỉ số phụ -->
+      <div class="toggle-extra-kpi-bar">
+        <button type="button" class="btn-toggle-extra" (click)="toggleExtraKpis()">
+          <mat-icon>{{ showExtraKpis ? 'expand_less' : 'expand_more' }}</mat-icon>
+          <span>{{ showExtraKpis ? 'Thu gọn các chỉ số bổ sung' : 'Xem thêm chỉ số chi tiết khác (Đang làm, Chưa kiểm tra, Đình chỉ...)' }}</span>
+        </button>
       </div>
 
-      <div class="doughnut-chart-content">
-        <div class="doughnut-canvas-wrap">
-          <canvas #complianceCanvas id="complianceCanvas"></canvas>
-        </div>
+      <!-- Expandable Extra KPIs Grid -->
+      <div class="extra-kpi-panel" *ngIf="showExtraKpis">
+        <div class="extra-kpi-grid">
+          <div class="extra-kpi-item">
+            <div class="extra-icon in-progress"><mat-icon>edit_document</mat-icon></div>
+            <div class="extra-info">
+              <span class="extra-label">Đang thực hiện kiểm tra:</span>
+              <strong class="extra-num text-primary">{{ summary.inProgressCount }} hồ sơ</strong>
+            </div>
+          </div>
 
-        <div class="compliance-legend-list">
-          <div *ngFor="let g of complianceGroups" class="legend-item">
-            <div class="legend-color-dot" [style.background-color]="g.color"></div>
-            <div class="legend-text">
-              <span class="legend-name">{{ g.name }}</span>
-              <strong class="legend-count">{{ g.count }} cơ sở</strong>
+          <div class="extra-kpi-item">
+            <div class="extra-icon not-started"><mat-icon>hourglass_empty</mat-icon></div>
+            <div class="extra-info">
+              <span class="extra-label">Chưa kiểm tra / Tồn đọng:</span>
+              <strong class="extra-num">{{ summary.notStartedCount }} hồ sơ</strong>
+            </div>
+          </div>
+
+          <div class="extra-kpi-item">
+            <div class="extra-icon completed"><mat-icon>verified</mat-icon></div>
+            <div class="extra-info">
+              <span class="extra-label">Đã kiểm tra & Khóa biên bản:</span>
+              <strong class="extra-num text-success">{{ summary.completedCount }} hồ sơ</strong>
+            </div>
+          </div>
+
+          <div class="extra-kpi-item">
+            <div class="extra-icon suspended"><mat-icon>gavel</mat-icon></div>
+            <div class="extra-info">
+              <span class="extra-label">Đình chỉ hoạt động:</span>
+              <strong class="extra-num text-danger">{{ summary.suspendedObjects }} cơ sở</strong>
+            </div>
+          </div>
+
+          <div class="extra-kpi-item" *ngIf="!isWardDrillDown">
+            <div class="extra-icon wards"><mat-icon>domain</mat-icon></div>
+            <div class="extra-info">
+              <span class="extra-label">Tiến độ 5 Phường:</span>
+              <strong class="extra-num">{{ summary.completedWards }} hoàn thành / {{ summary.totalWards }} phường</strong>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ROW 3: OVERDUE RANKINGS & HOTSPOTS LEADERBOARD -->
-  <div class="rankings-panel">
-    <div class="panel-header">
-      <div class="header-left">
-        <mat-icon class="panel-icon">format_list_numbered</mat-icon>
-        <span class="panel-title">XẾP HẠNG TIẾN ĐỘ KIỂM TRA & ĐỊA BÀN CẦN ĐÔN ĐỐC</span>
+    <!-- HÀNG 2: GAUGE TỔNG + TOP 5 XẾP HẠNG (CHỈ HIỆN 1 BẢNG VỚI TOGGLE CHUYỂN ĐỔI) -->
+    <div class="row-gauge-ranking">
+      <!-- Cột trái: Radial Target Gauge (40% width) -->
+      <div class="kpi-panel gauge-panel">
+        <div class="panel-header">
+          <span class="panel-title">{{ isWardDrillDown ? 'TIẾN ĐỘ ĐỊA BÀN PHƯỜNG' : 'MỤC TIÊU TIẾN ĐỘ TOÀN TP' }}</span>
+          <span class="badge-year">Quý II/2026</span>
+        </div>
+
+        <div class="gauge-content">
+          <div class="radial-gauge-wrap">
+            <svg viewBox="0 0 100 100" class="gauge-svg">
+              <circle class="gauge-bg" cx="50" cy="50" r="42"></circle>
+              <circle 
+                class="gauge-fill" 
+                cx="50" 
+                cy="50" 
+                r="42" 
+                [style.stroke-dashoffset]="264 - (264 * (summary.taskCompletionRate || 0)) / 100">
+              </circle>
+            </svg>
+            <div class="gauge-center-text">
+              <span class="gauge-percent">{{ summary.taskCompletionRate || 0 }}%</span>
+              <span class="gauge-sublabel">Hoàn thành</span>
+            </div>
+          </div>
+
+          <div class="gauge-details">
+            <div class="detail-row">
+              <span class="detail-label">Đã kiểm tra xong:</span>
+              <span class="detail-val text-success font-bold">{{ summary.completedCount }} <small>cơ sở</small></span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Chỉ tiêu Quota kỳ:</span>
+              <span class="detail-val">{{ summary.targetCount | number }} <small>cơ sở</small></span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Tổng hồ sơ đợt này:</span>
+              <span class="detail-val font-bold">{{ summary.totalInspections }} <small>hồ sơ</small></span>
+            </div>
+          </div>
+        </div>
       </div>
-      <a routerLink="/plans" class="view-all-link">Xem tất cả kế hoạch <mat-icon>arrow_forward</mat-icon></a>
+
+      <!-- Cột phải: Top 5 Xếp hạng với Toggle Switch Chậm/Nhanh (60% width) -->
+      <div class="kpi-panel ranking-toggle-panel">
+        <div class="ranking-panel-header">
+          <div class="ranking-header-left">
+            <mat-icon class="ranking-icon">leaderboard</mat-icon>
+            <div>
+              <h4 class="ranking-title">Bảng Xếp Hạng Đơn Vị</h4>
+              <span class="ranking-sub">{{ activeRankingTab === 'slowest' ? 'Top 5 đơn vị cần đôn đốc tiến độ' : 'Top 5 đơn vị dẫn đầu hoàn thành' }}</span>
+            </div>
+          </div>
+
+          <!-- Ranking Scope Dropdown -->
+          <div class="ranking-scope-select">
+            <select [(ngModel)]="selectedRankingScope" (change)="onRankingScopeChange()" class="compact-scope-select">
+              <option value="overall">🌐 Toàn diện (Tổng thể)</option>
+              <option *ngFor="let d of domainsList" [value]="d.id">
+                Lĩnh vực: {{ d.name }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Toggle Switch: Top 5 Chậm vs Top 5 Nhanh (KHÔNG hiện 2 bảng cùng lúc) -->
+          <div class="ranking-toggle-buttons">
+            <button
+              type="button"
+              class="rank-toggle-btn btn-slowest"
+              [class.active]="activeRankingTab === 'slowest'"
+              (click)="toggleRankingTab('slowest')"
+            >
+              <mat-icon>warning</mat-icon>
+              <span>Top 5 Chậm</span>
+            </button>
+            <button
+              type="button"
+              class="rank-toggle-btn btn-fastest"
+              [class.active]="activeRankingTab === 'fastest'"
+              (click)="toggleRankingTab('fastest')"
+            >
+              <mat-icon>emoji_events</mat-icon>
+              <span>Top 5 Nhanh</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- TABLE: TOP 5 CHẬM TIẾN ĐỘ (Mặc định) -->
+        <div class="table-responsive ranking-table-wrap" *ngIf="activeRankingTab === 'slowest'">
+          <table class="leaderboard-table slowest-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">Hạng</th>
+                <th>Phường / Đơn vị</th>
+                <th style="width: 90px; text-align: center;">Chỉ tiêu</th>
+                <th style="width: 110px; text-align: center;">Tồn đọng/Lỗi</th>
+                <th style="width: 140px;">Tỷ lệ đạt</th>
+                <th style="width: 100px; text-align: center;">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of slowestRankings; let idx = index">
+                <td class="rank-num">
+                  <span class="warn-badge">#{{ idx + 1 }}</span>
+                </td>
+                <td class="ward-cell">
+                  <span class="ward-link" (click)="navigateToWard(item.ward)" matTooltip="Xem Dashboard {{ item.ward }}">
+                    {{ item.ward }} <mat-icon class="link-icon">launch</mat-icon>
+                  </span>
+                </td>
+                <td style="text-align: center;">{{ item.target }}</td>
+                <td style="text-align: center;">
+                  <span class="text-danger font-bold">{{ item.overdue }}</span>
+                </td>
+                <td>
+                  <div class="table-progress">
+                    <span class="rate-text font-bold" [class.text-danger]="item.rate < 60" [class.text-warning]="item.rate >= 60">{{ item.rate }}%</span>
+                    <div class="bar-track">
+                      <div class="bar-fill red" [style.width.%]="item.rate"></div>
+                    </div>
+                  </div>
+                </td>
+                <td style="text-align: center;">
+                  <span class="pill-badge" [ngClass]="item.rate < 50 ? 'pill-danger' : 'pill-warning'">
+                    {{ item.status }}
+                  </span>
+                </td>
+              </tr>
+              <tr *ngIf="slowestRankings.length === 0">
+                <td colspan="6" class="empty-state">Chưa có dữ liệu xếp hạng</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TABLE: TOP 5 NHANH NHẤT -->
+        <div class="table-responsive ranking-table-wrap" *ngIf="activeRankingTab === 'fastest'">
+          <table class="leaderboard-table fastest-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">Hạng</th>
+                <th>Phường / Đơn vị</th>
+                <th style="width: 90px; text-align: center;">Chỉ tiêu</th>
+                <th style="width: 110px; text-align: center;">Hoàn thành</th>
+                <th style="width: 140px;">Tỷ lệ đạt</th>
+                <th style="width: 100px; text-align: center;">Đánh giá</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of fastestRankings; let idx = index">
+                <td class="rank-num">
+                  <span class="medal-badge" [ngClass]="'medal-' + (idx + 1)">#{{ idx + 1 }}</span>
+                </td>
+                <td class="ward-cell">
+                  <span class="ward-link" (click)="navigateToWard(item.ward)" matTooltip="Xem Dashboard {{ item.ward }}">
+                    {{ item.ward }} <mat-icon class="link-icon">launch</mat-icon>
+                  </span>
+                </td>
+                <td style="text-align: center;">{{ item.target }}</td>
+                <td style="text-align: center;">
+                  <span class="text-success font-bold">{{ item.completed }}</span>
+                </td>
+                <td>
+                  <div class="table-progress">
+                    <span class="rate-text font-bold text-success">{{ item.rate }}%</span>
+                    <div class="bar-track">
+                      <div class="bar-fill green" [style.width.%]="item.rate"></div>
+                    </div>
+                  </div>
+                </td>
+                <td style="text-align: center;">
+                  <span class="pill-badge pill-success">{{ item.status }}</span>
+                </td>
+              </tr>
+              <tr *ngIf="fastestRankings.length === 0">
+                <td colspan="6" class="empty-state">Chưa có dữ liệu xếp hạng</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
-    <div class="table-responsive">
-      <table class="ranking-table">
-        <thead>
-          <tr>
-            <th style="width: 60px;">Xếp hạng</th>
-            <th>Địa bàn Phường</th>
-            <th style="width: 140px; text-align: center;">Chỉ tiêu giao</th>
-            <th style="width: 140px; text-align: center;">Đã hoàn thành</th>
-            <th style="width: 140px; text-align: center;">Quá hạn</th>
-            <th style="width: 220px;">Tỷ lệ hoàn thành</th>
-            <th style="width: 160px; text-align: center;">Đánh giá</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of overdueRankings; let idx = index">
-            <td class="rank-cell">
-              <span class="rank-badge" [class.top-low]="idx === 0">#{{ idx + 1 }}</span>
-            </td>
-            <td>
-              <strong class="ward-name">{{ item.ward }}</strong>
-            </td>
-            <td style="text-align: center;">{{ item.target }} cơ sở</td>
-            <td style="text-align: center;">
-              <strong class="text-success">{{ item.completed }}</strong>
-            </td>
-            <td style="text-align: center;">
-              <span [class.text-danger]="item.overdue > 0" [class.font-bold]="item.overdue > 0">
-                {{ item.overdue }}
-              </span>
-            </td>
-            <td>
-              <div class="progress-cell">
-                <span class="progress-val">{{ item.rate }}%</span>
-                <div class="progress-track">
-                  <div 
-                    class="progress-bar" 
-                    [style.width.%]="item.rate"
-                    [ngClass]="{
-                      'bar-danger': item.rate < 40,
-                      'bar-warning': item.rate >= 40 && item.rate < 75,
-                      'bar-success': item.rate >= 75
-                    }">
-                  </div>
-                </div>
+    <!-- HÀNG 3: LINE CHART TIẾN ĐỘ + PIE CHART CHẤP HÀNH (2 CỘT SONG SONG) -->
+    <div class="row-charts-parallel">
+      <!-- Cột trái: Line Chart Tiến độ -->
+      <div class="chart-panel line-chart-panel">
+        <div class="panel-header">
+          <div class="header-left">
+            <mat-icon class="panel-icon">show_chart</mat-icon>
+            <span class="panel-title">TIẾN ĐỘ THỰC HIỆN THEO NGÀY (14 NGÀY GẦN NHẤT)</span>
+          </div>
+          <span class="chart-subtitle">Tích lũy hồ sơ hoàn thành</span>
+        </div>
+
+        <div class="chart-wrapper">
+          <canvas #timelineCanvas id="timelineCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Cột phải: Doughnut Chart Chấp hành -->
+      <div class="chart-panel doughnut-chart-panel">
+        <div class="panel-header">
+          <div class="header-left">
+            <mat-icon class="panel-icon">pie_chart</mat-icon>
+            <span class="panel-title">TỶ LỆ CHẤP HÀNH THEO NHÓM</span>
+          </div>
+          <span class="chart-subtitle">Phân loại cơ sở</span>
+        </div>
+
+        <div class="doughnut-chart-content">
+          <div class="doughnut-canvas-wrap">
+            <canvas #complianceCanvas id="complianceCanvas"></canvas>
+          </div>
+
+          <div class="compliance-legend-list">
+            <div *ngFor="let g of complianceGroups" class="legend-item">
+              <div class="legend-color-dot" [style.background-color]="g.color"></div>
+              <div class="legend-text">
+                <span class="legend-name">{{ g.name }}</span>
+                <strong class="legend-count">{{ g.count }} cơ sở</strong>
               </div>
-            </td>
-            <td style="text-align: center;">
-              <span class="status-pill-badge" [ngClass]="{
-                'status-danger': item.status === 'Chậm tiến độ',
-                'status-warning': item.status === 'Cảnh báo',
-                'status-normal': item.status === 'Bình thường',
-                'status-success': item.status === 'Tốt' || item.status === 'Xuất sắc'
-              }">
-                {{ item.status }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KHỐI CẢNH BÁO & NHẮC VIỆC (Mặc định hiện tối đa 5 mục gần nhất) -->
+    <div class="ward-alerts-section" *ngIf="isWardDrillDown && wardAlerts.length > 0">
+      <div class="section-heading">
+        <div class="heading-left">
+          <div class="heading-icon-badge alert-heading-icon">
+            <mat-icon>notification_important</mat-icon>
+          </div>
+          <div>
+            <div class="heading-title-row">
+              <h3 class="heading-title">CẢNH BÁO & NHẮC VIỆC CẦN XỬ LÝ (Tối đa 5 mục gần nhất)</h3>
+              <span class="badge-pending-count" *ngIf="wardAlertsSummary.pendingNoticesCount > 0">
+                <mat-icon>priority_high</mat-icon> {{ wardAlertsSummary.pendingNoticesCount }} cơ sở cần gửi thông báo
               </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+            <p class="heading-subtitle">Đôn đốc văn bản thông báo vi phạm cho cơ sở trên địa bàn</p>
+          </div>
+        </div>
+
+        <div class="heading-controls">
+          <a routerLink="/admin" [queryParams]="{ tab: 'alerts' }" class="btn-link-all-alerts">
+            <span>Xem tất cả cảnh báo</span>
+            <mat-icon>arrow_forward</mat-icon>
+          </a>
+        </div>
+      </div>
+
+      <!-- Top 5 Alert Cards -->
+      <div class="alert-cards-grid">
+        <div 
+          *ngFor="let item of wardAlerts.slice(0, maxAlertsToShow)" 
+          class="alert-card" 
+          [class.needs-notice]="item.needsNoticeLetter"
+          [class.notice-sent]="item.hasNotice">
+          
+          <div class="alert-card-header">
+            <div class="business-info">
+              <strong class="biz-name">{{ item.objectName }}</strong>
+              <div class="biz-meta">
+                <span>MST: {{ item.objectTaxCode || 'N/A' }}</span> • 
+                <span>{{ item.objectAddress }}</span>
+              </div>
+            </div>
+            <span class="status-badge badge-needs-action" *ngIf="item.needsNoticeLetter">
+              <mat-icon>warning</mat-icon> CẦN GỬI THÔNG BÁO
+            </span>
+            <span class="status-badge badge-sent" *ngIf="item.hasNotice">
+              <mat-icon>check_circle</mat-icon> ĐÃ GỬI VĂN BẢN
+            </span>
+          </div>
+
+          <div class="alert-card-footer">
+            <span class="criteria-badge fail" *ngIf="item.failCount > 0">✗ {{ item.failCount }} Vi phạm</span>
+            <button *ngIf="item.needsNoticeLetter" mat-flat-button class="btn-mark-sent" (click)="openNoticeDialog(item)">
+              <mat-icon>send</mat-icon> Gửi thông báo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TAB 2: THEO 5 LĨNH VỰC CHUYÊN MÔN (CR-03)                               -->
+  <!-- ========================================================================= -->
+  <div class="tab-pane-container" *ngIf="activeDashboardTab === 'domains'">
+    <div class="domain-breakdown-section">
+      <div class="section-heading">
+        <div class="heading-left">
+          <div class="heading-icon-badge">
+            <mat-icon>category</mat-icon>
+          </div>
+          <div>
+            <h3 class="heading-title">TỶ LỆ HOÀN THÀNH & ĐẠT CHUẨN THEO 5 LĨNH VỰC CHUYÊN MÔN</h3>
+            <p class="heading-subtitle">Phân tích kết quả kiểm tra thực địa theo từng lĩnh vực trọng điểm</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="domain-cards-grid">
+        <div 
+          *ngFor="let domain of domainStats" 
+          class="domain-card" 
+          [style.--domain-color]="domain.color"
+          (click)="selectDomainDetails(domain)"
+          matTooltip="Nhấp để xem danh sách hồ sơ có tiêu chí Không đạt thuộc lĩnh vực này">
+          <div class="domain-card-header">
+            <div class="domain-icon-wrap" [style.background-color]="domain.color + '18'" [style.color]="domain.color">
+              <mat-icon>{{ domain.icon || 'category' }}</mat-icon>
+            </div>
+            <div class="domain-title-wrap">
+              <span class="domain-code">{{ domain.domainCode }}</span>
+              <h4 class="domain-name">{{ domain.domainName }}</h4>
+            </div>
+          </div>
+
+          <div class="domain-metric-row">
+            <div class="domain-rate-big" [style.color]="domain.color">
+              {{ domain.passRate }}<span class="unit">%</span>
+            </div>
+            <div class="domain-sub-stats">
+              <div class="sub-stat pass">
+                <mat-icon>check_circle</mat-icon>
+                <span>Đạt: <strong>{{ domain.totalPass }}</strong></span>
+              </div>
+              <div class="sub-stat fail" *ngIf="domain.totalFail > 0">
+                <mat-icon>cancel</mat-icon>
+                <span>Lỗi: <strong class="text-danger">{{ domain.totalFail }}</strong></span>
+              </div>
+              <div class="sub-stat total">
+                <span>Tổng: {{ domain.totalChecked }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="domain-progress-bar-wrap">
+            <div class="progress-track">
+              <div 
+                class="progress-fill" 
+                [style.width.%]="domain.passRate"
+                [style.background-color]="domain.color">
+              </div>
+            </div>
+          </div>
+
+          <div class="domain-card-footer">
+            <span class="footer-hint">
+              <mat-icon>search</mat-icon> Lọc hồ sơ vi phạm
+            </span>
+            <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TAB 3: BẢN ĐỒ VI PHẠM & ĐỊA BÀN                                         -->
+  <!-- ========================================================================= -->
+  <div class="tab-pane-container" *ngIf="activeDashboardTab === 'map'">
+    <div class="embedded-map-section">
+      <div class="section-heading">
+        <div class="heading-left">
+          <div class="heading-icon-badge" style="background: #e0e7ff; color: #4338ca;">
+            <mat-icon>explore</mat-icon>
+          </div>
+          <div>
+            <h3 class="heading-title">BẢN ĐỒ PHÂN BỐ VI PHẠM ĐỊA BÀN</h3>
+            <p class="heading-subtitle">Trực quan hóa vị trí GPS và mức độ vi phạm của các cơ sở kinh doanh</p>
+          </div>
+        </div>
+        <div class="heading-controls">
+          <a routerLink="/map" class="btn-goto-fullmap">
+            <mat-icon>open_in_new</mat-icon>
+            <span>Mở Bản đồ Toàn màn hình</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="map-placeholder-card">
+        <div class="map-preview-box">
+          <mat-icon class="preview-map-icon">map</mat-icon>
+          <h3>Bản đồ Nhiệt & Vị trí Thực địa</h3>
+          <p>Truy cập phân hệ Bản đồ chuyên sâu để lọc theo bán kính, mức độ vi phạm và trích xuất tọa độ GPS.</p>
+          <a routerLink="/map" mat-flat-button color="primary" class="btn-open-map">
+            <mat-icon>navigation</mat-icon> Xem Bản đồ Vi phạm Ngay
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOMAIN DEEP-DIVE MODAL / DRAWER -->
+  <div class="domain-modal-backdrop" *ngIf="selectedDomainForDetails">
+    <div class="domain-modal-content">
+      <div class="domain-modal-header" [style.border-top-color]="selectedDomainForDetails.color">
+        <div class="modal-header-left">
+          <div class="modal-domain-icon" [style.background-color]="selectedDomainForDetails.color + '22'" [style.color]="selectedDomainForDetails.color">
+            <mat-icon>{{ selectedDomainForDetails.icon || 'category' }}</mat-icon>
+          </div>
+          <div>
+            <h3 class="modal-title">Lĩnh vực: {{ selectedDomainForDetails.domainName }} ({{ selectedDomainForDetails.domainCode }})</h3>
+            <p class="modal-subtitle">
+              Tỷ lệ đạt chuẩn: <strong [style.color]="selectedDomainForDetails.color">{{ selectedDomainForDetails.passRate }}%</strong> 
+              • {{ selectedDomainForDetails.totalPass }}/{{ selectedDomainForDetails.totalChecked }} tiêu chí đạt • 
+              <span class="text-danger">{{ selectedDomainForDetails.totalFail }} tiêu chí vi phạm</span>
+            </p>
+          </div>
+        </div>
+        <button mat-icon-button (click)="closeDomainDetails()" class="close-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="domain-modal-body">
+        <h4 class="detail-list-title">Danh sách cơ sở có tiêu chí thuộc lĩnh vực này cần khắc phục:</h4>
+
+        <div *ngIf="isLoadingDomainDetails" class="loading-state">
+          <mat-icon class="spin">refresh</mat-icon> Đang tải dữ liệu hồ sơ...
+        </div>
+
+        <div *ngIf="!isLoadingDomainDetails && failedInspectionsForDomain.length === 0" class="empty-detail-state">
+          <mat-icon class="text-success">check_circle</mat-icon>
+          <p>Tất cả cơ sở đã kiểm tra đều tuân thủ tốt tiêu chuẩn của lĩnh vực này!</p>
+        </div>
+
+        <div *ngIf="!isLoadingDomainDetails && failedInspectionsForDomain.length > 0" class="detail-cards-list">
+          <div *ngFor="let insp of failedInspectionsForDomain" class="insp-issue-card">
+            <div class="insp-issue-header">
+              <div>
+                <strong class="insp-object-name">{{ insp.objectName }}</strong>
+                <span class="insp-ward-badge">{{ insp.ward }}</span>
+              </div>
+              <span class="badge badge-warning" *ngIf="insp.status !== 'completed'">Chưa hoàn thành</span>
+              <span class="badge badge-danger" *ngIf="insp.status === 'completed'">Có vi phạm</span>
+            </div>
+            <div class="insp-issue-address">
+              <mat-icon>place</mat-icon> {{ insp.objectAddress }}
+            </div>
+            <div class="insp-issue-note" *ngIf="insp.recommendationNote">
+              <mat-icon>notes</mat-icon> <em>{{ insp.recommendationNote }}</em>
+            </div>
+            <div class="insp-issue-footer">
+              <a [routerLink]="['/inspections']" [queryParams]="{ search: insp.objectName }" (click)="closeDomainDetails()" class="btn-goto-insp">
+                Xem hồ sơ kiểm tra chi tiết <mat-icon>arrow_forward</mat-icon>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="domain-modal-footer">
+        <button mat-flat-button color="primary" (click)="closeDomainDetails()">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTICE DISPATCH MODAL DIALOG (PROMPT 13) -->
+  <div class="domain-modal-backdrop" *ngIf="isNoticeDialogOpen">
+    <div class="domain-modal-content notice-modal-content">
+      <div class="domain-modal-header notice-modal-header">
+        <div class="modal-header-left">
+          <div class="modal-domain-icon notice-icon-wrap">
+            <mat-icon>mark_email_read</mat-icon>
+          </div>
+          <div>
+            <h3 class="modal-title">Xác nhận gửi văn bản thông báo vi phạm</h3>
+            <p class="modal-subtitle">
+              Cơ sở: <strong>{{ selectedAlertForNotice?.objectName }}</strong> • MST: {{ selectedAlertForNotice?.objectTaxCode || 'N/A' }}
+            </p>
+          </div>
+        </div>
+        <button mat-icon-button (click)="closeNoticeDialog()" class="close-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="domain-modal-body notice-modal-body">
+        <div class="notice-violations-summary" *ngIf="selectedAlertForNotice && selectedAlertForNotice.failCount > 0">
+          <div class="summary-title"><mat-icon>report_problem</mat-icon> Các tiêu chí vi phạm cần khắc phục:</div>
+          <ul class="violations-compact-list">
+            <li *ngFor="let f of selectedAlertForNotice.failItems">
+              <strong>[{{ f.domainCode }}]</strong> {{ f.criteriaName }} <span *ngIf="f.notes"><em>({{ f.notes }})</em></span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="notice-form-grid">
+          <div class="form-row">
+            <label class="form-label">Hình thức gửi văn bản: <span class="text-danger">*</span></label>
+            <select [(ngModel)]="noticeForm.method" class="form-control-select">
+              <option value="van_ban_giay">📄 Văn bản giấy (Giao trực tiếp / Ký nhận biên bản)</option>
+              <option value="khac">📱 Hình thức khác (Zalo / Email / Cổng DVC)</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">Ngày gửi thông báo: <span class="text-danger">*</span></label>
+            <input type="date" [(ngModel)]="noticeForm.sentAt" class="form-control-input" />
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">Đường dẫn / File scan văn bản đã gửi (Optional):</label>
+            <input 
+              type="text" 
+              [(ngModel)]="noticeForm.fileUrl" 
+              placeholder="VD: /uploads/notices/cv_thong_bao_102.pdf hoặc link đính kèm" 
+              class="form-control-input" />
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">Ghi chú & Số hiệu công văn:</label>
+            <textarea 
+              [(ngModel)]="noticeForm.note" 
+              rows="3" 
+              placeholder="VD: Đã gửi công văn số 56/UBND-PCCC, đại diện cơ sở ông Nguyễn Văn A đã ký nhận..." 
+              class="form-control-textarea"></textarea>
+          </div>
+        </div>
+
+        <div class="alert-success-banner" *ngIf="noticeSuccessMessage">
+          <mat-icon>check_circle</mat-icon> {{ noticeSuccessMessage }}
+        </div>
+      </div>
+
+      <div class="domain-modal-footer">
+        <button mat-button (click)="closeNoticeDialog()" [disabled]="isSubmittingNotice">Hủy bỏ</button>
+        <button 
+          mat-flat-button 
+          color="primary" 
+          (click)="submitNoticeSent()" 
+          [disabled]="isSubmittingNotice || !noticeForm.sentAt"
+          class="btn-submit-notice">
+          <mat-icon *ngIf="isSubmittingNotice" class="spin">refresh</mat-icon>
+          <mat-icon *ngIf="!isSubmittingNotice">check</mat-icon>
+          Xác nhận đã gửi thông báo
+        </button>
+      </div>
     </div>
   </div>
 </div>

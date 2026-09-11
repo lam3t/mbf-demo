@@ -20,14 +20,17 @@ import {
   SearchFilterBarComponent,
   DataTableComponent,
   TableColumn,
-  TableAction
+  TableAction,
+  WardSelectComponent
 } from '../../shared/components';
 
 import { UserDialogComponent } from './components/user-dialog.component';
 import { CatalogDialogComponent } from './components/catalog-dialog.component';
 import { LogDetailDialogComponent } from './components/log-detail-dialog.component';
+import { LogDiffDialogComponent } from './components/log-diff-dialog.component';
 import { ApiService } from '../../core/services/api.service';
-import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig, CutoffConfig } from '../../core/models';
+import { AlertsService } from '../../core/services/alerts.service';
+import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig, CutoffConfig, Alert } from '../../core/models';
 
 @Component({
   selector: 'app-admin',
@@ -47,7 +50,8 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
     PageHeaderComponent,
     StatusTabsComponent,
     SearchFilterBarComponent,
-    DataTableComponent
+    DataTableComponent,
+    WardSelectComponent
   ],
   template: `
     <div class="admin-management-page">
@@ -101,6 +105,16 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
         >
           <mat-icon>history</mat-icon>
           <span>5. Nhật ký hệ thống</span>
+        </button>
+
+        <button
+          type="button"
+          class="nav-tab-btn"
+          [class.active]="activeTab === 'alerts'"
+          (click)="switchTab('alerts')"
+        >
+          <mat-icon style="color: #ef4444;">crisis_alert</mat-icon>
+          <span>6. Cảnh báo hệ thống</span>
         </button>
       </div>
 
@@ -232,11 +246,11 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
         ></app-data-table>
       </div>
 
-      <!-- TAB 4: SYSTEM CONFIGS (QUOTA & CUT-OFF) -->
+      <!-- TAB 4: SYSTEM CONFIGS (QUOTA & CUT-OFF & DEADLINE) -->
       <div class="tab-view-container" *ngIf="activeTab === 'config'">
         <app-page-header
-          title="Cấu hình Hệ thống (Quota & Cut-off)"
-          subtitle="Thiết lập chỉ tiêu kiểm tra 5 phường và thời hạn chốt sổ kế hoạch"
+          title="Cấu hình Hệ thống (Quota, Cut-off & Deadline)"
+          subtitle="Thiết lập chỉ tiêu kiểm tra 5 phường, thời hạn nộp kế hoạch và thời hạn hoàn thành kiểm tra"
         ></app-page-header>
 
         <div class="config-grid">
@@ -336,6 +350,43 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
               </div>
             </div>
           </div>
+
+          <!-- Inspection Deadline Configuration Card -->
+          <div class="config-card">
+            <div class="card-header-bar">
+              <div class="title-with-icon">
+                <mat-icon>hourglass_bottom</mat-icon>
+                <h3>Thời hạn Hoàn thành Kiểm tra (Inspection Deadline)</h3>
+              </div>
+            </div>
+
+            <div class="cutoff-form-box">
+              <div class="form-group">
+                <label>Số ngày hoàn thành kiểm tra (N ngày từ khi duyệt):</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <input
+                    type="number"
+                    class="cids-input"
+                    style="max-width: 140px;"
+                    [(ngModel)]="inspectionDeadlineDays"
+                    min="1"
+                    max="365"
+                  />
+                  <span style="font-weight: 500; color: #4b5563;">ngày</span>
+                </div>
+              </div>
+
+              <div class="info-alert">
+                <mat-icon>info</mat-icon>
+                <span>Hồ sơ kiểm tra tự động tính hạn hoàn thành = ngày duyệt + N ngày. Nếu quá hạn hệ thống sẽ đổi cờ quá hạn và phát cảnh báo.</span>
+              </div>
+
+              <button mat-flat-button class="btn-cids-primary w-100" (click)="saveInspectionDeadlineDays()">
+                <mat-icon>save</mat-icon>
+                <span>Cập nhật Thời hạn Kiểm tra</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -348,12 +399,27 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
           (actionClick)="handleAuditHeaderAction($event)"
         ></app-page-header>
 
-        <app-search-filter-bar
-          placeholder="Tìm kiếm nhật ký theo người dùng, đối tượng, hành động..."
-          (search)="handleLogSearch($event)"
-          (searchChange)="handleLogSearch($event)"
-          (refresh)="loadAuditLogs()"
-        ></app-search-filter-bar>
+        <div class="audit-filter-toolbar" style="display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; background: #ffffff; padding: 12px 16px; border-radius: 8px; border: 1px solid #e5e7eb;">
+          <input
+            type="text"
+            class="cids-input"
+            style="flex: 1; min-width: 260px; max-width: 420px;"
+            placeholder="Tìm kiếm nhật ký theo người dùng, đối tượng, hành động..."
+            [(ngModel)]="logSearchQuery"
+            (input)="applyLogFilter()"
+          />
+
+          <app-ward-select
+            [(ngModel)]="logWardFilter"
+            (wardChange)="loadAuditLogs()"
+            placeholder="-- Lọc theo Phường --"
+            [includeAllOption]="true"
+          ></app-ward-select>
+
+          <button mat-button class="btn-reset" (click)="resetLogFilters()" style="border: 1px solid #d1d5db; height: 38px; border-radius: 6px; color: #4b5563;">
+            <mat-icon>filter_alt_off</mat-icon> Đặt lại
+          </button>
+        </div>
 
         <app-data-table
           [columns]="auditColumns"
@@ -361,10 +427,69 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
           [actions]="auditRowActions"
           [loading]="isLoadingLogs"
           (actionClick)="handleAuditRowAction($event)"
-          (rowClick)="openLogDetail($event)"
+          (rowClick)="openLogDiff($event)"
+        ></app-data-table>
+      </div>
+
+      <!-- TAB 6: SYSTEM ALERTS -->
+      <div class="tab-view-container" *ngIf="activeTab === 'alerts'">
+        <app-page-header
+          title="Cảnh báo & Quá hạn Hệ thống"
+          [subtitle]="'Theo dõi và xử lý các cảnh báo quá hạn kế hoạch và hồ sơ kiểm tra thực địa (' + alerts.length + ' cảnh báo)'"
+          [actions]="alertHeaderActions"
+          (actionClick)="handleAlertHeaderAction($event)"
+        ></app-page-header>
+
+        <div class="alerts-filters-strip" style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; background: #ffffff; padding: 12px 16px; border-radius: 8px; border: 1px solid #e5e7eb;">
+          <input
+            type="text"
+            class="cids-input"
+            style="max-width: 260px;"
+            placeholder="Tìm theo nội dung cảnh báo..."
+            [(ngModel)]="alertSearchTerm"
+            (input)="filterAlerts()"
+          />
+
+          <app-ward-select
+            [(ngModel)]="alertWardFilter"
+            (wardChange)="loadAlerts()"
+            placeholder="-- Tất cả đơn vị --"
+            [includeAllOption]="true"
+            allOptionValue="all"
+          ></app-ward-select>
+
+          <select class="cids-select" style="max-width: 170px;" [(ngModel)]="alertTypeFilter" (change)="loadAlerts()">
+            <option value="all">-- Tất cả loại --</option>
+            <option value="overdue_inspection">Quá hạn kiểm tra</option>
+            <option value="overdue_plan">Quá hạn kế hoạch</option>
+            <option value="quota_below">Dưới chỉ tiêu</option>
+            <option value="quota_above">Vượt chỉ tiêu</option>
+          </select>
+
+          <select class="cids-select" style="max-width: 160px;" [(ngModel)]="alertSeverityFilter" (change)="loadAlerts()">
+            <option value="all">-- Mức độ --</option>
+            <option value="critical">Nghiêm trọng (Critical)</option>
+            <option value="warning">Cảnh báo (Warning)</option>
+            <option value="info">Thông tin (Info)</option>
+          </select>
+
+          <select class="cids-select" style="max-width: 150px;" [(ngModel)]="alertReadFilter" (change)="loadAlerts()">
+            <option value="all">-- Trạng thái đọc --</option>
+            <option value="0">Chưa đọc</option>
+            <option value="1">Đã đọc</option>
+          </select>
+        </div>
+
+        <app-data-table
+          [columns]="alertColumns"
+          [data]="filteredAlerts"
+          [actions]="alertRowActions"
+          [loading]="isLoadingAlerts"
+          (actionClick)="handleAlertRowAction($event)"
         ></app-data-table>
       </div>
     </div>
+
   `,
   styles: [`
     .admin-management-page {
@@ -684,7 +809,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
   `]
 })
 export class AdminComponent implements OnInit {
-  activeTab: 'users' | 'roles' | 'categories' | 'config' | 'logs' = 'users';
+  activeTab: 'users' | 'roles' | 'categories' | 'config' | 'logs' | 'alerts' = 'users';
 
   // 1. User Management State
   users: User[] = [];
@@ -827,55 +952,126 @@ export class AdminComponent implements OnInit {
     { id: 'delete', label: 'Xóa danh mục', icon: 'delete', color: '#dc2626', dividerBefore: true }
   ];
 
-  // 4. Config State (Quota & Cutoff)
+  // 4. Config State (Quota & Cutoff & Deadline)
   quotaList: QuotaConfig[] = [];
   cutoffList: CutoffConfig[] = [];
   cutoffForm = {
     quarter: 'Q2/2026',
     cutoffDateTime: '2026-06-25T17:00'
   };
+  inspectionDeadlineDays: number = 30;
 
   // 5. Audit Log State
   auditLogs: AuditLog[] = [];
   filteredLogs: AuditLog[] = [];
   isLoadingLogs = false;
   logSearchQuery = '';
+  logWardFilter = '';
 
   auditHeaderActions: PageHeaderAction[] = [
     { id: 'export_logs', label: 'Xuất nhật ký (.csv)', icon: 'download', variant: 'primary' }
   ];
 
   auditColumns: TableColumn[] = [
-    { key: 'createdAt', label: 'Thời gian', sortable: true, width: '18%' },
-    { key: 'userName', label: 'Cán bộ thực hiện', sortable: true, width: '20%' },
+    { key: 'createdAt', label: 'Thời gian', sortable: true, width: '14%' },
+    { key: 'userName', label: 'Cán bộ thực hiện', sortable: true, width: '15%' },
     {
       key: 'action',
       label: 'Hành động',
       sortable: true,
       type: 'badge',
-      width: '20%',
+      width: '15%',
       badgeMapping: {
         CREATE_USER: { label: 'Tạo tài khoản', cssClass: 'badge-new' },
         UPDATE_USER: { label: 'Sửa tài khoản', cssClass: 'badge-in_progress' },
         TOGGLE_USER_ACTIVE: { label: 'Đổi trạng thái', cssClass: 'badge-pending' },
         CREATE_OBJECT: { label: 'Tạo đối tượng', cssClass: 'badge-new' },
+        UPDATE_OBJECT: { label: 'Sửa đối tượng', cssClass: 'badge-in_progress' },
         CREATE_PLAN: { label: 'Lập kế hoạch', cssClass: 'badge-in_progress' },
         APPROVE_PLAN: { label: 'Phê duyệt KH', cssClass: 'badge-approved' },
+        REJECT_PLAN: { label: 'Từ chối KH', cssClass: 'badge-rejected' },
         COMPLETE_INSPECTION: { label: 'Hoàn thành KT', cssClass: 'badge-won' },
+        UPDATE_INSPECTION: { label: 'Cập nhật KT', cssClass: 'badge-in_progress' },
+        CREATE_ADHOC_REQUEST: { label: 'Đề xuất đột xuất', cssClass: 'badge-new' },
+        APPROVE_ADHOC_REQUEST: { label: 'Duyệt đột xuất', cssClass: 'badge-approved' },
+        REJECT_ADHOC_REQUEST: { label: 'Từ chối đột xuất', cssClass: 'badge-rejected' },
         SAVE_QUOTA: { label: 'Cấu hình Quota', cssClass: 'badge-in_progress' },
-        SAVE_CUTOFF: { label: 'Cấu hình Cutoff', cssClass: 'badge-in_progress' }
+        SAVE_CUTOFF: { label: 'Cấu hình Cutoff', cssClass: 'badge-in_progress' },
+        SAVE_INSPECTION_DEADLINE_DAYS: { label: 'Cấu hình Deadline', cssClass: 'badge-in_progress' }
       }
     },
-    { key: 'entityType', label: 'Đối tượng tác động', sortable: true, width: '20%' },
-    { key: 'detail', label: 'Chi tiết payload', width: '22%' }
+    { key: 'entityType', label: 'Đối tượng tác động', sortable: true, width: '15%' },
+    { key: 'ward', label: 'Đơn vị / Phường', sortable: true, width: '15%', formatter: (val, row) => row.ward || '—' },
+    { key: 'ipAddress', label: 'Địa chỉ IP', width: '11%', formatter: (val, row) => row.ipAddress || '—' },
+    { key: 'detail', label: 'Chi tiết Snapshot', width: '15%', formatter: (val, row) => (row.beforeData || row.afterData) ? '⚡ Có Snapshot Diff' : 'Payload JSON' }
   ];
 
   auditRowActions: TableAction[] = [
-    { id: 'view_detail', label: 'Xem chi tiết Request JSON', icon: 'code' }
+    { id: 'view_diff', label: 'Xem chi tiết thay đổi (Diff Trước/Sau)', icon: 'difference' },
+    { id: 'view_detail', label: 'Xem Request JSON Payload', icon: 'code' }
+  ];
+
+  // 6. Alerts State
+  alerts: Alert[] = [];
+  filteredAlerts: Alert[] = [];
+  isLoadingAlerts = false;
+  alertSearchTerm = '';
+  alertWardFilter = 'all';
+  alertTypeFilter = 'all';
+  alertSeverityFilter = 'all';
+  alertReadFilter = 'all';
+
+  alertHeaderActions: PageHeaderAction[] = [
+    { id: 'trigger_check', label: 'Quét hạn ngay (Trigger Check)', icon: 'refresh', variant: 'secondary' },
+    { id: 'mark_all_read', label: 'Đánh dấu đã đọc tất cả', icon: 'done_all', variant: 'primary' }
+  ];
+
+  alertColumns: TableColumn[] = [
+    {
+      key: 'isRead',
+      label: 'Trạng thái',
+      type: 'badge',
+      width: '12%',
+      badgeMapping: {
+        0: { label: 'Chưa đọc', cssClass: 'badge-danger' },
+        1: { label: 'Đã đọc', cssClass: 'badge-draft' }
+      }
+    },
+    {
+      key: 'severity',
+      label: 'Mức độ',
+      type: 'badge',
+      width: '13%',
+      badgeMapping: {
+        critical: { label: 'Khẩn cấp', cssClass: 'badge-danger' },
+        warning: { label: 'Cảnh báo', cssClass: 'badge-rejected' },
+        info: { label: 'Thông tin', cssClass: 'badge-in_progress' }
+      }
+    },
+    {
+      key: 'type',
+      label: 'Loại cảnh báo',
+      width: '16%',
+      type: 'badge',
+      badgeMapping: {
+        overdue_inspection: { label: 'Quá hạn kiểm tra', cssClass: 'badge-danger' },
+        overdue_plan: { label: 'Quá hạn kế hoạch', cssClass: 'badge-rejected' },
+        quota_below: { label: 'Dưới chỉ tiêu', cssClass: 'badge-pending' },
+        quota_above: { label: 'Vượt chỉ tiêu', cssClass: 'badge-approved' }
+      }
+    },
+    { key: 'message', label: 'Nội dung cảnh báo', width: '31%' },
+    { key: 'ward', label: 'Đơn vị', width: '14%' },
+    { key: 'createdAt', label: 'Thời gian tạo', width: '14%' }
+  ];
+
+  alertRowActions: TableAction[] = [
+    { id: 'mark_read', label: 'Đánh dấu đã đọc', icon: 'check' }
   ];
 
   constructor(
     private api: ApiService,
+    private alertsService: AlertsService,
     private route: ActivatedRoute,
     private router: Router,
     private dialog: MatDialog,
@@ -894,10 +1090,12 @@ export class AdminComponent implements OnInit {
     this.loadRecommendationTags();
     this.loadQuotas();
     this.loadCutoffs();
+    this.loadInspectionDeadlineDays();
     this.loadAuditLogs();
+    this.loadAlerts();
   }
 
-  switchTab(tabKey: 'users' | 'roles' | 'categories' | 'config' | 'logs'): void {
+  switchTab(tabKey: 'users' | 'roles' | 'categories' | 'config' | 'logs' | 'alerts'): void {
     this.activeTab = tabKey;
     this.router.navigate([], {
       relativeTo: this.route,
@@ -905,6 +1103,7 @@ export class AdminComponent implements OnInit {
       queryParamsHandling: 'merge'
     });
   }
+
 
   // --- Users Handlers ---
   loadUsers(): void {
@@ -1161,7 +1360,11 @@ export class AdminComponent implements OnInit {
   // --- Audit Log Handlers ---
   loadAuditLogs(): void {
     this.isLoadingLogs = true;
-    this.api.get<any>('/audit-logs?limit=50').subscribe({
+    let endpoint = '/audit-logs?limit=50';
+    if (this.logWardFilter && this.logWardFilter !== 'all') {
+      endpoint += `&ward=${encodeURIComponent(this.logWardFilter)}`;
+    }
+    this.api.get<any>(endpoint).subscribe({
       next: (res) => {
         this.isLoadingLogs = false;
         if (res.success) {
@@ -1175,6 +1378,12 @@ export class AdminComponent implements OnInit {
     });
   }
 
+  resetLogFilters(): void {
+    this.logSearchQuery = '';
+    this.logWardFilter = '';
+    this.loadAuditLogs();
+  }
+
   applyLogFilter(): void {
     let result = [...this.auditLogs];
     if (this.logSearchQuery.trim()) {
@@ -1183,6 +1392,8 @@ export class AdminComponent implements OnInit {
         l =>
           l.action.toLowerCase().includes(q) ||
           l.entityType.toLowerCase().includes(q) ||
+          (l.ward && l.ward.toLowerCase().includes(q)) ||
+          (l.ipAddress && l.ipAddress.toLowerCase().includes(q)) ||
           (l.userName && l.userName.toLowerCase().includes(q)) ||
           (l.username && l.username.toLowerCase().includes(q)) ||
           (l.detail && l.detail.toLowerCase().includes(q))
@@ -1203,9 +1414,18 @@ export class AdminComponent implements OnInit {
   }
 
   handleAuditRowAction(event: { action: string; row: AuditLog }): void {
-    if (event.action === 'view_detail') {
+    if (event.action === 'view_diff') {
+      this.openLogDiff(event.row);
+    } else if (event.action === 'view_detail') {
       this.openLogDetail(event.row);
     }
+  }
+
+  openLogDiff(log: AuditLog): void {
+    this.dialog.open(LogDiffDialogComponent, {
+      width: '780px',
+      data: { log }
+    });
   }
 
   openLogDetail(log: AuditLog): void {
@@ -1214,4 +1434,101 @@ export class AdminComponent implements OnInit {
       data: { log }
     });
   }
+
+  // --- Inspection Deadline Handlers ---
+  loadInspectionDeadlineDays(): void {
+    this.api.get<any>('/configs/inspection-deadline-days').subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.inspectionDeadlineDays = res.data.days || 30;
+        }
+      }
+    });
+  }
+
+  saveInspectionDeadlineDays(): void {
+    this.api.put<any>('/configs/inspection-deadline-days', { days: this.inspectionDeadlineDays }).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.snackBar.open('Cập nhật thời hạn kiểm tra thành công!', 'Đóng', { duration: 2500 });
+          this.loadInspectionDeadlineDays();
+        }
+      },
+      error: (err) => {
+        this.snackBar.open(err.error?.message || 'Lỗi khi lưu thời hạn kiểm tra', 'Đóng', { duration: 3000 });
+      }
+    });
+  }
+
+  // --- Alerts Handlers ---
+  loadAlerts(): void {
+    this.isLoadingAlerts = true;
+    const params: any = { limit: 100 };
+    if (this.alertWardFilter !== 'all') params.ward = this.alertWardFilter;
+    if (this.alertTypeFilter !== 'all') params.type = this.alertTypeFilter;
+    if (this.alertSeverityFilter !== 'all') params.severity = this.alertSeverityFilter;
+    if (this.alertReadFilter !== 'all') params.isRead = this.alertReadFilter;
+
+    this.alertsService.getAlerts(params).subscribe({
+      next: (res) => {
+        this.isLoadingAlerts = false;
+        if (res && res.success) {
+          this.alerts = res.data || [];
+          this.filterAlerts();
+        }
+      },
+      error: () => {
+        this.isLoadingAlerts = false;
+      }
+    });
+  }
+
+  filterAlerts(): void {
+    if (!this.alertSearchTerm.trim()) {
+      this.filteredAlerts = [...this.alerts];
+      return;
+    }
+    const term = this.alertSearchTerm.toLowerCase();
+    this.filteredAlerts = this.alerts.filter(a =>
+      a.message.toLowerCase().includes(term) ||
+      (a.ward && a.ward.toLowerCase().includes(term))
+    );
+  }
+
+  handleAlertHeaderAction(actionId: string): void {
+    if (actionId === 'trigger_check') {
+      this.isLoadingAlerts = true;
+      this.alertsService.triggerDeadlineCheck().subscribe({
+        next: (res) => {
+          this.isLoadingAlerts = false;
+          const result = res.data;
+          this.snackBar.open(`Đã quét hạn: ${result?.overduePlansCount || 0} kế hoạch quá hạn, ${result?.overdueInspectionsCount || 0} hồ sơ quá hạn, tạo mới ${result?.newAlertsCreated || 0} cảnh báo.`, 'Đóng', { duration: 4000 });
+          this.loadAlerts();
+        },
+        error: (err) => {
+          this.isLoadingAlerts = false;
+          this.snackBar.open(err.error?.message || 'Lỗi khi quét hạn', 'Đóng', { duration: 3000 });
+        }
+      });
+    } else if (actionId === 'mark_all_read') {
+      this.alertsService.markAllAsRead().subscribe({
+        next: () => {
+          this.snackBar.open('Đã đánh dấu tất cả cảnh báo là đã đọc!', 'Đóng', { duration: 2500 });
+          this.loadAlerts();
+        }
+      });
+    }
+  }
+
+  handleAlertRowAction(event: { action: string; row: Alert }): void {
+    if (event.action === 'mark_read') {
+      this.alertsService.markAsRead(event.row.id).subscribe({
+        next: () => {
+          this.snackBar.open('Đã đánh dấu đã đọc!', 'Đóng', { duration: 2000 });
+          this.loadAlerts();
+        }
+      });
+    }
+  }
 }
+

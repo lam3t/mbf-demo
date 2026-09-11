@@ -365,6 +365,25 @@
       &.household { background: #fef3c7; color: #b45309; }
       &.individual { background: #f3e8ff; color: #7e22ce; }
     }
+
+    .badge-adhoc {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      background: #f3e8ff;
+      color: #7c3aed;
+      border: 1px solid #d8b4fe;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+
+      .adhoc-icon {
+        font-size: 11px;
+        width: 11px;
+        height: 11px;
+      }
+    }
   }
 
   .object-meta {

@@ -12,14 +12,18 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { ApiService } from '../../../core/services/api.service';
-import { Inspection, ViolationCatalog, RecommendationTagCatalog } from '../../../core/models';
+import { Inspection, ViolationCatalog, RecommendationTagCatalog, InspectionChecklistItem, ChecklistResult } from '../../../core/models';
 
-export interface ChecklistCriterion {
-  id: string;
-  title: string;
-  desc: string;
-  passed: boolean;
+export interface DomainGroup {
+  id: number;
+  code: string;
+  name: string;
+  icon: string;
+  color: string;
+  items: InspectionChecklistItem[];
+  isExpanded?: boolean;
 }
 
 export interface WardCoordinate {
@@ -44,7 +48,8 @@ export interface WardCoordinate {
     MatRadioModule,
     MatChipsModule,
     MatTooltipModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    MatExpansionModule
   ],
   templateUrl: './inspection-detail-dialog.component.html',
   styleUrls: ['./inspection-detail-dialog.component.scss']
@@ -59,37 +64,70 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
   @Output() saved = new EventEmitter<Inspection>();
   @Output() completed = new EventEmitter<Inspection>();
 
-  // Checklist criteria
-  checklist: ChecklistCriterion[] = [
+  // Active Domain Tab Filter (0: All, 1: PCCC, 2: ATTP, 3: MOI_TRUONG, 4: TTDT, 5: THUE)
+  activeDomainTab = 0;
+
+  // Domain Groups (5 Domains - CR-03 / CR-12 Progressive Disclosure)
+  domainGroups: DomainGroup[] = [
     {
-      id: 'dkkd',
-      title: 'Có giấy chứng nhận ĐKKD / Đăng ký ngành nghề hợp lệ',
-      desc: 'Cơ sở có giấy phép kinh doanh đúng quy định, phù hợp với ngành nghề đang hoạt động thực tế.',
-      passed: true
+      id: 1,
+      code: 'PCCC',
+      name: 'Phòng cháy chữa cháy',
+      icon: 'local_fire_department',
+      color: '#ef4444',
+      isExpanded: false,
+      items: [
+        { domainId: 1, criteriaCode: 'pccc_1', criteriaName: 'Trang bị bình chữa cháy còn hạn & tiêu lệnh PCCC', result: 'pass' },
+        { domainId: 1, criteriaCode: 'pccc_2', criteriaName: 'Lối thoát nạn & hành lang thoát hiểm thông thoáng', result: 'pass' }
+      ]
     },
     {
-      id: 'pccc',
-      title: 'Đảm bảo điều kiện An toàn PCCC & Cứu nạn cứu hộ',
-      desc: 'Trang bị bình chữa cháy còn hạn sử dụng, tiêu lệnh PCCC, lối thoát nạn thông thoáng không bị che chắn.',
-      passed: true
+      id: 2,
+      code: 'ATTP',
+      name: 'An toàn thực phẩm',
+      icon: 'restaurant',
+      color: '#f59e0b',
+      isExpanded: false,
+      items: [
+        { domainId: 2, criteriaCode: 'attp_1', criteriaName: 'Giấy chứng nhận cơ sở đủ điều kiện ATTP / Cam kết ATTP', result: 'pass' },
+        { domainId: 2, criteriaCode: 'attp_2', criteriaName: 'Nguồn gốc nguyên liệu & điều kiện vệ sinh bảo quản', result: 'pass' }
+      ]
     },
     {
-      id: 'location',
-      title: 'Kinh doanh đúng địa điểm, phạm vi đã đăng ký',
-      desc: 'Hoạt động đúng địa chỉ được cấp phép, không lấn chiếm vỉa hè, lòng đường, đất công cộng.',
-      passed: true
+      id: 3,
+      code: 'MOI_TRUONG',
+      name: 'Bảo vệ môi trường',
+      icon: 'eco',
+      color: '#10b981',
+      isExpanded: false,
+      items: [
+        { domainId: 3, criteriaCode: 'env_1', criteriaName: 'Thu gom, phân loại & xử lý rác thải / nước thải đúng quy định', result: 'pass' },
+        { domainId: 3, criteriaCode: 'env_2', criteriaName: 'Không gây ô nhiễm tiếng ồn, khói bụi vượt quy chuẩn', result: 'pass' }
+      ]
     },
     {
-      id: 'price_tag',
-      title: 'Niêm yết công khai giá hàng hóa, dịch vụ theo quy định',
-      desc: 'Bảng giá rõ ràng, minh bạch, bán đúng giá niêm yết, không có hành vi gian lận thương mại.',
-      passed: true
+      id: 4,
+      code: 'TTDT',
+      name: 'Trật tự đô thị',
+      icon: 'location_city',
+      color: '#3b82f6',
+      isExpanded: false,
+      items: [
+        { domainId: 4, criteriaCode: 'ttdt_1', criteriaName: 'Không lấn chiếm lòng lề đường, vỉa hè, hành lang an toàn', result: 'pass' },
+        { domainId: 4, criteriaCode: 'ttdt_2', criteriaName: 'Biển hiệu, bảng quảng cáo đúng quy chuẩn cấp phép', result: 'pass' }
+      ]
     },
     {
-      id: 'hygiene',
-      title: 'Vệ sinh an toàn thực phẩm & Giữ gìn ANTT cơ sở',
-      desc: 'Đảm bảo điều kiện vệ sinh môi trường, an toàn thực phẩm (nếu kinh doanh ăn uống), không gây rối trật tự.',
-      passed: true
+      id: 5,
+      code: 'THUE',
+      name: 'Thuế & Nghĩa vụ tài chính',
+      icon: 'receipt_long',
+      color: '#8b5cf6',
+      isExpanded: false,
+      items: [
+        { domainId: 5, criteriaCode: 'tax_1', criteriaName: 'Đăng ký kinh doanh & niêm yết giá công khai', result: 'pass' },
+        { domainId: 5, criteriaCode: 'tax_2', criteriaName: 'Kê khai & thực hiện đầy đủ nghĩa vụ thuế / hóa đơn', result: 'pass' }
+      ]
     }
   ];
 
@@ -148,28 +186,28 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
     this.successMessage = '';
     this.showConfirmComplete = false;
 
-    // Parse checklist
-    if (this.inspection.checklist) {
-      try {
-        const parsed = typeof this.inspection.checklist === 'string'
-          ? JSON.parse(this.inspection.checklist)
-          : this.inspection.checklist;
-        
-        if (Array.isArray(parsed)) {
-          this.checklist = parsed;
-        } else if (typeof parsed === 'object') {
-          this.checklist.forEach(item => {
-            if (item.id in parsed) {
-              item.passed = !!parsed[item.id];
-            }
-          });
-        }
-      } catch (e) {
-        console.error('Error parsing checklist:', e);
-      }
+    // Reset default domain items
+    this.resetDefaultDomainGroups();
+
+    // Fetch full inspection with checklistItems from API if needed or use passed checklistItems
+    if (this.inspection.checklistItems && this.inspection.checklistItems.length > 0) {
+      this.populateChecklistItems(this.inspection.checklistItems);
     } else {
-      // Default all pass
-      this.checklist.forEach(c => c.passed = true);
+      // Query full inspection details
+      this.api.get<any>(`/inspections/${this.inspection.id}`).subscribe({
+        next: (res) => {
+          if (res?.success && res.data?.checklistItems?.length > 0) {
+            this.populateChecklistItems(res.data.checklistItems);
+          } else if (this.inspection?.checklist) {
+            this.parseLegacyChecklist(this.inspection.checklist);
+          }
+        },
+        error: () => {
+          if (this.inspection?.checklist) {
+            this.parseLegacyChecklist(this.inspection.checklist);
+          }
+        }
+      });
     }
 
     // Parse violationCodes
@@ -224,27 +262,178 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
     this.calculateNearestWard();
   }
 
+  private resetDefaultDomainGroups(): void {
+    this.domainGroups = [
+      {
+        id: 1,
+        code: 'PCCC',
+        name: 'Phòng cháy chữa cháy',
+        icon: 'local_fire_department',
+        color: '#ef4444',
+        isExpanded: false,
+        items: [
+          { domainId: 1, criteriaCode: 'pccc_1', criteriaName: 'Trang bị bình chữa cháy còn hạn & tiêu lệnh PCCC', result: 'pass' },
+          { domainId: 1, criteriaCode: 'pccc_2', criteriaName: 'Lối thoát nạn & hành lang thoát hiểm thông thoáng', result: 'pass' }
+        ]
+      },
+      {
+        id: 2,
+        code: 'ATTP',
+        name: 'An toàn thực phẩm',
+        icon: 'restaurant',
+        color: '#f59e0b',
+        isExpanded: false,
+        items: [
+          { domainId: 2, criteriaCode: 'attp_1', criteriaName: 'Giấy chứng nhận cơ sở đủ điều kiện ATTP / Cam kết ATTP', result: 'pass' },
+          { domainId: 2, criteriaCode: 'attp_2', criteriaName: 'Nguồn gốc nguyên liệu & điều kiện vệ sinh bảo quản', result: 'pass' }
+        ]
+      },
+      {
+        id: 3,
+        code: 'MOI_TRUONG',
+        name: 'Bảo vệ môi trường',
+        icon: 'eco',
+        color: '#10b981',
+        isExpanded: false,
+        items: [
+          { domainId: 3, criteriaCode: 'env_1', criteriaName: 'Thu gom, phân loại & xử lý rác thải / nước thải đúng quy định', result: 'pass' },
+          { domainId: 3, criteriaCode: 'env_2', criteriaName: 'Không gây ô nhiễm tiếng ồn, khói bụi vượt quy chuẩn', result: 'pass' }
+        ]
+      },
+      {
+        id: 4,
+        code: 'TTDT',
+        name: 'Trật tự đô thị',
+        icon: 'location_city',
+        color: '#3b82f6',
+        isExpanded: false,
+        items: [
+          { domainId: 4, criteriaCode: 'ttdt_1', criteriaName: 'Không lấn chiếm lòng lề đường, vỉa hè, hành lang an toàn', result: 'pass' },
+          { domainId: 4, criteriaCode: 'ttdt_2', criteriaName: 'Biển hiệu, bảng quảng cáo đúng quy chuẩn cấp phép', result: 'pass' }
+        ]
+      },
+      {
+        id: 5,
+        code: 'THUE',
+        name: 'Thuế & Nghĩa vụ tài chính',
+        icon: 'receipt_long',
+        color: '#8b5cf6',
+        isExpanded: false,
+        items: [
+          { domainId: 5, criteriaCode: 'tax_1', criteriaName: 'Đăng ký kinh doanh & niêm yết giá công khai', result: 'pass' },
+          { domainId: 5, criteriaCode: 'tax_2', criteriaName: 'Kê khai & thực hiện đầy đủ nghĩa vụ thuế / hóa đơn', result: 'pass' }
+        ]
+      }
+    ];
+  }
+
+  updateExpansionStates(): void {
+    // Prompt 16 / CR-12: Auto-expand only groups that contain at least 1 failed criterion
+    this.domainGroups.forEach(g => {
+      g.isExpanded = this.getDomainFailCount(g) > 0;
+    });
+  }
+
+  toggleDomainExpand(domain: DomainGroup): void {
+    domain.isExpanded = !domain.isExpanded;
+  }
+
+  private populateChecklistItems(items: InspectionChecklistItem[]): void {
+    items.forEach(ci => {
+      const group = this.domainGroups.find(g => g.id === ci.domainId || g.code === ci.domainCode);
+      if (group) {
+        const existing = group.items.find(i => i.criteriaCode === ci.criteriaCode);
+        if (existing) {
+          existing.id = ci.id;
+          existing.result = ci.result;
+          existing.violationCodeId = ci.violationCodeId;
+          existing.notes = ci.notes;
+        } else {
+          group.items.push(ci);
+        }
+      }
+    });
+    this.updateExpansionStates();
+  }
+
+  private parseLegacyChecklist(checklist: any): void {
+    try {
+      const parsed = typeof checklist === 'string' ? JSON.parse(checklist) : checklist;
+      if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+        if (parsed.pccc === false) {
+          const pcccGroup = this.domainGroups.find(g => g.id === 1);
+          if (pcccGroup) pcccGroup.items.forEach(i => i.result = 'fail');
+        }
+        if (parsed.hygiene === false) {
+          const attpGroup = this.domainGroups.find(g => g.id === 2);
+          if (attpGroup) attpGroup.items.forEach(i => i.result = 'fail');
+        }
+        if (parsed.location === false) {
+          const ttdtGroup = this.domainGroups.find(g => g.id === 4);
+          if (ttdtGroup) ttdtGroup.items.forEach(i => i.result = 'fail');
+        }
+        if (parsed.price_tag === false || parsed.dkkd === false) {
+          const taxGroup = this.domainGroups.find(g => g.id === 5);
+          if (taxGroup) taxGroup.items.forEach(i => i.result = 'fail');
+        }
+      }
+    } catch {
+      // ignore
+    }
+    this.updateExpansionStates();
+  }
+
   get isLocked(): boolean {
     return !!(this.inspection && (this.inspection.isLocked === 1 || this.inspection.status === 'completed'));
   }
 
+  getAllChecklistItems(): InspectionChecklistItem[] {
+    const all: InspectionChecklistItem[] = [];
+    this.domainGroups.forEach(g => {
+      all.push(...g.items);
+    });
+    return all;
+  }
+
+  get visibleDomainGroups(): DomainGroup[] {
+    if (this.activeDomainTab === 0) {
+      return this.domainGroups;
+    }
+    return this.domainGroups.filter(g => g.id === this.activeDomainTab);
+  }
+
+  get totalItemsCount(): number {
+    return this.getAllChecklistItems().length;
+  }
+
+  get totalPassCount(): number {
+    return this.getAllChecklistItems().filter(i => i.result === 'pass').length;
+  }
+
+  get totalFailCount(): number {
+    return this.getAllChecklistItems().filter(i => i.result === 'fail').length;
+  }
+
   get hasViolations(): boolean {
-    return this.checklist.some(c => !c.passed);
+    return this.totalFailCount > 0;
   }
 
-  get passedCount(): number {
-    return this.checklist.filter(c => c.passed).length;
+  getDomainPassCount(domain: DomainGroup): number {
+    return domain.items.filter(i => i.result === 'pass').length;
   }
 
-  get failedCount(): number {
-    return this.checklist.filter(c => !c.passed).length;
+  getDomainFailCount(domain: DomainGroup): number {
+    return domain.items.filter(i => i.result === 'fail').length;
   }
 
-  toggleChecklist(item: ChecklistCriterion, passed: boolean): void {
+  toggleChecklistItem(item: InspectionChecklistItem, result: ChecklistResult): void {
     if (this.isLocked) return;
-    item.passed = passed;
+    item.result = result;
+    if (result === 'fail') {
+      const group = this.domainGroups.find(g => g.items.some(i => i.criteriaCode === item.criteriaCode));
+      if (group) group.isExpanded = true;
+    }
     if (!this.hasViolations) {
-      // If all passed, clear violation codes
       this.selectedViolationCodes = [];
     }
   }
@@ -433,8 +622,18 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
     this.errorMessage = '';
     this.successMessage = '';
 
+    const allItems = this.getAllChecklistItems();
+    const legacyChecklist: Record<string, boolean> = {
+      pccc: this.getDomainFailCount(this.domainGroups[0]) === 0,
+      hygiene: this.getDomainFailCount(this.domainGroups[1]) === 0,
+      location: this.getDomainFailCount(this.domainGroups[3]) === 0,
+      price_tag: this.getDomainFailCount(this.domainGroups[4]) === 0,
+      dkkd: this.getDomainFailCount(this.domainGroups[4]) === 0
+    };
+
     const payload = {
-      checklist: this.checklist,
+      checklist: legacyChecklist,
+      checklistItems: allItems,
       violationCodes: this.selectedViolationCodes,
       recommendationNote: this.recommendationNote,
       recommendationTags: this.selectedTags,
@@ -451,7 +650,8 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
           this.successMessage = 'Đã lưu tạm hồ sơ kiểm tra thành công.';
           if (this.inspection) {
             this.inspection.status = 'in_progress';
-            this.inspection.checklist = JSON.stringify(this.checklist);
+            this.inspection.checklist = JSON.stringify(legacyChecklist);
+            this.inspection.checklistItems = allItems;
             this.inspection.violationCodes = JSON.stringify(this.selectedViolationCodes);
             this.inspection.recommendationNote = this.recommendationNote;
             this.inspection.recommendationTags = JSON.stringify(this.selectedTags);
@@ -487,9 +687,18 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
     this.isSubmitting = true;
     this.errorMessage = '';
 
-    // First update the latest form state
+    const allItems = this.getAllChecklistItems();
+    const legacyChecklist: Record<string, boolean> = {
+      pccc: this.getDomainFailCount(this.domainGroups[0]) === 0,
+      hygiene: this.getDomainFailCount(this.domainGroups[1]) === 0,
+      location: this.getDomainFailCount(this.domainGroups[3]) === 0,
+      price_tag: this.getDomainFailCount(this.domainGroups[4]) === 0,
+      dkkd: this.getDomainFailCount(this.domainGroups[4]) === 0
+    };
+
     const payload = {
-      checklist: this.checklist,
+      checklist: legacyChecklist,
+      checklistItems: allItems,
       violationCodes: this.selectedViolationCodes,
       recommendationNote: this.recommendationNote,
       recommendationTags: this.selectedTags,
@@ -511,6 +720,7 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
                 this.inspection.status = 'completed';
                 this.inspection.isLocked = 1;
                 this.inspection.completedAt = new Date().toISOString();
+                this.inspection.checklistItems = allItems;
                 this.completed.emit(this.inspection);
               }
               this.successMessage = 'Hồ sơ đã được chốt và khóa dữ liệu an toàn theo RULE-03.';

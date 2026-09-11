@@ -9,8 +9,10 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { filter } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
+import { AlertsService } from '../core/services/alerts.service';
 
 interface NavItem {
+
   id: string;
   label: string;
   icon: string;
@@ -176,6 +178,56 @@ interface NavSubItem {
               <span class="flag-icon">🇻🇳</span>
             </div>
 
+            <!-- Alert Warning Bell with Unread Count Badge -->
+            <button
+              type="button"
+              class="tool-btn alert-bell-btn"
+              [matMenuTriggerFor]="alertMenu"
+              matTooltip="Cảnh báo & Quá hạn hệ thống"
+            >
+              <mat-icon [style.color]="((unreadAlertsCount$ | async) ?? 0) > 0 ? '#ef4444' : '#64748b'">warning_amber</mat-icon>
+              <span class="noti-badge-pill alert-badge" *ngIf="((unreadAlertsCount$ | async) ?? 0) > 0">
+                {{ unreadAlertsCount$ | async }}
+              </span>
+            </button>
+
+            <mat-menu #alertMenu="matMenu" class="cids-dropdown-menu alert-dropdown-menu">
+              <div class="dropdown-header">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <mat-icon style="color: #ef4444; font-size: 18px; width: 18px; height: 18px;">warning</mat-icon>
+                  <strong>Cảnh báo quá hạn ({{ (unreadAlertsCount$ | async) || 0 }})</strong>
+                </div>
+                <a href="javascript:void(0)" class="mark-read" (click)="markAllAlertsRead($event)">Đã đọc tất cả</a>
+              </div>
+              <mat-divider></mat-divider>
+              
+              <div class="alerts-list-container">
+                <ng-container *ngIf="(recentAlerts$ | async) as alerts">
+                  <div *ngIf="alerts.length === 0" class="empty-alerts-p">
+                    <mat-icon style="color: #10b981; font-size: 20px; width: 20px; height: 20px;">check_circle</mat-icon>
+                    <span>Không có cảnh báo quá hạn nào!</span>
+                  </div>
+                  <button mat-menu-item *ngFor="let alert of alerts" (click)="handleAlertClick(alert)" class="alert-menu-item" [class.alert-unread]="!alert.isRead">
+                    <mat-icon [style.color]="getAlertSeverityColor(alert.severity)" style="margin-right: 8px;">
+                      {{ alert.severity === 'critical' ? 'error' : (alert.severity === 'warning' ? 'warning' : 'info') }}
+                    </mat-icon>
+                    <div class="alert-item-content">
+                      <div class="alert-msg">{{ alert.message }}</div>
+                      <div class="alert-time">{{ alert.createdAt }}</div>
+                    </div>
+                  </button>
+                </ng-container>
+              </div>
+              
+              <mat-divider></mat-divider>
+              <div style="padding: 8px 12px; text-align: center;">
+                <a routerLink="/admin" [queryParams]="{ tab: 'alerts' }" class="view-all-alerts-btn">
+                  <span>Xem tất cả cảnh báo</span>
+                  <mat-icon style="font-size: 16px; width: 16px; height: 16px; margin-left: 4px;">arrow_forward</mat-icon>
+                </a>
+              </div>
+            </mat-menu>
+
             <!-- Notification Bell with Count Badge -->
             <button
               type="button"
@@ -206,6 +258,7 @@ interface NavSubItem {
                 <span>5 cơ sở kinh doanh mới đăng ký</span>
               </button>
             </mat-menu>
+
 
             <!-- User Avatar & Profile -->
             <div class="user-profile-widget" [matMenuTriggerFor]="userProfileMenu">
@@ -779,6 +832,84 @@ interface NavSubItem {
         &:hover { text-decoration: underline; }
       }
     }
+
+    .alert-badge {
+      background-color: #ef4444 !important;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .alert-dropdown-menu {
+      min-width: 320px;
+      max-width: 360px;
+    }
+
+    .alerts-list-container {
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .empty-alerts-p {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 20px 16px;
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .alert-menu-item {
+      display: flex !important;
+      align-items: flex-start !important;
+      padding: 10px 14px !important;
+      height: auto !important;
+      line-height: normal !important;
+      border-bottom: 1px solid #f1f5f9;
+
+      &.alert-unread {
+        background-color: #fef2f2;
+      }
+
+      .alert-item-content {
+        display: flex;
+        flex-direction: column;
+        white-space: normal;
+        text-align: left;
+        max-width: 240px;
+
+        .alert-msg {
+          font-size: 12px;
+          color: #1e293b;
+          font-weight: 500;
+          line-height: 1.35;
+        }
+
+        .alert-time {
+          font-size: 10.5px;
+          color: #94a3b8;
+          margin-top: 3px;
+        }
+      }
+    }
+
+    .view-all-alerts-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #1a56db;
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: background-color 0.15s;
+
+      &:hover {
+        background-color: #eff6ff;
+      }
+    }
   `]
 })
 export class ShellComponent implements OnInit {
@@ -802,7 +933,12 @@ export class ShellComponent implements OnInit {
       id: 'plans',
       label: 'Lập kế hoạch & Phê duyệt',
       icon: 'event_note',
-      route: '/plans'
+      route: '/plans',
+      expanded: false,
+      children: [
+        { id: 'plans-official', label: 'Kế hoạch chính thức', icon: 'event_available', route: '/plans', queryParams: { tab: 'official' } },
+        { id: 'plans-adhoc', label: 'Đề xuất kiểm tra phát sinh', icon: 'notification_important', route: '/plans', queryParams: { tab: 'adhoc' } }
+      ]
     },
     {
       id: 'inspections',
@@ -832,22 +968,44 @@ export class ShellComponent implements OnInit {
         { id: 'roles', label: 'Phân quyền', icon: 'security', route: '/admin', queryParams: { tab: 'roles' } },
         { id: 'categories', label: 'Danh mục', icon: 'category', route: '/admin', queryParams: { tab: 'categories' } },
         { id: 'config', label: 'Cấu hình', icon: 'tune', route: '/admin', queryParams: { tab: 'config' } },
+        { id: 'alerts', label: 'Cảnh báo hệ thống', icon: 'crisis_alert', route: '/admin', queryParams: { tab: 'alerts' } },
         { id: 'logs', label: 'Nhật ký hệ thống', icon: 'history', route: '/admin', queryParams: { tab: 'logs' } }
       ]
     }
   ];
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private alertsService: AlertsService,
+    private router: Router
+  ) {}
+
+  get unreadAlertsCount$() {
+    return this.alertsService.unreadCount$;
+  }
+
+  get recentAlerts$() {
+    return this.alertsService.recentAlerts$;
+  }
 
   ngOnInit(): void {
     this.currentUrl = this.router.url;
+    this.checkAutoCollapse(this.currentUrl);
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
         this.currentUrl = event.urlAfterRedirects || event.url;
+        this.checkAutoCollapse(this.currentUrl);
         this.updateAccordionState();
       });
     this.updateAccordionState();
+  }
+
+  checkAutoCollapse(url: string): void {
+    // Prompt 16 / CR-12: Auto-collapse sidebar on Dashboard and Map to maximize horizontal workspace
+    if (url.startsWith('/dashboard') || url.startsWith('/map')) {
+      this.isCollapsed = true;
+    }
   }
 
   toggleSidebar(): void {
@@ -867,6 +1025,10 @@ export class ShellComponent implements OnInit {
     const adminItem = this.navItems.find(i => i.id === 'admin');
     if (adminItem && this.currentUrl.startsWith('/admin')) {
       adminItem.expanded = true;
+    }
+    const plansItem = this.navItems.find(i => i.id === 'plans');
+    if (plansItem && this.currentUrl.startsWith('/plans')) {
+      plansItem.expanded = true;
     }
   }
 
@@ -899,7 +1061,36 @@ export class ShellComponent implements OnInit {
     }
   }
 
+  getAlertSeverityColor(severity: string): string {
+    switch (severity) {
+      case 'critical': return '#ef4444';
+      case 'warning': return '#f59e0b';
+      default: return '#3b82f6';
+    }
+  }
+
+  markAllAlertsRead(event: Event): void {
+    event.stopPropagation();
+    this.alertsService.markAllAsRead().subscribe();
+  }
+
+  handleAlertClick(alert: any): void {
+    if (!alert.isRead) {
+      this.alertsService.markAsRead(alert.id).subscribe();
+    }
+    if (alert.type === 'notice_letter_pending' && alert.ward) {
+      this.router.navigate(['/dashboard/ward', encodeURIComponent(alert.ward)]);
+    } else if (alert.relatedEntityType === 'inspection') {
+      this.router.navigate(['/inspections']);
+    } else if (alert.relatedEntityType === 'plan') {
+      this.router.navigate(['/plans']);
+    } else {
+      this.router.navigate(['/admin'], { queryParams: { tab: 'alerts' } });
+    }
+  }
+
   logout(): void {
     this.authService.logout();
   }
 }
+

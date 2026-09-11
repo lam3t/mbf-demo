@@ -78,4 +78,36 @@ export class ConfigsController {
       res.status(500).json({ success: false, message: err.message });
     }
   }
+
+  static getInspectionDeadlineDays(req: Request, res: Response): void {
+    try {
+      const row = db.prepare(`SELECT value FROM system_configs WHERE key = 'inspectionDeadlineDays'`).get() as { value: string } | undefined;
+      const days = row ? parseInt(row.value, 10) : 30;
+      res.json({ success: true, data: { days } });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  static saveInspectionDeadlineDays(req: Request, res: Response): void {
+    try {
+      const { days } = req.body;
+      const daysNum = parseInt(days, 10);
+      if (isNaN(daysNum) || daysNum <= 0) {
+        res.status(400).json({ success: false, message: 'Số ngày thời hạn kiểm tra không hợp lệ (phải > 0).' });
+        return;
+      }
+
+      db.prepare(`
+        INSERT INTO system_configs (key, value)
+        VALUES ('inspectionDeadlineDays', ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value
+      `).run(daysNum.toString());
+
+      res.json({ success: true, message: 'Lưu cấu hình thời hạn kiểm tra thành công.', data: { days: daysNum } });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
 }
+

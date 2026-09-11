@@ -19,4 +19,10 @@ router.post('/recommendation-tags', roleGuard('admin'), auditLogger('CREATE_RECO
 router.put('/recommendation-tags/:id', roleGuard('admin'), auditLogger('UPDATE_RECOMMENDATION_TAG', 'CATALOGS'), CatalogsController.updateRecommendationTag);
 router.delete('/recommendation-tags/:id', roleGuard('admin'), auditLogger('DELETE_RECOMMENDATION_TAG', 'CATALOGS'), CatalogsController.deleteRecommendationTag);
 
+// Domain Catalog (PCCC, ATTP, MOI_TRUONG, TTDT, THUE)
+router.get('/domains', CatalogsController.getDomains);
+router.post('/domains', roleGuard('admin'), auditLogger('CREATE_DOMAIN', 'CATALOGS'), CatalogsController.createDomain);
+router.put('/domains/:id', roleGuard('admin'), auditLogger('UPDATE_DOMAIN', 'CATALOGS'), CatalogsController.updateDomain);
+router.delete('/domains/:id', roleGuard('admin'), auditLogger('DELETE_DOMAIN', 'CATALOGS'), CatalogsController.deleteDomain);
+
 export default router;

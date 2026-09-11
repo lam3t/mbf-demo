@@ -76,30 +76,19 @@ export interface ObjectDialogData {
           </button>
         </div>
 
-        <!-- Warning / Error Banner: LOCKED BY WARD -->
-        <div *ngIf="lockedByWard" class="alert-banner-danger">
+        <!-- Warning / Error Banner: SINGLE CHECK / 1 NĂM 1 LẦN -->
+        <div *ngIf="isBlocked" class="alert-banner-danger">
           <div class="alert-icon-box">
             <mat-icon>block</mat-icon>
           </div>
           <div class="alert-text">
-            <strong>CẢNH BÁO TRÙNG LẶP KẾ HOẠCH (RULE-SC):</strong>
-            <p>Đối tượng đã thuộc quản lý kế hoạch kiểm tra của <strong>{{ lockedByWard }}</strong> - Không được phép thêm mới.</p>
-          </div>
-        </div>
-
-        <!-- Warning Banner: COMPLETED THIS YEAR (RULE-01) -->
-        <div *ngIf="isCompletedThisYear" class="alert-banner-danger">
-          <div class="alert-icon-box">
-            <mat-icon>warning</mat-icon>
-          </div>
-          <div class="alert-text">
-            <strong>CẢNH BÁO QUY ĐỊNH (RULE-01):</strong>
-            <p>Đối tượng đã được kiểm tra hoàn thành trong năm tài chính {{ currentYear }}. Không được phép thêm mới trùng lặp.</p>
+            <strong>CẢNH BÁO NGUYÊN TẮC KIỂM TRA (1 NĂM / 1 LẦN DUY NHẤT):</strong>
+            <p>{{ blockReason }}</p>
           </div>
         </div>
 
         <!-- Info Banner: AUTO-FILLED -->
-        <div *ngIf="isAutoFilled && !lockedByWard && !isCompletedThisYear" class="alert-banner-info">
+        <div *ngIf="isAutoFilled && !isBlocked" class="alert-banner-info">
           <mat-icon>info</mat-icon>
           <span>Đã tìm thấy thông tin đối tượng trên hệ thống. Dữ liệu đã được tự động điền.</span>
         </div>
@@ -458,6 +447,8 @@ export class ObjectDialogComponent implements OnInit, OnDestroy {
   identifierInput = '';
   isChecking = false;
   isAutoFilled = false;
+  isBlocked = false;
+  blockReason: string | null = null;
   lockedByWard: string | null = null;
   isCompletedThisYear = false;
   currentYear = new Date().getFullYear();
@@ -534,6 +525,8 @@ export class ObjectDialogComponent implements OnInit, OnDestroy {
 
   setType(type: BusinessObjectType): void {
     this.formData.type = type;
+    this.isBlocked = false;
+    this.blockReason = null;
     this.lockedByWard = null;
     this.isCompletedThisYear = false;
     this.isAutoFilled = false;
@@ -547,6 +540,8 @@ export class ObjectDialogComponent implements OnInit, OnDestroy {
     if (clean && (clean.length === 10 || clean.length === 12 || clean.length === 13)) {
       this.searchSubject.next(clean);
     } else {
+      this.isBlocked = false;
+      this.blockReason = null;
       this.lockedByWard = null;
       this.isCompletedThisYear = false;
       this.isAutoFilled = false;
@@ -559,10 +554,12 @@ export class ObjectDialogComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.isChecking = false;
         if (res.success && res.exists) {
-          this.lockedByWard = res.lockedByWard;
-          this.isCompletedThisYear = res.isCompletedThisYear;
+          this.isBlocked = !!res.blocked;
+          this.blockReason = res.blockReason || null;
+          this.lockedByWard = res.lockedByWard || null;
+          this.isCompletedThisYear = !!res.isCompletedThisYear;
 
-          if (!res.lockedByWard && !res.isCompletedThisYear && res.objectData) {
+          if (!res.blocked && res.objectData) {
             this.isAutoFilled = true;
             this.formData.name = res.objectData.name || this.formData.name;
             this.formData.representative = res.objectData.representative || this.formData.representative;
@@ -571,19 +568,25 @@ export class ObjectDialogComponent implements OnInit, OnDestroy {
             this.formData.status = res.objectData.status || this.formData.status;
           }
         } else {
+          this.isBlocked = false;
+          this.blockReason = null;
           this.lockedByWard = null;
           this.isCompletedThisYear = false;
           this.isAutoFilled = false;
         }
       },
-      error: () => {
+      error: (err) => {
         this.isChecking = false;
+        if (err.error?.message) {
+          this.isBlocked = true;
+          this.blockReason = err.error.message;
+        }
       }
     });
   }
 
   isSaveDisabled(): boolean {
-    if (this.lockedByWard || this.isCompletedThisYear) {
+    if (this.isBlocked || this.lockedByWard || this.isCompletedThisYear) {
       return true;
     }
     if (!this.identifierInput || !this.formData.name || !this.formData.address || !this.formData.ward) {

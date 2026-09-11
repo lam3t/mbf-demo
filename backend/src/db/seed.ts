@@ -94,20 +94,20 @@ export function runSeed(skipInit: boolean = false) {
 
   // 6. Seed Plans FIRST (so business_objects can reference planId or vice-versa)
   const insertPlan = db.prepare(`
-    INSERT OR REPLACE INTO plans (id, quarter, ward, status, rejectReason, submittedBy, submittedAt, approvedBy, approvedAt, createdAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '-5 days'))
+    INSERT OR REPLACE INTO plans (id, quarter, year, ward, status, rejectReason, submittedBy, submittedAt, approvedBy, approvedAt, createdAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '-5 days'))
   `);
 
   const samplePlans = [
-    { id: 1, quarter: 'Q2/2026', ward: 'Phường Hoàn Kiếm', status: 'approved', rejectReason: null, submittedBy: 4, submittedAt: '2026-04-05 08:30:00', approvedBy: 2, approvedAt: '2026-04-06 09:15:00' },
-    { id: 2, quarter: 'Q2/2026', ward: 'Phường Ba Đình', status: 'approved', rejectReason: null, submittedBy: 3, submittedAt: '2026-04-07 10:00:00', approvedBy: 2, approvedAt: '2026-04-08 14:00:00' },
-    { id: 3, quarter: 'Q2/2026', ward: 'Phường Đống Đa', status: 'pending', rejectReason: null, submittedBy: 3, submittedAt: '2026-04-10 11:20:00', approvedBy: null, approvedAt: null },
-    { id: 4, quarter: 'Q2/2026', ward: 'Phường Hai Bà Trưng', status: 'draft', rejectReason: null, submittedBy: 3, submittedAt: null, approvedBy: null, approvedAt: null },
-    { id: 5, quarter: 'Q2/2026', ward: 'Phường Cầu Giấy', status: 'rejected', rejectReason: 'Số lượng đối tượng chưa đạt ngưỡng tối thiểu 30 cơ sở theo Quota.', submittedBy: 3, submittedAt: '2026-04-09 15:45:00', approvedBy: 2, approvedAt: '2026-04-10 08:30:00' }
+    { id: 1, quarter: 'Q2/2026', year: 2026, ward: 'Phường Hoàn Kiếm', status: 'approved', rejectReason: null, submittedBy: 4, submittedAt: '2026-04-05 08:30:00', approvedBy: 2, approvedAt: '2026-04-06 09:15:00' },
+    { id: 2, quarter: 'Q2/2026', year: 2026, ward: 'Phường Ba Đình', status: 'approved', rejectReason: null, submittedBy: 3, submittedAt: '2026-04-07 10:00:00', approvedBy: 2, approvedAt: '2026-04-08 14:00:00' },
+    { id: 3, quarter: 'Q2/2026', year: 2026, ward: 'Phường Đống Đa', status: 'pending', rejectReason: null, submittedBy: 3, submittedAt: '2026-04-10 11:20:00', approvedBy: null, approvedAt: null },
+    { id: 4, quarter: 'Q2/2026', year: 2026, ward: 'Phường Hai Bà Trưng', status: 'draft', rejectReason: null, submittedBy: 3, submittedAt: null, approvedBy: null, approvedAt: null },
+    { id: 5, quarter: 'Q2/2026', year: 2026, ward: 'Phường Cầu Giấy', status: 'rejected', rejectReason: 'Số lượng đối tượng chưa đạt ngưỡng tối thiểu 30 cơ sở theo Quota.', submittedBy: 3, submittedAt: '2026-04-09 15:45:00', approvedBy: 2, approvedAt: '2026-04-10 08:30:00' }
   ];
 
   for (const p of samplePlans) {
-    insertPlan.run(p.id, p.quarter, p.ward, p.status, p.rejectReason, p.submittedBy, p.submittedAt, p.approvedBy, p.approvedAt);
+    insertPlan.run(p.id, p.quarter, p.year, p.ward, p.status, p.rejectReason, p.submittedBy, p.submittedAt, p.approvedBy, p.approvedAt);
   }
   console.log(`✅ Seeded ${samplePlans.length} sample plans`);
 

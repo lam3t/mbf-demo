@@ -3,17 +3,19 @@ import * as XLSX from 'xlsx';
 import { db } from '../db/connection';
 import { BusinessObject } from '../types';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
+import { checkObjectSingleCheckRule, formatQuarterText, formatDateText } from '../utils/singleCheck';
 
 export class ObjectsController {
   /**
-   * 1. GET /api/objects - Filter & Pagination
+   * 1. GET /api/objects - Filter & Pagination with Single Check annotations
    */
   static getAll(req: Request, res: Response): void {
     try {
-      const { type, status, ward, search, page = '1', limit = '50' } = req.query;
+      const { type, status, ward, search, page = '1', limit = '50', checkYear } = req.query;
       const pageNum = parseInt(page as string, 10);
       const limitNum = parseInt(limit as string, 10);
       const offset = (pageNum - 1) * limitNum;
+      const currentYear = checkYear ? parseInt(checkYear as string, 10) : new Date().getFullYear();
 
       let whereClause = 'WHERE 1=1';
       const params: any[] = [];
@@ -40,9 +42,30 @@ export class ObjectsController {
       const countStmt = db.prepare(`SELECT COUNT(*) as total FROM business_objects b ${whereClause}`);
       const countRes = countStmt.get(...params) as { total: number };
 
-      // Query data
+      // Query data with plan info and single check status
       const query = `
-        SELECT b.*, u.fullName as createdByName, p.quarter as planQuarter, p.ward as planWard
+        SELECT b.*, u.fullName as createdByName, 
+               p.quarter as planQuarter, p.year as planYear, p.ward as planWard, p.status as planStatus,
+               (
+                 SELECT p2.quarter || ' (' || p2.ward || ')'
+                 FROM plan_items pi2 
+                 JOIN plans p2 ON pi2.planId = p2.id 
+                 WHERE pi2.objectId = b.id AND p2.status IN ('pending', 'approved') AND (p2.year = ? OR p2.quarter LIKE ?)
+                 ORDER BY p2.id DESC LIMIT 1
+               ) as activePlanLock,
+               (
+                 SELECT 'Phát sinh (' || a.wardRequestedBy || ' - ' || CASE WHEN a.status = 'approved' THEN 'đã duyệt' ELSE 'chờ duyệt' END || ')'
+                 FROM adhoc_inspection_requests a
+                 WHERE a.objectId = b.id AND a.status IN ('pending', 'approved') AND (a.relatedYear = ? OR a.relatedQuarter LIKE ?)
+                 ORDER BY a.id DESC LIMIT 1
+               ) as activeAdhocLock,
+               (
+                 SELECT i2.completedAt 
+                 FROM inspections i2 
+                 LEFT JOIN plans p3 ON i2.planId = p3.id
+                 WHERE i2.objectId = b.id AND i2.status = 'completed' AND (p3.year = ? OR i2.completedAt LIKE ?)
+                 ORDER BY i2.completedAt DESC LIMIT 1
+               ) as completedInspectionThisYear
         FROM business_objects b
         LEFT JOIN users u ON b.createdBy = u.id
         LEFT JOIN plans p ON b.planId = p.id
@@ -51,7 +74,40 @@ export class ObjectsController {
         LIMIT ? OFFSET ?
       `;
 
-      const data = db.prepare(query).all(...params, limitNum, offset);
+      const rawData = db.prepare(query).all(
+        currentYear,
+        `%${currentYear}%`,
+        currentYear,
+        `%${currentYear}%`,
+        currentYear,
+        `%${currentYear}%`,
+        ...params,
+        limitNum,
+        offset
+      ) as any[];
+
+      const data = rawData.map(item => {
+        let isBlockedThisYear = false;
+        let blockReason: string | null = null;
+
+        if (item.completedInspectionThisYear) {
+          isBlockedThisYear = true;
+          const formattedDate = formatDateText(item.completedInspectionThisYear);
+          blockReason = `Đã hoàn thành kiểm tra ngày ${formattedDate} (${currentYear}) - Không được kiểm tra trùng lặp.`;
+        } else if (item.activePlanLock) {
+          isBlockedThisYear = true;
+          blockReason = `Đã thuộc kế hoạch ${item.activePlanLock} trong năm ${currentYear} (Single Check).`;
+        } else if (item.activeAdhocLock) {
+          isBlockedThisYear = true;
+          blockReason = `Đã có ${item.activeAdhocLock} trong năm ${currentYear} (Single Check).`;
+        }
+
+        return {
+          ...item,
+          isBlockedThisYear,
+          blockReason
+        };
+      });
 
       res.json({
         success: true,
@@ -69,59 +125,50 @@ export class ObjectsController {
   }
 
   /**
-   * 2. GET /api/objects/check/:idOrTaxCode - Check duplicate & cross-ward plan lock
+   * 2. GET /api/objects/check/:idOrTaxCode - Check duplicate & city-wide Single Check rule
    */
   static checkDuplicate(req: AuthenticatedRequest, res: Response): void {
     try {
       const { idOrTaxCode } = req.params;
-      const currentYear = new Date().getFullYear().toString();
-      const currentUserWard = req.user?.unit || '';
+      const currentYear = new Date().getFullYear();
 
-      // Find object by taxCode or idNumber
-      const objStmt = db.prepare(`
-        SELECT * FROM business_objects 
-        WHERE taxCode = ? OR idNumber = ?
-      `);
-      const obj = objStmt.get(idOrTaxCode, idOrTaxCode) as BusinessObject | undefined;
+      // Find object by id (if numeric), taxCode or idNumber
+      let obj: BusinessObject | undefined;
+      if (/^\d+$/.test(idOrTaxCode) && idOrTaxCode.length < 9) {
+        obj = db.prepare('SELECT * FROM business_objects WHERE id = ?').get(parseInt(idOrTaxCode, 10)) as BusinessObject | undefined;
+      }
 
       if (!obj) {
-        res.json({ success: true, exists: false });
+        const objStmt = db.prepare(`
+          SELECT * FROM business_objects 
+          WHERE (taxCode = ? AND taxCode IS NOT NULL AND taxCode != '') 
+             OR (idNumber = ? AND idNumber IS NOT NULL AND idNumber != '')
+             OR id = ?
+        `);
+        obj = objStmt.get(idOrTaxCode, idOrTaxCode, idOrTaxCode) as BusinessObject | undefined;
+      }
+
+      if (!obj) {
+        res.json({ success: true, exists: false, blocked: false, blockReason: null });
         return;
       }
 
-      // Check RULE-01: Inspected & completed in current financial year
-      const inspectionCheckStmt = db.prepare(`
-        SELECT i.id, i.completedAt, i.ward 
-        FROM inspections i
-        WHERE i.objectId = ? AND i.status = 'completed' AND (i.completedAt LIKE ? OR i.createdAt LIKE ?)
-      `);
-      const completedInspection = inspectionCheckStmt.get(obj.id, `%${currentYear}%`, `%${currentYear}%`) as any;
-
-      // Check if object is in any plan for the current year
-      const planCheckStmt = db.prepare(`
-        SELECT p.id, p.ward, p.quarter, p.status 
-        FROM plan_items pi
-        JOIN plans p ON pi.planId = p.id
-        WHERE pi.objectId = ? AND p.quarter LIKE ?
-      `);
-      const plan = planCheckStmt.get(obj.id, `%${currentYear}%`) as { id: number; ward: string; quarter: string; status: string } | undefined;
-
-      // If object belongs to another ward's plan or is locked
-      let lockedByWard: string | null = null;
-      if (plan) {
-        lockedByWard = plan.ward;
-      } else if (obj.ward && currentUserWard && !currentUserWard.includes(obj.ward) && !currentUserWard.includes('TNT')) {
-        // Also if object belongs to another ward
-        lockedByWard = obj.ward;
-      }
+      // Check city-wide Single Check rule for current year
+      const singleCheck = checkObjectSingleCheckRule(obj.id, currentYear);
 
       res.json({
         success: true,
         exists: true,
-        lockedByWard,
-        planQuarter: plan ? plan.quarter : null,
-        isCompletedThisYear: !!completedInspection,
-        lastCheckedYear: obj.lastCheckedYear || (completedInspection ? parseInt(currentYear, 10) : null),
+        blocked: singleCheck.isBlocked,
+        blockReason: singleCheck.blockReason,
+        conflictType: singleCheck.conflictType || null,
+        lockedByWard: singleCheck.planWard || null,
+        planQuarter: singleCheck.planQuarter || null,
+        planYear: singleCheck.planYear || null,
+        planStatus: singleCheck.planStatus || null,
+        isCompletedThisYear: singleCheck.conflictType === 'COMPLETED_INSPECTION',
+        completedAt: singleCheck.completedAt || null,
+        lastCheckedYear: obj.lastCheckedYear || (singleCheck.conflictType === 'COMPLETED_INSPECTION' ? currentYear : null),
         objectData: obj
       });
     } catch (err: any) {
@@ -130,13 +177,15 @@ export class ObjectsController {
   }
 
   /**
-   * 3. GET /api/objects/:id - Details with Inspections history
+   * 3. GET /api/objects/:id - Details with Inspections history & Full Yearly Plan History
    */
   static getById(req: Request, res: Response): void {
     try {
       const { id } = req.params;
+      const currentYear = new Date().getFullYear();
+
       const stmt = db.prepare(`
-        SELECT b.*, u.fullName as createdByName, p.quarter as planQuarter, p.ward as planWard
+        SELECT b.*, u.fullName as createdByName, p.quarter as planQuarter, p.year as planYear, p.ward as planWard
         FROM business_objects b
         LEFT JOIN users u ON b.createdBy = u.id
         LEFT JOIN plans p ON b.planId = p.id
@@ -149,9 +198,9 @@ export class ObjectsController {
         return;
       }
 
-      // Query inspection history for this object
+      // Query all inspection records for this object
       const inspectionsStmt = db.prepare(`
-        SELECT i.*, p.quarter as planQuarter, p.approvedAt as planApprovedAt
+        SELECT i.*, p.quarter as planQuarter, p.year as planYear, p.ward as planWard, p.approvedAt as planApprovedAt
         FROM inspections i
         LEFT JOIN plans p ON i.planId = p.id
         WHERE i.objectId = ?
@@ -159,11 +208,45 @@ export class ObjectsController {
       `);
       const inspections = inspectionsStmt.all(id);
 
+      // Query full plan history across all quarters and years (including draft, pending, approved, rejected)
+      const plansHistoryStmt = db.prepare(`
+        SELECT p.id as planId, p.quarter, p.year, p.ward, p.status as planStatus, 
+               p.rejectReason, p.submittedAt, p.approvedAt, p.createdAt as planCreatedAt,
+               u1.fullName as submittedByName, u2.fullName as approvedByName,
+               i.id as inspectionId, i.status as inspectionStatus, i.completedAt as inspectionCompletedAt,
+               i.severity, i.violationCodes, i.recommendationNote, i.isLocked as inspectionIsLocked
+        FROM plan_items pi
+        JOIN plans p ON pi.planId = p.id
+        LEFT JOIN users u1 ON p.submittedBy = u1.id
+        LEFT JOIN users u2 ON p.approvedBy = u2.id
+        LEFT JOIN inspections i ON (i.planId = p.id AND i.objectId = pi.objectId)
+        WHERE pi.objectId = ?
+        ORDER BY COALESCE(p.year, 2026) DESC, p.quarter DESC, p.id DESC
+      `);
+      const planHistory = plansHistoryStmt.all(id);
+
+      // Query adhoc requests history for this object
+      const adhocRequestsStmt = db.prepare(`
+        SELECT a.*, u1.fullName as requestedByName, u2.fullName as approvedByName
+        FROM adhoc_inspection_requests a
+        LEFT JOIN users u1 ON a.requestedBy = u1.id
+        LEFT JOIN users u2 ON a.approvedBy = u2.id
+        WHERE a.objectId = ?
+        ORDER BY a.id DESC
+      `);
+      const adhocRequests = adhocRequestsStmt.all(id);
+
+      // Single check summary for current year
+      const singleCheck = checkObjectSingleCheckRule(parseInt(id as string, 10), currentYear);
+
       res.json({
         success: true,
         data: {
           ...item,
-          inspections
+          inspections,
+          planHistory,
+          adhocRequests,
+          singleCheckSummary: singleCheck
         }
       });
     } catch (err: any) {
@@ -172,7 +255,7 @@ export class ObjectsController {
   }
 
   /**
-   * 4. POST /api/objects - Create object with type-based validation & RULE-01
+   * 4. POST /api/objects - Create object with type-based validation & Single Check
    */
   static create(req: AuthenticatedRequest, res: Response): void {
     try {
@@ -203,7 +286,7 @@ export class ObjectsController {
         }
       }
 
-      // Check duplicate identifier & lock in other ward
+      // Check duplicate identifier & Single Check rule
       const duplicateStmt = db.prepare(`
         SELECT id, ward, lastCheckedYear FROM business_objects 
         WHERE (taxCode = ? AND taxCode IS NOT NULL AND taxCode != '') 
@@ -212,27 +295,19 @@ export class ObjectsController {
       const duplicate = duplicateStmt.get(taxCode || null, idNumber || null) as { id: number; ward: string; lastCheckedYear?: number } | undefined;
 
       if (duplicate) {
-        // Check RULE-01: If completed inspection in current financial year
-        if (duplicate.lastCheckedYear === currentYear) {
-          res.status(400).json({
+        const singleCheck = checkObjectSingleCheckRule(duplicate.id, currentYear);
+        if (singleCheck.isBlocked && singleCheck.blockReason) {
+          res.status(409).json({
             success: false,
-            message: `RULE-01: Đối tượng đã hoàn thành kiểm tra trong năm ${currentYear}. Không được phép thêm mới/lập kế hoạch trùng lặp.`
+            message: singleCheck.blockReason,
+            conflictType: singleCheck.conflictType
           });
           return;
         }
 
-        // Check if locked by another ward's plan
-        const planCheckStmt = db.prepare(`
-          SELECT p.ward FROM plan_items pi
-          JOIN plans p ON pi.planId = p.id
-          WHERE pi.objectId = ? AND p.quarter LIKE ?
-        `);
-        const plan = planCheckStmt.get(duplicate.id, `%${currentYear}%`) as { ward: string } | undefined;
-
-        const lockedWard = plan ? plan.ward : duplicate.ward;
-        res.status(400).json({
+        res.status(409).json({
           success: false,
-          message: `Đối tượng đã thuộc quản lý kế hoạch kiểm tra của ${lockedWard} - Không được phép thêm mới.`
+          message: `Mã định danh đã tồn tại trong cơ sở dữ liệu (thuộc quản lý của ${duplicate.ward}).`
         });
         return;
       }

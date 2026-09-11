@@ -75,7 +75,17 @@
 
           <!-- Ward -->
           <div class="control-group">
-            <label class="control-label">Địa bàn Phường:</label>
+            <div class="control-label-row">
+              <label class="control-label">Địa bàn Phường:</label>
+              <button 
+                *ngIf="selectedWard" 
+                type="button"
+                class="btn-link-ward" 
+                (click)="goToWardDashboard(selectedWard)"
+                matTooltip="Chuyển đến Dashboard phân tích chi tiết của phường này">
+                <mat-icon>analytics</mat-icon> Xem Dashboard phường
+              </button>
+            </div>
             <select [(ngModel)]="selectedWard" (change)="onFilterChange()" class="sidebar-select">
               <option value="">Toàn thành phố Hà Nội</option>
               <option *ngFor="let w of WARD_OPTIONS" [value]="w">{{ w }}</option>
@@ -103,8 +113,17 @@
         </div>
 
         <div class="top-hotspot-box">
-          <span class="hotspot-label">Khu vực mật độ cao nhất:</span>
-          <strong class="hotspot-ward">{{ hotspotsSummary.topWard }}</strong>
+          <div class="hotspot-info">
+            <span class="hotspot-label">Khu vực mật độ cao nhất:</span>
+            <strong class="hotspot-ward">{{ hotspotsSummary.topWard }}</strong>
+          </div>
+          <button 
+            type="button"
+            class="btn-hotspot-dash" 
+            (click)="goToWardDashboard(hotspotsSummary.topWard)" 
+            matTooltip="Xem Dashboard chi tiết của phường điểm nóng này">
+            <mat-icon>dashboard</mat-icon> Xem Dashboard
+          </button>
         </div>
 
         <!-- Quick Focus Ward Buttons -->

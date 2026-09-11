@@ -1,7 +1,7 @@
 import { Component, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -105,10 +105,18 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
     { value: 'quarter', label: 'Trong quý này (Q2/2026)' }
   ];
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.loadCatalogs();
+  }
+
+  goToWardDashboard(wardName: string): void {
+    if (!wardName) return;
+    this.router.navigate(['/dashboard/ward', encodeURIComponent(wardName)]);
   }
 
   ngAfterViewInit(): void {
@@ -185,9 +193,13 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
       this.map.addLayer(this.markerClusterGroup);
     }
 
-    // Expose global callback for popup inspect button click
+    // Expose global callbacks for popup action buttons
     (window as any).openInspectionDetail = (id: number) => {
       this.openInspectionModal(id);
+    };
+
+    (window as any).goToWardDashboard = (wardName: string) => {
+      this.goToWardDashboard(wardName);
     };
   }
 
@@ -328,7 +340,9 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
           const popupContent = `
             <div class="leaflet-popup-card">
               <div class="popup-header">
-                <span class="popup-ward">${pt.ward}</span>
+                <span class="popup-ward popup-ward-link" onclick="window.goToWardDashboard('${pt.ward}')" title="Xem Dashboard Phường ${pt.ward}">
+                  📍 ${pt.ward} ↗
+                </span>
                 <span class="popup-severity-badge severity-${pt.severity}">Mức ${pt.severity}/5</span>
               </div>
               <h4 class="popup-name">${pt.objectName}</h4>
@@ -340,9 +354,11 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
               </div>
 
               <div class="popup-footer">
-                <span class="popup-time">Mã HS: #${pt.inspectionId}</span>
+                <button class="popup-btn ward-dash-btn" onclick="window.goToWardDashboard('${pt.ward}')">
+                  📊 Dashboard Phường
+                </button>
                 <button class="popup-btn" onclick="window.openInspectionDetail(${pt.inspectionId})">
-                  Xem chi tiết hồ sơ →
+                  Chi tiết HS →
                 </button>
               </div>
             </div>

@@ -1,6 +1,6 @@
 import { Component, OnInit, AfterViewInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,7 +10,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Chart, registerables } from 'chart.js';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { DomainStats, RankingItem, InspectionDomain, Ward, WardInspectionAlertItem, WardInspectionAlertsResponse, BusinessNotice } from '../../core/models';
 
 Chart.register(...registerables);
 
@@ -40,6 +42,39 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   isLoading = false;
   isRefreshing = false;
 
+  // Progressive Disclosure Tabs (Prompt 16 / CR-12)
+  activeDashboardTab: 'overview' | 'domains' | 'map' = 'overview';
+  activeRankingTab: 'slowest' | 'fastest' = 'slowest';
+  showExtraKpis = false;
+  maxAlertsToShow = 5;
+
+  // Ward Drill-down State (CR-05)
+  wardsList: Ward[] = [];
+  currentWard: Ward | null = null;
+  isWardDrillDown = false;
+  activeWardSelectValue = 'all';
+
+  // Ward Inspection Alerts & Notice Dispatch State (PROMPT 13)
+  wardAlerts: WardInspectionAlertItem[] = [];
+  wardAlertsSummary = {
+    totalCompleted: 0,
+    totalWithViolations: 0,
+    pendingNoticesCount: 0,
+    sentNoticesCount: 0
+  };
+  isLoadingWardAlerts = false;
+  showCompletedAlerts = false;
+  isNoticeDialogOpen = false;
+  selectedAlertForNotice: WardInspectionAlertItem | null = null;
+  noticeForm = {
+    method: 'van_ban_giay' as 'van_ban_giay' | 'khac',
+    sentAt: '',
+    note: '',
+    fileUrl: ''
+  };
+  isSubmittingNotice = false;
+  noticeSuccessMessage = '';
+
   // Data states
   summary: any = {
     targetCount: 9960,
@@ -59,6 +94,19 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     totalWards: 5
   };
 
+  // Domain Statistics (CR-03)
+  domainStats: DomainStats[] = [];
+  domainsList: InspectionDomain[] = [];
+  selectedDomainForDetails: DomainStats | null = null;
+  failedInspectionsForDomain: any[] = [];
+  isLoadingDomainDetails = false;
+
+  // Parallel Rankings (CR-04)
+  selectedRankingScope = 'overall';
+  fastestRankings: RankingItem[] = [];
+  slowestRankings: RankingItem[] = [];
+  isLoadingRankings = false;
+
   overdueRankings: any[] = [];
   complianceGroups: any[] = [];
   timelineData: any[] = [];
@@ -67,14 +115,142 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private timelineChart: Chart | null = null;
   private complianceChart: Chart | null = null;
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private auth: AuthService,
+    private route: ActivatedRoute,
+    private router: Router
+  ) {}
+
+  get currentUser() {
+    return this.auth.currentUser();
+  }
+
+  get isOfficerWard(): boolean {
+    return this.currentUser?.role === 'officer_ward';
+  }
+
+  get pageTitle(): string {
+    if (this.currentWard) {
+      return `Dashboard - ${this.currentWard.name}`;
+    }
+    return 'Trung tâm Chỉ huy & Điều hành BI Dashboard';
+  }
+
+  get pageSubtitle(): string {
+    if (this.currentWard) {
+      return `Chi tiết chỉ số KPI, tiến độ thực hiện và phân loại vi phạm tại địa bàn ${this.currentWard.name}`;
+    }
+    return 'Tổng hợp chỉ số KPI, tỷ lệ hoàn thành mục tiêu kiểm tra và phân tích vi phạm toàn TP Hà Nội';
+  }
 
   ngOnInit(): void {
+    // 1. Load Wards Catalog first
+    this.api.get<any>('/wards').subscribe({
+      next: (res) => {
+        if (res?.success) {
+          this.wardsList = res.data;
+        }
+        // 2. Listen to route params for drill-down
+        this.route.params.subscribe(params => {
+          const wardParam = params['wardId'];
+          this.setupWardContext(wardParam);
+        });
+      },
+      error: () => {
+        this.route.params.subscribe(params => {
+          const wardParam = params['wardId'];
+          this.setupWardContext(wardParam);
+        });
+      }
+    });
+  }
+
+  setupWardContext(wardParam?: string): void {
+    // Role-based automatic lock for officer_ward
+    if (this.isOfficerWard && this.currentUser?.unit) {
+      const wardUnit = this.currentUser.unit;
+      const found = this.wardsList.find(w => w.name === wardUnit || w.name.includes(wardUnit));
+      this.currentWard = found || {
+        id: 0,
+        code: 'WARD',
+        name: wardUnit,
+        lat: 21.0318,
+        lng: 105.8528
+      };
+      this.isWardDrillDown = true;
+      this.activeWardSelectValue = this.currentWard.id.toString();
+    } else if (wardParam) {
+      // Find ward from param (id, code, or name)
+      const parsedId = parseInt(wardParam, 10);
+      const found = this.wardsList.find(w => 
+        (!isNaN(parsedId) && w.id === parsedId) ||
+        w.code.toLowerCase() === wardParam.toLowerCase() ||
+        w.name.toLowerCase() === wardParam.toLowerCase() ||
+        encodeURIComponent(w.name) === encodeURIComponent(wardParam)
+      );
+
+      if (found) {
+        this.currentWard = found;
+        this.activeWardSelectValue = found.id.toString();
+      } else {
+        this.currentWard = {
+          id: !isNaN(parsedId) ? parsedId : 1,
+          code: 'WARD',
+          name: decodeURIComponent(wardParam),
+          lat: 21.0318,
+          lng: 105.8528
+        };
+        this.activeWardSelectValue = this.currentWard.name;
+      }
+      this.isWardDrillDown = true;
+    } else {
+      // City-level dashboard
+      this.currentWard = null;
+      this.isWardDrillDown = false;
+      this.activeWardSelectValue = 'all';
+    }
+
     this.loadAllDashboardData();
   }
 
+  navigateToWard(wardNameOrId: string | number): void {
+    const found = this.wardsList.find(w => w.name === wardNameOrId || w.id === wardNameOrId || w.code === wardNameOrId);
+    const targetId = found ? found.id : encodeURIComponent(wardNameOrId.toString());
+    this.router.navigate(['/dashboard/ward', targetId]);
+  }
+
+  navigateToCityDashboard(): void {
+    if (this.isOfficerWard) return;
+    this.router.navigate(['/dashboard']);
+  }
+
+  onQuickWardChange(): void {
+    if (this.activeWardSelectValue === 'all') {
+      this.navigateToCityDashboard();
+    } else {
+      this.navigateToWard(this.activeWardSelectValue);
+    }
+  }
+
+  switchDashboardTab(tab: 'overview' | 'domains' | 'map'): void {
+    this.activeDashboardTab = tab;
+    if (tab === 'overview') {
+      setTimeout(() => {
+        this.initCharts();
+      }, 100);
+    }
+  }
+
+  toggleRankingTab(tab: 'slowest' | 'fastest'): void {
+    this.activeRankingTab = tab;
+  }
+
+  toggleExtraKpis(): void {
+    this.showExtraKpis = !this.showExtraKpis;
+  }
+
   ngAfterViewInit(): void {
-    // Delay slightly to ensure canvas elements are ready in DOM
     setTimeout(() => {
       this.initCharts();
     }, 150);
@@ -91,9 +267,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   loadAllDashboardData(): void {
     this.isLoading = true;
+    const wardParam = this.currentWard ? this.currentWard.name : undefined;
 
     // 1. Summary
-    this.api.get<any>('/dashboard/summary').subscribe({
+    this.api.get<any>('/dashboard/summary', { ward: wardParam, quarter: this.selectedQuarter }).subscribe({
       next: (res) => {
         if (res?.success) {
           this.summary = res.data;
@@ -101,8 +278,17 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    // 2. Overdue Rankings
-    this.api.get<any>('/dashboard/overdue-ranking', { limit: 5 }).subscribe({
+    // 2. Domain Statistics (CR-03)
+    this.loadDomainStats();
+
+    // 3. Parallel Fast/Slow Rankings (CR-04)
+    this.loadRankings();
+
+    // 4. Domain Catalog
+    this.loadDomainCatalog();
+
+    // 5. Overdue Rankings
+    this.api.get<any>('/dashboard/overdue-ranking', { limit: 5, ward: wardParam }).subscribe({
       next: (res) => {
         if (res?.success) {
           this.overdueRankings = res.data;
@@ -110,8 +296,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    // 3. Compliance Pie Data
-    this.api.get<any>('/dashboard/compliance-pie').subscribe({
+    // 6. Compliance Pie Data
+    this.api.get<any>('/dashboard/compliance-pie', { ward: wardParam }).subscribe({
       next: (res) => {
         if (res?.success) {
           this.complianceGroups = res.data;
@@ -120,8 +306,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    // 4. Progress Timeline Data
-    this.api.get<any>('/dashboard/progress-by-day', { days: 14 }).subscribe({
+    // 7. Progress Timeline Data
+    this.api.get<any>('/dashboard/progress-by-day', { days: 14, ward: wardParam }).subscribe({
       next: (res) => {
         this.isLoading = false;
         if (res?.success) {
@@ -133,6 +319,186 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.isLoading = false;
       }
     });
+
+    // 8. Ward-Level Inspection Alerts (PROMPT 13)
+    if (this.isWardDrillDown) {
+      this.loadWardInspectionAlerts();
+    }
+  }
+
+  loadWardInspectionAlerts(): void {
+    if (!this.currentWard) return;
+    this.isLoadingWardAlerts = true;
+    const wardParam = this.currentWard.id || encodeURIComponent(this.currentWard.name);
+    const filterParam = this.showCompletedAlerts ? 'all' : 'needs_action';
+
+    this.api.get<WardInspectionAlertsResponse>(`/wards/${wardParam}/inspection-alerts`, { filter: filterParam }).subscribe({
+      next: (res) => {
+        this.isLoadingWardAlerts = false;
+        if (res?.success) {
+          this.wardAlerts = res.data || [];
+          if (res.summary) {
+            this.wardAlertsSummary = res.summary;
+          }
+        }
+      },
+      error: (err) => {
+        this.isLoadingWardAlerts = false;
+        console.error('Failed to load ward inspection alerts:', err);
+      }
+    });
+  }
+
+  toggleShowCompletedAlerts(): void {
+    this.showCompletedAlerts = !this.showCompletedAlerts;
+    this.loadWardInspectionAlerts();
+  }
+
+  openNoticeDialog(alertItem: WardInspectionAlertItem): void {
+    this.selectedAlertForNotice = alertItem;
+    this.noticeSuccessMessage = '';
+    this.noticeForm = {
+      method: 'van_ban_giay',
+      sentAt: new Date().toISOString().substring(0, 10),
+      note: '',
+      fileUrl: ''
+    };
+    this.isNoticeDialogOpen = true;
+  }
+
+  closeNoticeDialog(): void {
+    this.isNoticeDialogOpen = false;
+    this.selectedAlertForNotice = null;
+    this.noticeSuccessMessage = '';
+  }
+
+  submitNoticeSent(): void {
+    if (!this.selectedAlertForNotice || !this.currentWard) return;
+    this.isSubmittingNotice = true;
+    const wardParam = this.currentWard.id || encodeURIComponent(this.currentWard.name);
+    const inspectionId = this.selectedAlertForNotice.inspectionId;
+
+    this.api.post<any>(`/wards/${wardParam}/inspection-alerts/${inspectionId}/mark-notice-sent`, this.noticeForm).subscribe({
+      next: (res) => {
+        this.isSubmittingNotice = false;
+        if (res?.success) {
+          this.noticeSuccessMessage = 'Đã xác nhận gửi văn bản thông báo thành công!';
+          setTimeout(() => {
+            this.closeNoticeDialog();
+            this.loadWardInspectionAlerts();
+          }, 600);
+        }
+      },
+      error: (err) => {
+        this.isSubmittingNotice = false;
+        console.error('Failed to mark notice sent:', err);
+      }
+    });
+  }
+
+  loadDomainCatalog(): void {
+    this.api.get<any>('/catalogs/domains').subscribe({
+      next: (res) => {
+        if (res?.success) {
+          this.domainsList = res.data;
+        }
+      }
+    });
+  }
+
+  loadDomainStats(): void {
+    const wardParam = this.currentWard ? this.currentWard.name : undefined;
+    this.api.get<any>('/dashboard/by-domain', { quarter: this.selectedQuarter, ward: wardParam }).subscribe({
+      next: (res) => {
+        if (res?.success) {
+          this.domainStats = res.data;
+        }
+      }
+    });
+  }
+
+  loadRankings(): void {
+    this.isLoadingRankings = true;
+    const isDomain = this.selectedRankingScope !== 'overall';
+    const wardParam = this.currentWard ? this.currentWard.name : undefined;
+
+    const paramsFastest: any = {
+      scope: isDomain ? 'domain' : 'overall',
+      domainId: isDomain ? this.selectedRankingScope : undefined,
+      order: 'fastest',
+      limit: 5,
+      quarter: this.selectedQuarter,
+      ward: wardParam
+    };
+
+    const paramsSlowest: any = {
+      scope: isDomain ? 'domain' : 'overall',
+      domainId: isDomain ? this.selectedRankingScope : undefined,
+      order: 'slowest',
+      limit: 5,
+      quarter: this.selectedQuarter,
+      ward: wardParam
+    };
+
+    // Fastest
+    this.api.get<any>('/dashboard/ranking', paramsFastest).subscribe({
+      next: (res) => {
+        if (res?.success) {
+          this.fastestRankings = res.data;
+        }
+      }
+    });
+
+    // Slowest
+    this.api.get<any>('/dashboard/ranking', paramsSlowest).subscribe({
+      next: (res) => {
+        this.isLoadingRankings = false;
+        if (res?.success) {
+          this.slowestRankings = res.data;
+        }
+      },
+      error: () => {
+        this.isLoadingRankings = false;
+      }
+    });
+  }
+
+  onRankingScopeChange(): void {
+    this.loadRankings();
+  }
+
+  selectDomainDetails(domain: DomainStats): void {
+    this.selectedDomainForDetails = domain;
+    this.isLoadingDomainDetails = true;
+    // Load list of inspections having failed criteria in this domain
+    this.api.get<any>('/inspections', { limit: 20 }).subscribe({
+      next: (res) => {
+        this.isLoadingDomainDetails = false;
+        if (res?.success && Array.isArray(res.data)) {
+          // Filter inspections relevant to this domain or with violations
+          this.failedInspectionsForDomain = res.data.filter((i: any) => {
+            if (i.violationCodes && i.violationCodes !== '[]') return true;
+            return i.status !== 'completed';
+          });
+        }
+      },
+      error: () => {
+        this.isLoadingDomainDetails = false;
+      }
+    });
+  }
+
+  closeDomainDetails(): void {
+    this.selectedDomainForDetails = null;
+    this.failedInspectionsForDomain = [];
+  }
+
+  getScopeTitle(): string {
+    if (this.selectedRankingScope === 'overall') {
+      return 'Tổng thể (Tất cả lĩnh vực)';
+    }
+    const found = this.domainsList.find(d => d.id.toString() === this.selectedRankingScope || d.code === this.selectedRankingScope);
+    return found ? `${found.code} - ${found.name}` : 'Theo lĩnh vực';
   }
 
   handleRefresh(): void {
