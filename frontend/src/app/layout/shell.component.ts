@@ -59,7 +59,7 @@ interface NavSubItem {
               </div>
             </div>
             <div class="brand-title-box">
-              <span class="brand-title">TNT - HÀ NỘI</span>
+              <span class="brand-title">MBF - HÀ NỘI</span>
               <span class="brand-subtitle">Quản lý Kiểm tra</span>
             </div>
           </div>
@@ -261,7 +261,7 @@ interface NavSubItem {
                 {{ userInitials }}
               </div>
               <div class="user-meta">
-                <span class="user-name">{{ currentUser?.fullName || 'Cán bộ TNT' }}</span>
+                <span class="user-name">{{ currentUser?.fullName || 'Cán bộ MBF' }}</span>
                 <span class="user-role">{{ userRoleName }}</span>
               </div>
               <mat-icon class="dropdown-caret">arrow_drop_down</mat-icon>
@@ -272,8 +272,8 @@ interface NavSubItem {
                 <div class="user-avatar-large">{{ userInitials }}</div>
                 <div class="user-info-text">
                   <div class="full-name">{{ currentUser?.fullName }}</div>
-                  <div class="user-unit">{{ currentUser?.unit || 'Phòng Nghiệp vụ TNT - Hà Nội' }}</div>
-                  <div class="user-email">{{ currentUser?.email || 'tnt.hanoi@tnt.gov.vn' }}</div>
+                  <div class="user-unit">{{ currentUser?.unit || 'Phòng Nghiệp vụ MBF - Hà Nội' }}</div>
+                  <div class="user-email">{{ currentUser?.email || 'mbf.hanoi@mobifone.vn' }}</div>
                 </div>
               </div>
               <mat-divider></mat-divider>
@@ -1031,7 +1031,7 @@ export class ShellComponent implements OnInit {
   }
 
   get userInitials(): string {
-    const name = this.currentUser?.fullName || 'TNT';
+    const name = this.currentUser?.fullName || 'MBF';
     const words = name.trim().split(' ');
     if (words.length >= 2) {
       return (words[words.length - 1][0]).toUpperCase();
@@ -1043,8 +1043,8 @@ export class ShellComponent implements OnInit {
     const role = this.currentUser?.role;
     switch (role) {
       case 'admin': return 'Quản trị viên';
-      case 'leader_tnt': return 'Lãnh đạo TNT';
-      case 'officer_tnt': return 'Cán bộ TNT';
+      case 'leader_mbf': return 'Lãnh đạo MBF';
+      case 'officer_mbf': return 'Cán bộ MBF';
       case 'officer_ward': return 'Cán bộ Xã/Phường';
       default: return 'Cán bộ';
     }

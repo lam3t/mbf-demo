@@ -67,7 +67,7 @@ async function runTests() {
     const req1: any = {
       params: { wardId: 'HOAN_KIEM' },
       query: {},
-      user: { id: 1, role: 'leader_tnt', unit: 'Cục TNT' }
+      user: { id: 1, role: 'leader_mbf', unit: 'MBF' }
     };
     const res1 = createMockRes();
     WardsController.getInspectionAlerts(req1, res1);

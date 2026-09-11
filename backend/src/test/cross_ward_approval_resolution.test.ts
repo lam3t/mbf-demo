@@ -100,7 +100,7 @@ function runCrossWardApprovalTests() {
       jointDate: '2026-05-20',
       participatingWards: ['Phường Hoàn Kiếm', 'Phường Ba Đình', 'Đội QLTT Số 2']
     },
-    user: { id: 1, role: 'leader_tnt', fullName: 'Lãnh đạo TNT' }
+    user: { id: 1, role: 'leader_mbf', fullName: 'Lãnh đạo MBF' }
   };
   const resApproveJoint = createMockRes();
   PlansController.approve(reqApproveJoint, resApproveJoint);
@@ -141,7 +141,7 @@ function runCrossWardApprovalTests() {
     body: {
       resolutionMode: 'select_single'
     },
-    user: { id: 1, role: 'leader_tnt', fullName: 'Lãnh đạo TNT' }
+    user: { id: 1, role: 'leader_mbf', fullName: 'Lãnh đạo MBF' }
   };
   const resApproveSingle = createMockRes();
   PlansController.approve(reqApproveSingle, resApproveSingle);

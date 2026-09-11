@@ -22,7 +22,7 @@ const router = Router();
 router.get('/', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'TNT Inspection Management Backend API',
+    service: 'MBF Inspection Management Backend API',
     version: '1.0.0',
     timestamp: new Date().toISOString()
   });
@@ -31,7 +31,7 @@ router.get('/', (req, res) => {
 router.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'TNT Inspection Management Backend',
+    service: 'MBF Inspection Management Backend',
     timestamp: new Date().toISOString()
   });
 });

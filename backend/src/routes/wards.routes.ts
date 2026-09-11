@@ -13,7 +13,7 @@ router.get('/:idOrCode', WardsController.getByIdOrCode);
 router.get('/:wardId/inspection-alerts', WardsController.getInspectionAlerts);
 router.post(
   '/:wardId/inspection-alerts/:inspectionId/mark-notice-sent',
-  roleGuard('officer_ward', 'leader_tnt', 'officer_tnt', 'admin'),
+  roleGuard('officer_ward', 'leader_mbf', 'officer_mbf', 'admin'),
   WardsController.markNoticeSent
 );
 

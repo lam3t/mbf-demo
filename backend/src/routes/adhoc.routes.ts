@@ -18,14 +18,14 @@ router.post(
 
 router.post(
   '/:id/approve',
-  roleGuard('admin', 'leader_tnt', 'officer_tnt'),
+  roleGuard('admin', 'leader_mbf', 'officer_mbf'),
   auditLogger('APPROVE_ADHOC_REQUEST', 'ADHOC_REQUESTS'),
   AdhocController.approve
 );
 
 router.post(
   '/:id/reject',
-  roleGuard('admin', 'leader_tnt', 'officer_tnt'),
+  roleGuard('admin', 'leader_mbf', 'officer_mbf'),
   auditLogger('REJECT_ADHOC_REQUEST', 'ADHOC_REQUESTS'),
   AdhocController.reject
 );

@@ -129,7 +129,7 @@ async function runTests() {
     console.log('\n--- TEST 4: GET /api/adhoc-requests Filter by Ward and Status ---');
     const reqList: any = {
       query: { status: 'pending', ward: 'Phường Hàng Bài' },
-      user: { id: 1, role: 'leader_tnt' }
+      user: { id: 1, role: 'leader_mbf' }
     };
     const resList = createMockRes();
     AdhocController.getAll(reqList, resList);
@@ -161,7 +161,7 @@ async function runTests() {
     const reqRejectEmpty: any = {
       params: { id: adhocReq3Id },
       body: { rejectReason: '' },
-      user: { id: 1, role: 'leader_tnt' }
+      user: { id: 1, role: 'leader_mbf' }
     };
     const resRejectEmpty = createMockRes();
     AdhocController.reject(reqRejectEmpty, resRejectEmpty);
@@ -173,7 +173,7 @@ async function runTests() {
     const reqRejectValid: any = {
       params: { id: adhocReq3Id },
       body: { rejectReason: 'Chưa đủ căn cứ pháp lý theo Nghị định về kiểm tra đột xuất.' },
-      user: { id: 1, role: 'leader_tnt' }
+      user: { id: 1, role: 'leader_mbf' }
     };
     const resRejectValid = createMockRes();
     AdhocController.reject(reqRejectValid, resRejectValid);
@@ -193,7 +193,7 @@ async function runTests() {
     console.log('\n--- TEST 6: PA04 Approval Generates Inspection (isAdhoc=1) with 10 Checklist Items ---');
     const reqApprove: any = {
       params: { id: adhocReq2Id },
-      user: { id: 1, role: 'leader_tnt' }
+      user: { id: 1, role: 'leader_mbf' }
     };
     const resApprove = createMockRes();
     AdhocController.approve(reqApprove, resApprove);
@@ -218,7 +218,7 @@ async function runTests() {
     // Verify inspection appears in GET /api/inspections
     const reqInspList: any = {
       query: { objectId: objId2 },
-      user: { id: 1, role: 'leader_tnt' }
+      user: { id: 1, role: 'leader_mbf' }
     };
     const resInspList = createMockRes();
     InspectionsController.getAll(reqInspList, resInspList);

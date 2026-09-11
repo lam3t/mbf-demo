@@ -75,8 +75,8 @@ export interface UserDialogData {
               <mat-label>Vai trò / Chức danh</mat-label>
               <mat-select [(ngModel)]="formData.role" name="role" required>
                 <mat-option value="admin">Quản trị viên (Admin)</mat-option>
-                <mat-option value="leader_tnt">Lãnh đạo Phòng TNT</mat-option>
-                <mat-option value="officer_tnt">Cán bộ Phòng TNT</mat-option>
+                <mat-option value="leader_mbf">Lãnh đạo Phòng MBF</mat-option>
+                <mat-option value="officer_mbf">Cán bộ Phòng MBF</mat-option>
                 <mat-option value="officer_ward">Cán bộ Xã / Phường</mat-option>
               </mat-select>
               <mat-icon matPrefix>security</mat-icon>

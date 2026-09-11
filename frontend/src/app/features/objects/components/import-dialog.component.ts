@@ -438,8 +438,8 @@ export class ImportDialogComponent {
           const a = document.createElement('a');
           a.style.display = 'none';
           a.href = reader.result as string;
-          a.setAttribute('download', 'Mau_Import_Doi_Tuong_TNT.xlsx');
-          a.download = 'Mau_Import_Doi_Tuong_TNT.xlsx';
+          a.setAttribute('download', 'Mau_Import_Doi_Tuong_MBF.xlsx');
+          a.download = 'Mau_Import_Doi_Tuong_MBF.xlsx';
           document.body.appendChild(a);
           a.click();
           setTimeout(() => {

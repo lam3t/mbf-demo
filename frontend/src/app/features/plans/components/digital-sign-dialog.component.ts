@@ -59,7 +59,7 @@ import { AuthService } from '../../../core/services/auth.service';
             </div>
             <div class="cert-row">
               <span class="label">Chức vụ / Đơn vị:</span>
-              <span class="value">{{ currentUser?.role === 'admin' ? 'Quản trị viên Hệ thống' : 'Trưởng phòng / Lãnh đạo PA04' }} — {{ currentUser?.unit || 'PA04 TNT' }}</span>
+              <span class="value">{{ currentUser?.role === 'admin' ? 'Quản trị viên Hệ thống' : 'Trưởng phòng / Lãnh đạo PA04' }} — {{ currentUser?.unit || 'PA04 MBF' }}</span>
             </div>
             <div class="cert-row">
               <span class="label">Mã định danh Token:</span>

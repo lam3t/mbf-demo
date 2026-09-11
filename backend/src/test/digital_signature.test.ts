@@ -58,20 +58,20 @@ function runDigitalSignatureTests() {
 
   // Find or use real users from database
   let wardUser = db.prepare("SELECT * FROM users WHERE role = 'officer_ward' LIMIT 1").get() as any;
-  let officerUser = db.prepare("SELECT * FROM users WHERE role = 'officer_tnt' LIMIT 1").get() as any;
-  let leaderUser = db.prepare("SELECT * FROM users WHERE role = 'leader_tnt' LIMIT 1").get() as any;
+  let officerUser = db.prepare("SELECT * FROM users WHERE role = 'officer_mbf' LIMIT 1").get() as any;
+  let leaderUser = db.prepare("SELECT * FROM users WHERE role = 'leader_mbf' LIMIT 1").get() as any;
 
   if (!wardUser) {
     const res = db.prepare("INSERT INTO users (username, passwordHash, fullName, role, unit) VALUES ('test_ward', 'hash', 'Cán bộ Phường Test', 'officer_ward', 'Phường Test')").run();
     wardUser = { id: Number(res.lastInsertRowid), username: 'test_ward', fullName: 'Cán bộ Phường Test', role: 'officer_ward', unit: 'Phường Test' };
   }
   if (!officerUser) {
-    const res = db.prepare("INSERT INTO users (username, passwordHash, fullName, role, unit) VALUES ('test_officer', 'hash', 'Cán bộ TNT Test', 'officer_tnt', 'PA04 TNT')").run();
-    officerUser = { id: Number(res.lastInsertRowid), username: 'test_officer', fullName: 'Cán bộ TNT Test', role: 'officer_tnt', unit: 'PA04 TNT' };
+    const res = db.prepare("INSERT INTO users (username, passwordHash, fullName, role, unit) VALUES ('test_officer', 'hash', 'Cán bộ MBF Test', 'officer_mbf', 'PA04 MBF')").run();
+    officerUser = { id: Number(res.lastInsertRowid), username: 'test_officer', fullName: 'Cán bộ MBF Test', role: 'officer_mbf', unit: 'PA04 MBF' };
   }
   if (!leaderUser) {
-    const res = db.prepare("INSERT INTO users (username, passwordHash, fullName, role, unit) VALUES ('test_leader', 'hash', 'Trưởng phòng TNT Test', 'leader_tnt', 'PA04 TNT')").run();
-    leaderUser = { id: Number(res.lastInsertRowid), username: 'test_leader', fullName: 'Trưởng phòng TNT Test', role: 'leader_tnt', unit: 'PA04 TNT' };
+    const res = db.prepare("INSERT INTO users (username, passwordHash, fullName, role, unit) VALUES ('test_leader', 'hash', 'Trưởng phòng MBF Test', 'leader_mbf', 'PA04 MBF')").run();
+    leaderUser = { id: Number(res.lastInsertRowid), username: 'test_leader', fullName: 'Trưởng phòng MBF Test', role: 'leader_mbf', unit: 'PA04 MBF' };
   }
 
   // Setup: Create test business object and test draft plan
@@ -113,7 +113,7 @@ function runDigitalSignatureTests() {
     assert(!!scanRecord && scanRecord.signatureImageUrl === '/uploads/signed_plan_doc_123.pdf', 'Scan signature entry created in digital_signatures');
   }
 
-  // 3. Leader TNT executes signDigital (Ký số điện tử bằng Token) -> Success 200, status becomes approved, certificateInfo stored
+  // 3. Leader MBF executes signDigital (Ký số điện tử bằng Token) -> Success 200, status becomes approved, certificateInfo stored
   {
     const mock = createMockReqRes({ id: testPlanId.toString() }, {}, leaderUser);
     PlansController.signDigital(mock.req, mock.res);
@@ -127,7 +127,7 @@ function runDigitalSignatureTests() {
 
     const tokenSig = db.prepare("SELECT * FROM digital_signatures WHERE planId = ? AND signatureType = 'digital_token'").get(testPlanId) as any;
     assert(!!tokenSig, 'digital_token record created in digital_signatures table');
-    assert(tokenSig.signedByRole === 'leader_tnt', 'Role leader_tnt stored in digital signature');
+    assert(tokenSig.signedByRole === 'leader_mbf', 'Role leader_mbf stored in digital signature');
 
     const inspections = db.prepare('SELECT * FROM inspections WHERE planId = ?').all(testPlanId) as any[];
     assert(inspections.length > 0, 'Inspections auto-generated for business objects in plan');
@@ -145,7 +145,7 @@ function runDigitalSignatureTests() {
     assert(resData.signedDocumentUrl === '/uploads/signed_plan_doc_123.pdf', 'signedDocumentUrl returned in plan details');
   }
 
-  // 5. Standard approval ("Duyệt thường") by Officer TNT
+  // 5. Standard approval ("Duyệt thường") by Officer MBF
   {
     const plan2Res = db.prepare(`
       INSERT INTO plans (quarter, year, ward, status, signedDocumentUrl, submittedBy, createdAt)

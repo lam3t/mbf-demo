@@ -18,7 +18,7 @@ import { MatIconModule } from '@angular/material/icon';
         </div>
         <h1 class="error-title">Không Tìm Thấy Trang Yêu Cầu</h1>
         <p class="error-desc">
-          Đường dẫn bạn truy cập không tồn tại trên hệ thống TNT hoặc đã được di dời sang vị trí mới.
+          Đường dẫn bạn truy cập không tồn tại trên hệ thống MBF hoặc đã được di dời sang vị trí mới.
         </p>
         <div class="error-actions">
           <button mat-flat-button color="primary" routerLink="/dashboard" class="btn-home">

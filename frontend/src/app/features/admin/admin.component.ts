@@ -162,8 +162,8 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
               <tr>
                 <th style="width: 35%;">Chức năng / Phân hệ nghiệp vụ</th>
                 <th class="text-center">Admin Hệ thống</th>
-                <th class="text-center">Lãnh đạo TNT</th>
-                <th class="text-center">Cán bộ TNT</th>
+                <th class="text-center">Lãnh đạo MBF</th>
+                <th class="text-center">Cán bộ MBF</th>
                 <th class="text-center">Cán bộ Xã / Phường</th>
               </tr>
             </thead>
@@ -825,8 +825,8 @@ export class AdminComponent implements OnInit {
   userStatusTabs: StatusTabItem[] = [
     { key: 'all', label: 'Tất cả', count: 4, color: 'gray' },
     { key: 'admin', label: 'Quản trị viên', count: 1, color: 'red' },
-    { key: 'leader_tnt', label: 'Lãnh đạo TNT', count: 1, color: 'purple' },
-    { key: 'officer_tnt', label: 'Cán bộ TNT', count: 1, color: 'blue' },
+    { key: 'leader_mbf', label: 'Lãnh đạo MBF', count: 1, color: 'purple' },
+    { key: 'officer_mbf', label: 'Cán bộ MBF', count: 1, color: 'blue' },
     { key: 'officer_ward', label: 'Cán bộ Phường', count: 1, color: 'green' }
   ];
 
@@ -841,8 +841,8 @@ export class AdminComponent implements OnInit {
       width: '18%',
       badgeMapping: {
         admin: { label: 'Quản trị viên', cssClass: 'badge-danger' },
-        leader_tnt: { label: 'Lãnh đạo TNT', cssClass: 'badge-approved' },
-        officer_tnt: { label: 'Cán bộ TNT', cssClass: 'badge-in_progress' },
+        leader_mbf: { label: 'Lãnh đạo MBF', cssClass: 'badge-approved' },
+        officer_mbf: { label: 'Cán bộ MBF', cssClass: 'badge-in_progress' },
         officer_ward: { label: 'Cán bộ Phường', cssClass: 'badge-new' }
       }
     },

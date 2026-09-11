@@ -546,7 +546,7 @@ export class ObjectsController {
 
       const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
-      res.setHeader('Content-Disposition', 'attachment; filename="Mau_Import_Doi_Tuong_TNT.xlsx"');
+      res.setHeader('Content-Disposition', 'attachment; filename="Mau_Import_Doi_Tuong_MBF.xlsx"');
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.send(buf);
     } catch (err: any) {

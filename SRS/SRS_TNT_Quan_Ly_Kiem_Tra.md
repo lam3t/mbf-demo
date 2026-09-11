@@ -1,17 +1,17 @@
 # SOFTWARE REQUIREMENTS SPECIFICATION (SRS)
-## Hệ thống Quản lý Đăng ký và Kiểm tra Tổ chức, Cá nhân Kinh doanh (TNT)
+## Hệ thống Quản lý Đăng ký và Kiểm tra Tổ chức, Cá nhân Kinh doanh (MBF)
 ### Bản demo — Frontend Angular / Backend Node.js
 
 **Phiên bản:** 1.0 (Demo Scope)
 **Ngày:** 09/09/2026
-**Nguồn tham chiếu:** Tài liệu Tổng quan Dự án TNT, WBS chức năng (wbs.xlsx), Giao diện tham khảo CIDS (danh sách/dashboard)
+**Nguồn tham chiếu:** Tài liệu Tổng quan Dự án MBF, WBS chức năng (wbs.xlsx), Giao diện tham khảo CIDS (danh sách/dashboard)
 
 ---
 
 ## 1. GIỚI THIỆU
 
 ### 1.1 Mục đích
-Tài liệu này đặc tả yêu cầu phần mềm cho bản **demo** của Hệ thống Quản lý Đăng ký và Kiểm tra Tổ chức, Cá nhân Kinh doanh, phục vụ Đơn vị TNT (Thanh tra / Tiếp nhận & Giám sát) và Cán bộ 126 xã/phường trên địa bàn TP Hà Nội. Tài liệu dùng làm đầu vào để dựng ứng dụng bằng công cụ lập trình AI (Antigravity) với ngăn xếp công nghệ **Angular (frontend)** và **Node.js (backend)**.
+Tài liệu này đặc tả yêu cầu phần mềm cho bản **demo** của Hệ thống Quản lý Đăng ký và Kiểm tra Tổ chức, Cá nhân Kinh doanh, phục vụ Đơn vị MBF (Thanh tra / Tiếp nhận & Giám sát) và Cán bộ 126 xã/phường trên địa bàn TP Hà Nội. Tài liệu dùng làm đầu vào để dựng ứng dụng bằng công cụ lập trình AI (Antigravity) với ngăn xếp công nghệ **Angular (frontend)** và **Node.js (backend)**.
 
 ### 1.2 Phạm vi demo
 - Xây dựng đầy đủ luồng nghiệp vụ chính: Đăng ký đối tượng → Lập kế hoạch → Phê duyệt → Kiểm tra thực địa → Dashboard/Báo cáo.
@@ -20,7 +20,7 @@ Tài liệu này đặc tả yêu cầu phần mềm cho bản **demo** của H�
 - Không yêu cầu triển khai hạ tầng production, bảo mật cấp độ nhà nước, ký số, hay tích hợp LGSP/VNeID — các mục này chỉ nêu như ghi chú "out of scope" để người dùng demo hiểu giới hạn.
 
 ### 1.3 Đối tượng sử dụng tài liệu
-Dùng cho: kỹ sư prompt / AI coding agent (Antigravity), lập trình viên rà soát lại, và người trình demo cho khách hàng TNT.
+Dùng cho: kỹ sư prompt / AI coding agent (Antigravity), lập trình viên rà soát lại, và người trình demo cho khách hàng MBF.
 
 ### 1.4 Định nghĩa, từ viết tắt
 | Từ viết tắt | Ý nghĩa |
@@ -28,7 +28,7 @@ Dùng cho: kỹ sư prompt / AI coding agent (Antigravity), lập trình viên r
 | MST | Mã số thuế |
 | CCCD | Căn cước công dân |
 | ĐKKD | Đăng ký kinh doanh |
-| TNT | Đơn vị Quản lý & Thanh tra (đơn vị chủ quản, cấp duyệt) |
+| MBF | Đơn vị Quản lý & Thanh tra (đơn vị chủ quản, cấp duyệt) |
 | Xã/Phường | Đơn vị cấp cơ sở (cấp nhập liệu, thực thi) |
 | Single Check | Nguyên tắc mỗi đối tượng chỉ bị kiểm tra tối đa 1 lần/năm |
 | Hot zone | Vùng có mật độ vi phạm cao trên bản đồ nhiệt |
@@ -38,14 +38,14 @@ Dùng cho: kỹ sư prompt / AI coding agent (Antigravity), lập trình viên r
 ## 2. TỔNG QUAN HỆ THỐNG
 
 ### 2.1 Bối cảnh nghiệp vụ
-Hệ thống cần quản lý ~9.960 đối tượng kinh doanh (Quý II/2026, tăng dần các quý sau) trên 126 xã/phường, tránh chồng chéo kiểm tra, đảm bảo minh bạch, và giám sát tiến độ real-time cho lãnh đạo TNT.
+Hệ thống cần quản lý ~9.960 đối tượng kinh doanh (Quý II/2026, tăng dần các quý sau) trên 126 xã/phường, tránh chồng chéo kiểm tra, đảm bảo minh bạch, và giám sát tiến độ real-time cho lãnh đạo MBF.
 
 ### 2.2 Vai trò người dùng (Role-based access)
 | Vai trò | Mô tả | Quyền chính |
 |---|---|---|
 | **Admin hệ thống** | Quản trị chung | Quản lý người dùng, phân quyền, danh mục, cấu hình quota/cut-off, xem audit log |
-| **Lãnh đạo TNT** | Cấp phê duyệt cao nhất | Xem toàn bộ Dashboard, phê duyệt/từ chối kế hoạch, xuất báo cáo |
-| **Cán bộ TNT** | Nghiệp vụ cấp thành phố | Rà soát trùng lặp toàn thành phố, thao tác ma trận phê duyệt |
+| **Lãnh đạo MBF** | Cấp phê duyệt cao nhất | Xem toàn bộ Dashboard, phê duyệt/từ chối kế hoạch, xuất báo cáo |
+| **Cán bộ MBF** | Nghiệp vụ cấp thành phố | Rà soát trùng lặp toàn thành phố, thao tác ma trận phê duyệt |
 | **Cán bộ Xã/Phường** | Nghiệp vụ cấp cơ sở | Nhập đối tượng, lập giỏ kế hoạch, trình duyệt, kiểm tra thực địa, ghi nhận kết quả/kiến nghị |
 
 ### 2.3 Kiến trúc tổng thể (đề xuất cho demo)
@@ -96,7 +96,7 @@ Theo ảnh giao diện CIDS đính kèm, áp dụng các mẫu UI sau xuyên su�
 | FR-0.3 | Danh sách người dùng | Bảng danh sách, lọc theo đơn vị (Xã/Phường/Phòng) | Theo mẫu bảng ở ảnh tham khảo |
 | FR-0.4 | Thêm/Sửa người dùng | Form thêm/sửa cán bộ (họ tên, chức vụ, đơn vị, vai trò) | — |
 | FR-0.5 | Khóa/Mở khóa tài khoản | Toggle trạng thái active | Badge trạng thái màu |
-| FR-0.6 | Nhóm quyền (Roles) | Danh sách 3 nhóm: Lãnh đạo TNT, Cán bộ TNT, Cán bộ Phường | Có thể hard-code 3 role cho demo, không cần builder quyền động phức tạp |
+| FR-0.6 | Nhóm quyền (Roles) | Danh sách 3 nhóm: Lãnh đạo MBF, Cán bộ MBF, Cán bộ Phường | Có thể hard-code 3 role cho demo, không cần builder quyền động phức tạp |
 | FR-0.7 | Gán quyền | Gán 1 user vào 1 role | Dropdown đơn giản |
 | FR-0.8 | Danh mục lỗi vi phạm | CRUD danh mục (Lỗi 01 - Không có ĐKKD, Lỗi 02 - Vi phạm PCCC, …) | Dùng lại ở Phân hệ C |
 | FR-0.9 | Danh mục lĩnh vực kiến nghị | CRUD tag: Thuế, Đất đai, Môi trường, Trật tự đô thị | Dùng lại ở Phân hệ C |
@@ -123,9 +123,9 @@ Theo ảnh giao diện CIDS đính kèm, áp dụng các mẫu UI sau xuyên su�
 |---|---|---|---|
 | FR-B.1 | Giỏ kế hoạch (Planning Cart) | Chọn nhiều đối tượng từ danh mục A để thêm vào kế hoạch quý (giống giỏ hàng) | UI dạng "add to cart" + badge số lượng |
 | FR-B.2 | Kiểm tra Quota | Cảnh báo nếu số lượng đăng ký < min hoặc > max cấu hình ở FR-0.10 | Banner cảnh báo vàng/đỏ theo ngưỡng |
-| FR-B.3 | Trình duyệt | Gửi giỏ kế hoạch lên TNT, chuyển trạng thái "Chờ phê duyệt" | — |
+| FR-B.3 | Trình duyệt | Gửi giỏ kế hoạch lên MBF, chuyển trạng thái "Chờ phê duyệt" | — |
 | FR-B.4 | Khóa cổng đăng ký (Cut-off) | Sau thời điểm cấu hình, disable nút trình duyệt, hiển thị đếm ngược | Cron/kiểm tra thời gian phía backend + frontend hiển thị |
-| FR-B.5 | Ma trận phê duyệt (Grid) | TNT xem danh sách dạng lưới, tick chọn nhiều dòng để duyệt hàng loạt | Table + checkbox + nút "Duyệt các mục đã chọn" |
+| FR-B.5 | Ma trận phê duyệt (Grid) | MBF xem danh sách dạng lưới, tick chọn nhiều dòng để duyệt hàng loạt | Table + checkbox + nút "Duyệt các mục đã chọn" |
 | FR-B.6 | Phê duyệt (Approve) | Chuyển trạng thái "Đã duyệt", ghi audit log | — |
 | FR-B.7 | Từ chối (Reject) | Bắt buộc nhập lý do (textarea), trả hồ sơ về "Bản nháp" cho phường sửa | Modal nhập lý do, validate not-empty |
 | FR-B.8 | Danh sách kế hoạch theo Quý | Bảng danh sách kế hoạch, filter theo quý/đơn vị/trạng thái, tabs trạng thái pill giống ảnh tham khảo | Trạng thái: Nháp / Chờ phê duyệt / Đã duyệt / Từ chối |
@@ -165,7 +165,7 @@ Theo ảnh giao diện CIDS đính kèm, áp dụng các mẫu UI sau xuyên su�
 | ID | Quy tắc |
 |---|---|
 | RULE-01 | Khóa đăng ký đối tượng đã có kiểm tra "Hoàn thành" trong năm tài chính hiện tại |
-| RULE-02 | Cảnh báo tự động cho TNT nếu số đăng ký của 1 đơn vị vượt/thấp hơn Quota |
+| RULE-02 | Cảnh báo tự động cho MBF nếu số đăng ký của 1 đơn vị vượt/thấp hơn Quota |
 | RULE-03 | Dữ liệu sau "Kết thúc kiểm tra" không được sửa đổi |
 | RULE-SC | Single Check — 1 đối tượng chỉ được đưa vào kế hoạch kiểm tra 1 lần/năm trên toàn thành phố |
 
@@ -193,7 +193,7 @@ Theo ảnh giao diện CIDS đính kèm, áp dụng các mẫu UI sau xuyên su�
 ## 5. MÔ HÌNH DỮ LIỆU ĐỀ XUẤT (Demo — đơn giản hóa)
 
 ```
-User(id, username, passwordHash, fullName, role[admin|leader_tnt|officer_tnt|officer_ward],
+User(id, username, passwordHash, fullName, role[admin|leader_mbf|officer_mbf|officer_ward],
      unit, isActive, createdAt)
 
 BusinessObject(id, type[enterprise|household|individual], taxCode, idNumber,

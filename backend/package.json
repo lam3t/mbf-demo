@@ -1,7 +1,7 @@
 {
-  "name": "tnt-backend",
+  "name": "mbf-backend",
   "version": "1.0.0",
-  "description": "Backend for TNT Inspection Management Demo System",
+  "description": "Backend for MBF Inspection Management Demo System",
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon --watch src -e ts --exec ts-node src/server.ts",

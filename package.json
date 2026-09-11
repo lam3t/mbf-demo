@@ -1,7 +1,7 @@
 {
-  "name": "tnt-monorepo",
+  "name": "mbf-monorepo",
   "version": "1.0.0",
-  "description": "TNT Inspection Management Demo Monorepo (Angular 18 + Node.js Express)",
+  "description": "MBF Inspection Management Demo Monorepo (Angular 18 + Node.js Express)",
   "engines": {
     "node": "22.x"
   },

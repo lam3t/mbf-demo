@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS users (
   username TEXT UNIQUE NOT NULL,
   passwordHash TEXT NOT NULL,
   fullName TEXT NOT NULL,
-  role TEXT CHECK(role IN ('admin', 'leader_tnt', 'officer_tnt', 'officer_ward')) NOT NULL,
+  role TEXT CHECK(role IN ('admin', 'leader_mbf', 'officer_mbf', 'officer_ward')) NOT NULL,
   unit TEXT,
   isActive INTEGER DEFAULT 1,
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP

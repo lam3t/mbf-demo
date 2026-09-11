@@ -82,7 +82,7 @@ import { DocumentPreviewDialogComponent } from './document-preview-dialog.compon
                 </div>
                 <div class="cert-field">
                   <span class="cert-label">Người ký số & chức vụ:</span>
-                  <strong>{{ plan.digitalSignature?.signedByName || plan.approvedByName || 'Lãnh đạo TNT' }} ({{ plan.digitalSignature?.signedByRole === 'admin' ? 'Quản trị viên' : 'Trưởng phòng / Giám đốc' }})</strong>
+                  <strong>{{ plan.digitalSignature?.signedByName || plan.approvedByName || 'Lãnh đạo MBF' }} ({{ plan.digitalSignature?.signedByRole === 'admin' ? 'Quản trị viên' : 'Trưởng phòng / Giám đốc' }})</strong>
                 </div>
                 <div class="cert-field">
                   <span class="cert-label">Thời gian đóng dấu số:</span>
@@ -102,7 +102,7 @@ import { DocumentPreviewDialogComponent } from './document-preview-dialog.compon
                 <span>Duyệt thường (Chưa ký số điện tử)</span>
               </div>
               <p class="standard-note">
-                Kế hoạch được phê duyệt bởi: <strong>{{ plan.approvedByName || 'Cán bộ TNT' }}</strong> vào ngày {{ plan.approvedAt || '—' }}.
+                Kế hoạch được phê duyệt bởi: <strong>{{ plan.approvedByName || 'Cán bộ MBF' }}</strong> vào ngày {{ plan.approvedAt || '—' }}.
               </p>
             </div>
           </div>

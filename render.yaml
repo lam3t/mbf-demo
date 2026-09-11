@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: mbf-tnt-inspection-demo
+    name: mbf-inspection-demo
     runtime: node
     plan: free
     region: singapore

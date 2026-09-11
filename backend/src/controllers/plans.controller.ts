@@ -477,7 +477,7 @@ export class PlansController {
 
       res.json({
         success: true,
-        message: 'Đã trình duyệt kế hoạch kèm văn bản đã ký lên Lãnh đạo TNT thành công.',
+        message: 'Đã trình duyệt kế hoạch kèm văn bản đã ký lên Lãnh đạo MBF thành công.',
         signedDocumentUrl: finalDocumentUrl.trim()
       });
     } catch (err: any) {
@@ -630,15 +630,15 @@ export class PlansController {
   }
 
   /**
-   * 7b. POST /api/plans/:id/sign-digital - Digital token signature approval (Leader TNT / Admin only)
+   * 7b. POST /api/plans/:id/sign-digital - Digital token signature approval (Leader MBF / Admin only)
    * Supports resolutionMode: 'merge_joint' | 'select_single' | 'standard'
    */
   static signDigital(req: AuthenticatedRequest, res: Response): void {
     try {
       const { id } = req.params;
       const userId = req.user?.id || null;
-      const userRole = req.user?.role || 'leader_tnt';
-      const userFullName = req.user?.fullName || 'Lãnh đạo TNT';
+      const userRole = req.user?.role || 'leader_mbf';
+      const userFullName = req.user?.fullName || 'Lãnh đạo MBF';
       const { resolutionMode = 'standard', jointDate, participatingWards, leaderComment } = req.body || {};
 
       const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(id) as Plan | undefined;

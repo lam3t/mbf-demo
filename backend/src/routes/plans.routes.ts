@@ -48,31 +48,31 @@ router.post('/:id/items', auditLogger('ADD_PLAN_ITEMS', 'PLANS'), PlansControlle
 router.put('/:id/items', auditLogger('UPDATE_PLAN_ITEMS', 'PLANS'), PlansController.updateItems);
 router.post('/:id/submit', auditLogger('SUBMIT_PLAN', 'PLANS'), PlansController.submit);
 
-// Approve / Reject (TNT Roles)
+// Approve / Reject (MBF Roles)
 router.post(
   '/:id/approve',
-  roleGuard('admin', 'leader_tnt', 'officer_tnt'),
+  roleGuard('admin', 'leader_mbf', 'officer_mbf'),
   auditLogger('APPROVE_PLAN', 'PLANS'),
   PlansController.approve
 );
 
 router.post(
   '/:id/sign-digital',
-  roleGuard('admin', 'leader_tnt'),
+  roleGuard('admin', 'leader_mbf'),
   auditLogger('DIGITAL_SIGN_PLAN', 'PLANS'),
   PlansController.signDigital
 );
 
 router.post(
   '/:id/reject',
-  roleGuard('admin', 'leader_tnt', 'officer_tnt'),
+  roleGuard('admin', 'leader_mbf', 'officer_mbf'),
   auditLogger('REJECT_PLAN', 'PLANS'),
   PlansController.reject
 );
 
 router.post(
   '/approve-bulk',
-  roleGuard('admin', 'leader_tnt', 'officer_tnt'),
+  roleGuard('admin', 'leader_mbf', 'officer_mbf'),
   auditLogger('APPROVE_BULK_PLANS', 'PLANS'),
   PlansController.approveBulk
 );

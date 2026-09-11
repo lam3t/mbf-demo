@@ -70,7 +70,7 @@ app.use(errorHandler);
 if (require.main === module) {
   app.listen(CONFIG.PORT, () => {
     console.log(`====================================================`);
-    console.log(`🚀 TNT Backend Server running on port ${CONFIG.PORT}`);
+    console.log(`🚀 MBF Backend Server running on port ${CONFIG.PORT}`);
     console.log(`📡 API Base URL: http://localhost:${CONFIG.PORT}/api`);
     console.log(`📁 SQLite DB: ${CONFIG.DB_PATH}`);
     console.log(`====================================================`);

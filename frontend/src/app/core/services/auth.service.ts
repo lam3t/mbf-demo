@@ -8,8 +8,8 @@ import { AuthResponse, User } from '../models';
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly TOKEN_KEY = 'tnt_jwt_token';
-  private readonly USER_KEY = 'tnt_current_user';
+  private readonly TOKEN_KEY = 'mbf_jwt_token';
+  private readonly USER_KEY = 'mbf_current_user';
 
   currentUser = signal<User | null>(this.getStoredUser());
 

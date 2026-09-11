@@ -114,8 +114,8 @@ export class ForbiddenComponent implements OnInit {
     const role = this.currentUser?.role;
     switch (role) {
       case 'admin': return 'Quản trị viên';
-      case 'leader_tnt': return 'Lãnh đạo TNT';
-      case 'officer_tnt': return 'Cán bộ TNT';
+      case 'leader_mbf': return 'Lãnh đạo MBF';
+      case 'officer_mbf': return 'Cán bộ MBF';
       case 'officer_ward': return 'Cán bộ Xã / Phường';
       default: return role || 'Chưa xác định';
     }

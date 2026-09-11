@@ -109,11 +109,11 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
             type="button"
             class="subnav-btn"
             [class.active]="activeView === 'matrix'"
-            *ngIf="isTNT || isAdmin"
+            *ngIf="isMBF || isAdmin"
             (click)="switchView('matrix')"
           >
             <mat-icon>fact_check</mat-icon>
-            <span>3. Ma trận Phê duyệt (TNT)</span>
+            <span>3. Ma trận Phê duyệt (MBF)</span>
             <span class="badge-pending-count" *ngIf="pendingGridList.length > 0">{{ pendingGridList.length }}</span>
           </button>
         </div>
@@ -127,8 +127,8 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
             (actionClick)="handleCartHeaderAction($event)"
           ></app-page-header>
 
-          <!-- Ward Selector for Admins / TNT Managers in Cart view -->
-          <div class="cart-ward-switcher-bar" *ngIf="isAdmin || isTNT">
+          <!-- Ward Selector for Admins / MBF Managers in Cart view -->
+          <div class="cart-ward-switcher-bar" *ngIf="isAdmin || isMBF">
             <label><mat-icon>domain</mat-icon> Chọn địa bàn Phường thao tác:</label>
             <select class="cids-select" [(ngModel)]="userWard" (change)="onCartWardChange()">
               <option *ngFor="let w of availableWards" [value]="w">{{ w }}</option>
@@ -221,7 +221,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
               [matTooltip]="getSubmitTooltip()"
             >
               <mat-icon>send</mat-icon>
-              <span>Trình duyệt Kế hoạch lên TNT</span>
+              <span>Trình duyệt Kế hoạch lên MBF</span>
             </button>
           </div>
 
@@ -315,10 +315,10 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
           ></app-data-table>
         </div>
 
-        <!-- VIEW 3: APPROVAL MATRIX (FOR TNT LEADERS & OFFICERS) -->
+        <!-- VIEW 3: APPROVAL MATRIX (FOR MBF LEADERS & OFFICERS) -->
         <div class="view-container" *ngIf="activeView === 'matrix'">
           <app-page-header
-            title="Ma trận Phê duyệt Kế hoạch (TNT)"
+            title="Ma trận Phê duyệt Kế hoạch (MBF)"
             [subtitle]="'Đang có ' + pendingGridList.length + ' cơ sở kiểm tra thuộc các phường chờ phê duyệt'"
             [actions]="matrixHeaderActions"
             (actionClick)="handleMatrixHeaderAction($event)"
@@ -410,7 +410,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
                   <td>{{ item.submittedByName || 'Cán bộ phường' }}</td>
                   <td class="text-center">
                     <div class="row-quick-actions">
-                      <!-- Standard Approve Button (Available to all TNT roles) -->
+                      <!-- Standard Approve Button (Available to all MBF roles) -->
                       <button
                         type="button"
                         class="btn-quick-approve"
@@ -420,9 +420,9 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
                         <mat-icon>check</mat-icon>
                       </button>
 
-                      <!-- Digital Token Signing Button (Only for leader_tnt and admin) -->
+                      <!-- Digital Token Signing Button (Only for leader_mbf and admin) -->
                       <button
-                        *ngIf="isLeaderTNT"
+                        *ngIf="isLeaderMBF"
                         type="button"
                         class="btn-quick-sign"
                         (click)="openDigitalSignDialog(item.planId, 'Kế hoạch ' + item.quarter + ' - ' + item.ward, item.quarter, item.ward)"
@@ -431,9 +431,9 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
                         <mat-icon>approval</mat-icon>
                       </button>
 
-                      <!-- Disabled Token Button with Tooltip for Officer TNT -->
+                      <!-- Disabled Token Button with Tooltip for Officer MBF -->
                       <button
-                        *ngIf="!isLeaderTNT"
+                        *ngIf="!isLeaderMBF"
                         type="button"
                         class="btn-quick-sign disabled"
                         matTooltip="Chỉ Trưởng phòng/Giám đốc mới có quyền ký số"
@@ -494,7 +494,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
             </button>
           </div>
 
-          <div class="filter-group" *ngIf="isTNT || isAdmin" style="min-width: 220px;">
+          <div class="filter-group" *ngIf="isMBF || isAdmin" style="min-width: 220px;">
             <label class="filter-label">Lọc Phường:</label>
             <app-ward-select
               [(ngModel)]="adhocFilterWard"
@@ -529,18 +529,18 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
                 <th style="width: 90px;" class="text-center">Quý/Năm</th>
                 <th style="width: 140px;">Người đề xuất</th>
                 <th style="width: 120px;" class="text-center">Trạng thái</th>
-                <th *ngIf="isTNT || isAdmin" style="width: 130px;" class="text-center">Thao tác PA04</th>
+                <th *ngIf="isMBF || isAdmin" style="width: 130px;" class="text-center">Thao tác PA04</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngIf="isLoadingAdhoc">
-                <td [attr.colspan]="(isTNT || isAdmin) ? 11 : 10" class="empty-cart-row">
+                <td [attr.colspan]="(isMBF || isAdmin) ? 11 : 10" class="empty-cart-row">
                   <mat-icon>sync</mat-icon>
                   <p>Đang tải danh sách đề xuất phát sinh...</p>
                 </td>
               </tr>
               <tr *ngIf="!isLoadingAdhoc && filteredAdhocRequests.length === 0">
-                <td [attr.colspan]="(isTNT || isAdmin) ? 11 : 10" class="empty-cart-row">
+                <td [attr.colspan]="(isMBF || isAdmin) ? 11 : 10" class="empty-cart-row">
                   <mat-icon>inbox</mat-icon>
                   <p>Không có đề xuất kiểm tra phát sinh nào trong danh mục này.</p>
                 </td>
@@ -584,7 +584,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
                     {{ req.status === 'pending' ? 'Chờ duyệt' : (req.status === 'approved' ? 'Đã duyệt' : 'Từ chối') }}
                   </span>
                 </td>
-                <td *ngIf="isTNT || isAdmin" class="text-center">
+                <td *ngIf="isMBF || isAdmin" class="text-center">
                   <div class="row-quick-actions" *ngIf="req.status === 'pending'">
                     <button
                       type="button"
@@ -1499,7 +1499,7 @@ export class PlansListComponent implements OnInit {
     },
     {
       id: 'submit_plan',
-      label: 'Trình duyệt lên TNT',
+      label: 'Trình duyệt lên MBF',
       icon: 'send',
       color: '#059669',
       hidden: (row) => row.status !== 'draft'
@@ -1509,14 +1509,14 @@ export class PlansListComponent implements OnInit {
       label: 'Duyệt & Ký số điện tử',
       icon: 'approval',
       color: '#4338ca',
-      hidden: (row) => row.status !== 'pending' || !this.isLeaderTNT
+      hidden: (row) => row.status !== 'pending' || !this.isLeaderMBF
     },
     {
       id: 'approve_plan',
       label: 'Phê duyệt thường',
       icon: 'task_alt',
       color: '#1a56db',
-      hidden: (row) => row.status !== 'pending' || (!this.isTNT && !this.isAdmin)
+      hidden: (row) => row.status !== 'pending' || (!this.isMBF && !this.isAdmin)
     },
     {
       id: 'reject_plan',
@@ -1524,7 +1524,7 @@ export class PlansListComponent implements OnInit {
       icon: 'close',
       color: '#dc2626',
       dividerBefore: true,
-      hidden: (row) => row.status !== 'pending' || (!this.isTNT && !this.isAdmin)
+      hidden: (row) => row.status !== 'pending' || (!this.isMBF && !this.isAdmin)
     }
   ];
 
@@ -1569,7 +1569,7 @@ export class PlansListComponent implements OnInit {
     // Default view based on role
     if (this.isWardOfficer) {
       this.activeView = 'cart';
-    } else if (this.isTNT) {
+    } else if (this.isMBF) {
       this.activeView = 'matrix';
     } else {
       this.activeView = 'list';
@@ -1610,17 +1610,17 @@ export class PlansListComponent implements OnInit {
     return this.currentUser?.role === 'officer_ward';
   }
 
-  get isTNT(): boolean {
+  get isMBF(): boolean {
     const r = this.currentUser?.role;
-    return r === 'leader_tnt' || r === 'officer_tnt';
+    return r === 'leader_mbf' || r === 'officer_mbf';
   }
 
-  get isLeaderTNT(): boolean {
-    return this.currentUser?.role === 'leader_tnt' || this.currentUser?.role === 'admin';
+  get isLeaderMBF(): boolean {
+    return this.currentUser?.role === 'leader_mbf' || this.currentUser?.role === 'admin';
   }
 
-  get isOfficerTNT(): boolean {
-    return this.currentUser?.role === 'officer_tnt';
+  get isOfficerMBF(): boolean {
+    return this.currentUser?.role === 'officer_mbf';
   }
 
   get isAdmin(): boolean {
@@ -1978,7 +1978,7 @@ export class PlansListComponent implements OnInit {
     this.api.post<any>(`/plans/${this.currentDraftPlan.id}/submit`, { signedDocumentUrl }).subscribe({
       next: (res) => {
         if (res.success) {
-          this.snackBar.open('Đã trình duyệt Kế hoạch Quý II/2026 kèm văn bản đã ký lên TNT thành công!', 'Đóng', { duration: 3000 });
+          this.snackBar.open('Đã trình duyệt Kế hoạch Quý II/2026 kèm văn bản đã ký lên MBF thành công!', 'Đóng', { duration: 3000 });
           this.selectedFile = null;
           this.loadCartPlan();
           this.loadPlans();
