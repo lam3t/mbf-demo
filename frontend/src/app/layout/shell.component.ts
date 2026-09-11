@@ -173,11 +173,6 @@ interface NavSubItem {
 
           <!-- Right: Badges, Notifications, Avatar -->
           <div class="header-right-tools">
-            <!-- Language / Country Flag -->
-            <div class="lang-flag" matTooltip="Tiếng Việt">
-              <span class="flag-icon">🇻🇳</span>
-            </div>
-
             <!-- Alert Warning Bell with Unread Count Badge -->
             <button
               type="button"
@@ -665,33 +660,30 @@ interface NavSubItem {
       .header-right-tools {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 10px;
 
-        .lang-flag {
-          font-size: 18px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          padding: 4px;
-        }
-
-        .noti-btn {
+        .tool-btn {
           position: relative;
           background: transparent;
           border: none;
+          outline: none;
           color: #4b5563;
           cursor: pointer;
-          width: 36px;
-          height: 36px;
+          width: 38px;
+          height: 38px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 50%;
-          transition: background-color 0.15s;
+          border-radius: 8px;
+          transition: all 0.15s ease;
 
           &:hover {
-            background-color: #f3f4f6;
+            background-color: #f1f5f9;
             color: #1e3a8a;
+          }
+
+          &.alert-bell-btn:hover {
+            background-color: #fef2f2;
           }
 
           mat-icon {
@@ -703,15 +695,20 @@ interface NavSubItem {
           .noti-badge-pill {
             position: absolute;
             top: 2px;
-            right: 0px;
+            right: 2px;
             background-color: #f59e0b;
             color: #ffffff;
-            font-size: 10.5px;
+            font-size: 10px;
             font-weight: 700;
             padding: 1px 5px;
             border-radius: 9999px;
             line-height: 1.2;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+            border: 1.5px solid #ffffff;
+
+            &.alert-badge {
+              background-color: #ef4444;
+            }
           }
         }
 
