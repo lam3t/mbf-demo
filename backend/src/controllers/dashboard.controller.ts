@@ -391,10 +391,13 @@ export class DashboardController {
           SUM(CASE WHEN ci.result = 'pass' THEN 1 ELSE 0 END) as totalPass,
           SUM(CASE WHEN ci.result = 'fail' THEN 1 ELSE 0 END) as totalFail
         FROM inspection_domains d
-        LEFT JOIN inspection_checklist_items ci ON d.id = ci.domainId
-        LEFT JOIN inspections i ON ci.inspectionId = i.id
-        LEFT JOIN plans p ON i.planId = p.id
-        WHERE 1=1 ${filterClause}
+        LEFT JOIN (
+          SELECT ci.id, ci.domainId, ci.result
+          FROM inspection_checklist_items ci
+          JOIN inspections i ON ci.inspectionId = i.id
+          LEFT JOIN plans p ON i.planId = p.id
+          WHERE 1=1 ${filterClause}
+        ) ci ON d.id = ci.domainId
         GROUP BY d.id, d.code, d.name, d.icon, d.color
         ORDER BY d.id ASC
       `);
