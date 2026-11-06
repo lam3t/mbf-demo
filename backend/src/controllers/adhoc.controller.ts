@@ -133,6 +133,10 @@ export class AdhocController {
         locationId,
         locationName,
         inspectionType = 'adhoc',
+        unitName,
+        workflowCode,
+        approvingDept,
+        assignedApproverName,
         reason,
         inspectionContent,
         scheduledDate,
@@ -176,12 +180,24 @@ export class AdhocController {
         if (locRow) resolvedLocationName = locRow.name;
       }
 
+      const wfRow = workflowCode
+        ? (db.prepare('SELECT * FROM unit_workflows WHERE code = ?').get(workflowCode) as any)
+        : (db.prepare('SELECT * FROM unit_workflows WHERE inspectionType = ? ORDER BY id ASC LIMIT 1').get(inspectionType === 'professional_request' ? 'professional_request' : 'adhoc') as any);
+
+      const resolvedUnitName = unitName || wfRow?.unitName || 'Phòng Cảnh sát PCCC & CNCH (PC07)';
+      const resolvedWfCode = wfRow?.code || workflowCode || 'WF_PC07_ADHOC';
+      const resolvedWfName = wfRow?.name || 'Quy trình Kiểm tra Đột xuất (PC07)';
+      const resolvedApprovingDept = approvingDept || wfRow?.planApprovalDept || 'Ban Chỉ huy Phòng PC07';
+      const resolvedApproverName = assignedApproverName || wfRow?.planApproverName || 'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)';
+
       const stmt = db.prepare(`
         INSERT INTO adhoc_inspection_requests (
-          objectId, locationId, locationName, wardRequestedBy, inspectionType, reason, inspectionContent, scheduledDate,
+          objectId, locationId, locationName, wardRequestedBy, inspectionType,
+          unitName, workflowCode, workflowName, approvingDept, assignedApproverName,
+          reason, inspectionContent, scheduledDate,
           status, requestedBy, requestedAt, relatedQuarter, relatedYear, createdAt
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, datetime('now'), ?, ?, datetime('now'))
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, datetime('now'), ?, ?, datetime('now'))
       `);
 
       const result = stmt.run(
@@ -190,6 +206,11 @@ export class AdhocController {
         resolvedLocationName,
         effectiveWard,
         inspectionType === 'professional_request' ? 'professional_request' : 'adhoc',
+        resolvedUnitName,
+        resolvedWfCode,
+        resolvedWfName,
+        resolvedApprovingDept,
+        resolvedApproverName,
         reason.trim(),
         inspectionContent || reason.trim(),
         scheduledDate || new Date().toISOString().substring(0, 10),

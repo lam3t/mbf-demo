@@ -748,17 +748,57 @@ export function initDatabase(): void {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           code TEXT NOT NULL UNIQUE,
           name TEXT NOT NULL,
+          unitCode TEXT DEFAULT 'PC07',
           unitName TEXT NOT NULL,
           inspectionType TEXT NOT NULL DEFAULT 'planned',
           stepsJson TEXT NOT NULL DEFAULT '[]',
+          planApprovalDept TEXT,
+          planApproverName TEXT,
           planApprovalRole TEXT NOT NULL DEFAULT 'leader_mbf',
+          teamEstablishDept TEXT,
+          teamApproverName TEXT,
           teamEstablishRole TEXT NOT NULL DEFAULT 'leader_mbf',
+          resultAcceptanceDept TEXT,
+          resultApproverName TEXT,
           resultAcceptanceRole TEXT NOT NULL DEFAULT 'leader_mbf',
           description TEXT,
           isActive INTEGER NOT NULL DEFAULT 1,
           updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `);
+
+      // Add dynamic workflow columns to unit_workflows, plans, and adhoc_inspection_requests if missing
+      const wfCols = (db.prepare("PRAGMA table_info(unit_workflows)").all() as Array<{ name: string }>).map(c => c.name);
+      const addWfCol = (col: string, def: string) => {
+        if (!wfCols.includes(col)) db.exec(`ALTER TABLE unit_workflows ADD COLUMN ${col} ${def};`);
+      };
+      addWfCol('unitCode', "TEXT DEFAULT 'PC07'");
+      addWfCol('planApprovalDept', 'TEXT');
+      addWfCol('planApproverName', 'TEXT');
+      addWfCol('teamEstablishDept', 'TEXT');
+      addWfCol('teamApproverName', 'TEXT');
+      addWfCol('resultAcceptanceDept', 'TEXT');
+      addWfCol('resultApproverName', 'TEXT');
+
+      const planCols2 = (db.prepare("PRAGMA table_info(plans)").all() as Array<{ name: string }>).map(c => c.name);
+      const addPlanCol2 = (col: string, def: string) => {
+        if (!planCols2.includes(col)) db.exec(`ALTER TABLE plans ADD COLUMN ${col} ${def};`);
+      };
+      addPlanCol2('unitName', 'TEXT');
+      addPlanCol2('workflowCode', 'TEXT');
+      addPlanCol2('workflowName', 'TEXT');
+      addPlanCol2('approvingDept', 'TEXT');
+      addPlanCol2('assignedApproverName', 'TEXT');
+
+      const adhocCols2 = (db.prepare("PRAGMA table_info(adhoc_inspection_requests)").all() as Array<{ name: string }>).map(c => c.name);
+      const addAdhocCol2 = (col: string, def: string) => {
+        if (!adhocCols2.includes(col)) db.exec(`ALTER TABLE adhoc_inspection_requests ADD COLUMN ${col} ${def};`);
+      };
+      addAdhocCol2('unitName', 'TEXT');
+      addAdhocCol2('workflowCode', 'TEXT');
+      addAdhocCol2('workflowName', 'TEXT');
+      addAdhocCol2('approvingDept', 'TEXT');
+      addAdhocCol2('assignedApproverName', 'TEXT');
     } catch (custMigErr) {
       console.warn('⚠️ Customer feedback schema migration note:', custMigErr);
     }
@@ -814,80 +854,343 @@ export function initDatabase(): void {
       console.warn('⚠️ Auto-seed check skipped or failed:', err);
     }
 
-    // Auto-populate default unit_workflows if empty
-    const wfCount = db.prepare('SELECT COUNT(*) as count FROM unit_workflows').get() as { count: number };
-    if (wfCount.count === 0) {
+    // Auto-populate / upgrade dynamic unit_workflows (PC07, PC04/PA04, PC06, Công an Phường, Liên ngành - each with multiple workflows for Planned / Adhoc / Professional Request)
+    const pc07Check = db.prepare("SELECT COUNT(*) as count FROM unit_workflows WHERE code = 'WF_PC07_PLANNED'").get() as { count: number };
+    if (pc07Check.count === 0) {
+      // Remove legacy 4 placeholder rows if they lacked structured approverDept/approverName
+      db.exec("DELETE FROM unit_workflows WHERE planApprovalDept IS NULL;");
+
       const insertWf = db.prepare(`
-        INSERT OR IGNORE INTO unit_workflows (code, name, unitName, inspectionType, stepsJson, planApprovalRole, teamEstablishRole, resultAcceptanceRole, description, isActive)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        INSERT OR REPLACE INTO unit_workflows (
+          code, name, unitCode, unitName, inspectionType, stepsJson,
+          planApprovalDept, planApproverName, planApprovalRole,
+          teamEstablishDept, teamApproverName, teamEstablishRole,
+          resultAcceptanceDept, resultApproverName, resultAcceptanceRole,
+          description, isActive
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
       `);
+
+      // 1. PC07 - Quy trình Kiểm tra Định kỳ PCCC
+      insertWf.run(
+        'WF_PC07_PLANNED',
+        'Quy trình Kiểm tra Định kỳ An toàn PCCC & CNCH (PC07)',
+        'PC07',
+        'Phòng Cảnh sát PCCC & CNCH (PC07)',
+        'planned',
+        JSON.stringify([
+          { step: 1, stepType: 'create', name: 'Rà soát danh mục cơ sở nguy cơ cháy nổ & Lập dự thảo kế hoạch Quý', approvingDept: 'Đội Công tác Phòng cháy - Phòng PC07', approverName: 'Thiếu tá Hoàng Văn Sơn (Đội trưởng Đội Phòng cháy)', role: 'Đội trưởng Đội Phòng cháy', slaHours: 24, required: true },
+          { step: 2, stepType: 'review', name: 'Thẩm định danh sách cơ sở, đối chiếu trùng lặp & Hồ sơ thẩm duyệt PCCC', approvingDept: 'Đội Tham mưu & Pháp chế - Phòng PC07', approverName: 'Trung tá Nguyễn Thị Mai (Đội trưởng Đội Tham mưu PC07)', role: 'Trưởng bộ phận Tham mưu', slaHours: 24, required: true },
+          { step: 3, stepType: 'approve_plan', name: 'Phê duyệt Kế hoạch Kiểm tra Định kỳ PCCC của đơn vị', approvingDept: 'Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)', approverName: 'Đại tá Lê Minh Hải (Trưởng phòng PC07)', role: 'Trưởng phòng PC07', slaHours: 16, required: true },
+          { step: 4, stepType: 'establish_team', name: 'Ban hành Quyết định Thành lập Đoàn kiểm tra PCCC & Gửi thông báo cơ sở', approvingDept: 'Ban Chỉ huy Phòng PC07 & Đội Công tác Phòng cháy', approverName: 'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)', role: 'Phó Trưởng phòng PC07', slaHours: 16, required: true },
+          { step: 5, stepType: 'inspect', name: 'Kiểm tra hệ thống PCCC tại cơ sở, đo kiểm kỹ thuật & Lập biên bản', approvingDept: 'Đoàn Kiểm tra Chuyên ngành PCCC (PC07)', approverName: 'Thiếu tá Hoàng Văn Sơn (Trưởng đoàn Kiểm tra PC07)', role: 'Trưởng đoàn kiểm tra', slaHours: 72, required: true },
+          { step: 6, stepType: 'accept_result', name: 'Nghiệm thu kết quả kiểm tra, duyệt quyết định xử phạt / hậu kiểm PCCC', approvingDept: 'Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)', approverName: 'Đại tá Lê Minh Hải (Trưởng phòng PC07)', role: 'Trưởng phòng PC07', slaHours: 24, required: true }
+        ]),
+        'Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)',
+        'Đại tá Lê Minh Hải (Trưởng phòng PC07)',
+        'Trưởng phòng PC07',
+        'Ban Chỉ huy Phòng PC07 & Đội Tham mưu',
+        'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)',
+        'Phó Trưởng phòng PC07',
+        'Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)',
+        'Đại tá Lê Minh Hải (Trưởng phòng PC07)',
+        'Trưởng phòng PC07',
+        'Quy trình riêng của Phòng PC07 áp dụng cho kế hoạch kiểm tra định kỳ an toàn PCCC & CNCH.'
+      );
+
+      // 2. PC07 - Quy trình Kiểm tra Đột xuất PCCC
+      insertWf.run(
+        'WF_PC07_ADHOC',
+        'Quy trình Kiểm tra Đột xuất Nguy cơ Cháy nổ Cao / Phản ánh Vi phạm (PC07)',
+        'PC07',
+        'Phòng Cảnh sát PCCC & CNCH (PC07)',
+        'adhoc',
+        JSON.stringify([
+          { step: 1, stepType: 'create', name: 'Tiếp nhận tin báo / Phát hiện nguy cơ mất an toàn PCCC nghiêm trọng & Đề xuất kiểm tra đột xuất', approvingDept: 'Đội Kiểm tra An toàn PCCC - Phòng PC07', approverName: 'Thiếu tá Hoàng Văn Sơn (Đội trưởng Đội Phòng cháy)', role: 'Đội trưởng đề xuất', slaHours: 2, required: true },
+          { step: 2, stepType: 'approve_plan', name: 'Phê duyệt khẩn Kế hoạch / Đề xuất Kiểm tra Đột xuất & Cử Tổ công tác', approvingDept: 'Trực ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)', approverName: 'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng trực chỉ huy PC07)', role: 'Lãnh đạo trực chỉ huy PC07', slaHours: 4, required: true },
+          { step: 3, stepType: 'inspect', name: 'Kiểm tra đột xuất tại hiện trường (không báo trước), lập biên bản & đình chỉ tạm thời nếu nguy hiểm', approvingDept: 'Tổ Công tác Kiểm tra Đột xuất PC07', approverName: 'Thiếu tá Hoàng Văn Sơn (Tổ trưởng Tổ Kiểm tra PC07)', role: 'Tổ trưởng kiểm tra', slaHours: 24, required: true },
+          { step: 4, stepType: 'accept_result', name: 'Nghiệm thu hồ sơ xử lý vi phạm đột xuất & Báo cáo Trưởng phòng PC07', approvingDept: 'Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)', approverName: 'Đại tá Lê Minh Hải (Trưởng phòng PC07)', role: 'Trưởng phòng PC07', slaHours: 12, required: true }
+        ]),
+        'Trực ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)',
+        'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)',
+        'Phó Trưởng phòng PC07',
+        'Trực ban Chỉ huy Phòng PC07',
+        'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)',
+        'Phó Trưởng phòng PC07',
+        'Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)',
+        'Đại tá Lê Minh Hải (Trưởng phòng PC07)',
+        'Trưởng phòng PC07',
+        'Quy trình rút gọn phản ứng nhanh của Phòng PC07 cho các kế hoạch/đề xuất kiểm tra đột xuất về PCCC.'
+      );
+
+      // 3. PC04 / PA04 - Quy trình Kiểm tra Định kỳ Kinh tế
+      insertWf.run(
+        'WF_PC04_PLANNED',
+        'Quy trình Kiểm tra Định kỳ Chấp hành Pháp luật Kinh tế & Thương mại (PC04)',
+        'PC04',
+        'Phòng Cảnh sát Kinh tế / An ninh Kinh tế (PC04 / PA04)',
+        'planned',
+        JSON.stringify([
+          { step: 1, stepType: 'create', name: 'Tổng hợp danh sách doanh nghiệp, chi nhánh & Lập kế hoạch kiểm tra định kỳ', approvingDept: 'Đội Nghiệp vụ Kinh tế Thương mại - Phòng PC04', approverName: 'Trung tá Đỗ Quang Huy (Đội trưởng Đội Nghiệp vụ 1 - PC04)', role: 'Đội trưởng Nghiệp vụ PC04', slaHours: 24, required: true },
+          { step: 2, stepType: 'review', name: 'Thẩm định pháp lý, rà soát lịch sử vi phạm & Hồ sơ thuế/hải quan', approvingDept: 'Đội Tham mưu Tổng hợp - Phòng PC04', approverName: 'Trung tá Phạm Thanh Tùng (Đội trưởng Tham mưu PC04)', role: 'Đội trưởng Tham mưu PC04', slaHours: 24, required: true },
+          { step: 3, stepType: 'approve_plan', name: 'Phê duyệt Kế hoạch Kiểm tra Định kỳ của Phòng PC04', approvingDept: 'Ban Chỉ huy Phòng Cảnh sát Kinh tế (PC04)', approverName: 'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04)', role: 'Trưởng phòng PC04', slaHours: 16, required: true },
+          { step: 4, stepType: 'establish_team', name: 'Quyết định thành lập Đoàn kiểm tra & Phân công kiểm tra từng Trụ sở/Chi nhánh', approvingDept: 'Ban Chỉ huy Phòng PC04', approverName: 'Thượng tá Vũ Minh Đức (Phó Trưởng phòng PC04)', role: 'Phó Trưởng phòng PC04', slaHours: 16, required: true },
+          { step: 5, stepType: 'inspect', name: 'Kiểm tra hồ sơ sổ sách, kho hàng, nguồn gốc hàng hóa & Lập biên bản', approvingDept: 'Đoàn Kiểm tra Nghiệp vụ Phòng PC04', approverName: 'Trung tá Đỗ Quang Huy (Trưởng đoàn Kiểm tra PC04)', role: 'Trưởng đoàn kiểm tra', slaHours: 72, required: true },
+          { step: 6, stepType: 'accept_result', name: 'Nghiệm thu kết luận kiểm tra & Phê duyệt phương án xử lý sau kiểm tra', approvingDept: 'Ban Chỉ huy Phòng Cảnh sát Kinh tế (PC04)', approverName: 'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04)', role: 'Trưởng phòng PC04', slaHours: 24, required: true }
+        ]),
+        'Ban Chỉ huy Phòng Cảnh sát Kinh tế (PC04)',
+        'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04)',
+        'Trưởng phòng PC04',
+        'Ban Chỉ huy Phòng PC04',
+        'Thượng tá Vũ Minh Đức (Phó Trưởng phòng PC04)',
+        'Phó Trưởng phòng PC04',
+        'Ban Chỉ huy Phòng Cảnh sát Kinh tế (PC04)',
+        'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04)',
+        'Trưởng phòng PC04',
+        'Quy trình kiểm tra định kỳ riêng của Phòng PC04 đối với các doanh nghiệp, cơ sở kinh doanh thương mại.'
+      );
+
+      // 4. PC04 / PA04 - Quy trình Kiểm tra Đột xuất Kinh tế
+      insertWf.run(
+        'WF_PC04_ADHOC',
+        'Quy trình Kiểm tra Đột xuất Dấu hiệu Vi phạm Kinh tế, Hàng giả & Buôn lậu (PC04)',
+        'PC04',
+        'Phòng Cảnh sát Kinh tế / An ninh Kinh tế (PC04 / PA04)',
+        'adhoc',
+        JSON.stringify([
+          { step: 1, stepType: 'create', name: 'Báo cáo trinh sát / Tin báo dấu hiệu vi phạm kinh tế & Lập đề xuất kiểm tra đột xuất', approvingDept: 'Đội Chống buôn lậu & Gian lận thương mại - Phòng PC04', approverName: 'Trung tá Đỗ Quang Huy (Đội trưởng Đội Nghiệp vụ - PC04)', role: 'Đội trưởng đề xuất', slaHours: 2, required: true },
+          { step: 2, stepType: 'approve_plan', name: 'Phê duyệt nhanh Phương án Kiểm tra Đột xuất & Ký Quyết định kiểm tra', approvingDept: 'Ban Chỉ huy Phòng Cảnh sát Kinh tế (PC04)', approverName: 'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04)', role: 'Trưởng phòng PC04', slaHours: 4, required: true },
+          { step: 3, stepType: 'inspect', name: 'Kiểm tra đột xuất kho bãi/địa điểm kinh doanh, niêm phong tang vật & Lập biên bản', approvingDept: 'Đoàn Kiểm tra Đột xuất Phòng PC04 & Quản lý Thị trường', approverName: 'Thượng tá Vũ Minh Đức (Phó Trưởng phòng - Trưởng đoàn)', role: 'Trưởng đoàn kiểm tra', slaHours: 24, required: true },
+          { step: 4, stepType: 'accept_result', name: 'Nghiệm thu kết quả kiểm tra đột xuất & Quyết định xử lý vi phạm', approvingDept: 'Ban Chỉ huy Phòng Cảnh sát Kinh tế (PC04)', approverName: 'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04)', role: 'Trưởng phòng PC04', slaHours: 16, required: true }
+        ]),
+        'Ban Chỉ huy Phòng Cảnh sát Kinh tế (PC04)',
+        'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04)',
+        'Trưởng phòng PC04',
+        'Ban Chỉ huy Phòng PC04',
+        'Thượng tá Vũ Minh Đức (Phó Trưởng phòng PC04)',
+        'Phó Trưởng phòng PC04',
+        'Ban Chỉ huy Phòng Cảnh sát Kinh tế (PC04)',
+        'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04)',
+        'Trưởng phòng PC04',
+        'Quy trình kiểm tra đột xuất riêng của Phòng PC04 khi phát hiện dấu hiệu vi phạm pháp luật kinh tế.'
+      );
+
+      // 5. PC04 / PA04 - Quy trình Kiểm tra Theo Yêu cầu Nghiệp vụ / Yếu tố Nước ngoài
+      insertWf.run(
+        'WF_PA04_FOREIGN',
+        'Quy trình Kiểm tra Theo Yêu cầu Nghiệp vụ Doanh nghiệp FDI & Yếu tố Nước ngoài (PC04 / PA04)',
+        'PC04',
+        'Phòng Cảnh sát Kinh tế / An ninh Kinh tế (PC04 / PA04)',
+        'professional_request',
+        JSON.stringify([
+          { step: 1, stepType: 'create', name: 'Tiếp nhận yêu cầu nghiệp vụ & Rà soát hồ sơ FDI / Lao động nước ngoài', approvingDept: 'Đội An ninh Kinh tế Đối ngoại - Phòng PA04/PC04', approverName: 'Trung tá Đỗ Quang Huy (Đội trưởng Nghiệp vụ)', role: 'Đội trưởng Nghiệp vụ', slaHours: 16, required: true },
+          { step: 2, stepType: 'review', name: 'Phối hợp thẩm định thông tin với Phòng Quản lý Xuất nhập cảnh (PA08)', approvingDept: 'Đội Tham mưu PA04/PC04 & Phòng PA08', approverName: 'Thiếu tá Hoàng Thanh Tùng (Phó Đội trưởng PA08)', role: 'Cán bộ thẩm định liên đơn vị', slaHours: 16, required: true },
+          { step: 3, stepType: 'approve_plan', name: 'Phê duyệt Kế hoạch Kiểm tra theo Yêu cầu Nghiệp vụ (Cho phép kiểm tra lại cơ sở)', approvingDept: 'Ban Chỉ huy Phòng PC04 / PA04', approverName: 'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04/PA04)', role: 'Trưởng phòng PC04/PA04', slaHours: 12, required: true },
+          { step: 4, stepType: 'establish_team', name: 'Thành lập Đoàn kiểm tra liên đơn vị (PC04/PA04 - PA08 - Sở KH&ĐT)', approvingDept: 'Ban Chỉ huy Phòng PC04 / PA04', approverName: 'Thượng tá Vũ Minh Đức (Phó Trưởng phòng PC04/PA04)', role: 'Phó Trưởng phòng', slaHours: 12, required: true },
+          { step: 5, stepType: 'inspect', name: 'Kiểm tra tại trụ sở chính và các chi nhánh hoạt động có yếu tố nước ngoài', approvingDept: 'Đoàn Kiểm tra Chuyên đề FDI (PC04/PA04)', approverName: 'Trung tá Đỗ Quang Huy (Trưởng đoàn Kiểm tra)', role: 'Trưởng đoàn kiểm tra', slaHours: 48, required: true },
+          { step: 6, stepType: 'accept_result', name: 'Nghiệm thu báo cáo kết quả kiểm tra nghiệp vụ & Lưu hồ sơ chuyên đề', approvingDept: 'Ban Chỉ huy Phòng PC04 / PA04', approverName: 'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04/PA04)', role: 'Trưởng phòng PC04/PA04', slaHours: 24, required: true }
+        ]),
+        'Ban Chỉ huy Phòng PC04 / PA04',
+        'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04/PA04)',
+        'Trưởng phòng PC04/PA04',
+        'Ban Chỉ huy Phòng PC04 / PA04',
+        'Thượng tá Vũ Minh Đức (Phó Trưởng phòng PC04/PA04)',
+        'Phó Trưởng phòng PC04/PA04',
+        'Ban Chỉ huy Phòng PC04 / PA04',
+        'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04/PA04)',
+        'Trưởng phòng PC04/PA04',
+        'Quy trình kiểm tra theo yêu cầu nghiệp vụ chuyên sâu đối với doanh nghiệp có yếu tố nước ngoài (cho phép kiểm tra lại cơ sở đã được đơn vị khác kiểm tra).'
+      );
+
+      // 6. PC06 - Quy trình Kiểm tra Định kỳ Ngành nghề Kinh doanh có điều kiện ANTT
+      insertWf.run(
+        'WF_PC06_PLANNED',
+        'Quy trình Kiểm tra Định kỳ Cơ sở Kinh doanh có Điều kiện về ANTT (PC06)',
+        'PC06',
+        'Phòng Cảnh sát QLHC về TTXH (PC06)',
+        'planned',
+        JSON.stringify([
+          { step: 1, stepType: 'create', name: 'Lập danh sách cơ sở lưu trú, karaoke, cầm đồ & Dự thảo kế hoạch Quý', approvingDept: 'Đội Quản lý Ngành nghề KD có điều kiện - Phòng PC06', approverName: 'Thiếu tá Ngô Quốc Khánh (Đội trưởng Đội 3 - PC06)', role: 'Đội trưởng Đội 3 - PC06', slaHours: 24, required: true },
+          { step: 2, stepType: 'approve_plan', name: 'Thẩm định & Phê duyệt Kế hoạch Kiểm tra Định kỳ ANTT', approvingDept: 'Ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)', approverName: 'Đại tá Phạm Hồng Quân (Trưởng phòng PC06)', role: 'Trưởng phòng PC06', slaHours: 24, required: true },
+          { step: 3, stepType: 'establish_team', name: 'Thành lập Đoàn kiểm tra PC06 phối hợp Công an Phường sở tại', approvingDept: 'Ban Chỉ huy Phòng PC06', approverName: 'Thượng tá Đặng Văn Hòa (Phó Trưởng phòng PC06)', role: 'Phó Trưởng phòng PC06', slaHours: 16, required: true },
+          { step: 4, stepType: 'inspect', name: 'Kiểm tra Giấy chứng nhận đủ điều kiện ANTT, khai báo lưu trú & Lập biên bản', approvingDept: 'Đoàn Kiểm tra Phòng PC06 & Công an Phường', approverName: 'Thiếu tá Ngô Quốc Khánh (Trưởng đoàn Kiểm tra PC06)', role: 'Trưởng đoàn kiểm tra', slaHours: 48, required: true },
+          { step: 5, stepType: 'accept_result', name: 'Nghiệm thu kết quả kiểm tra & Xử lý thu hồi giấy phép ANTT (nếu vi phạm)', approvingDept: 'Ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)', approverName: 'Đại tá Phạm Hồng Quân (Trưởng phòng PC06)', role: 'Trưởng phòng PC06', slaHours: 24, required: true }
+        ]),
+        'Ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)',
+        'Đại tá Phạm Hồng Quân (Trưởng phòng PC06)',
+        'Trưởng phòng PC06',
+        'Ban Chỉ huy Phòng PC06',
+        'Thượng tá Đặng Văn Hòa (Phó Trưởng phòng PC06)',
+        'Phó Trưởng phòng PC06',
+        'Ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)',
+        'Đại tá Phạm Hồng Quân (Trưởng phòng PC06)',
+        'Trưởng phòng PC06',
+        'Quy trình kiểm tra định kỳ riêng của Phòng PC06 đối với các cơ sở kinh doanh có điều kiện về ANTT.'
+      );
+
+      // 7. PC06 - Quy trình Kiểm tra Đột xuất Đêm / Cơ sở Nhạy cảm ANTT
+      insertWf.run(
+        'WF_PC06_ADHOC',
+        'Quy trình Kiểm tra Đột xuất Cơ sở Lưu trú, Karaoke, Bar/Vũ trường (PC06)',
+        'PC06',
+        'Phòng Cảnh sát QLHC về TTXH (PC06)',
+        'adhoc',
+        JSON.stringify([
+          { step: 1, stepType: 'create', name: 'Đề xuất kiểm tra hành chính đột xuất ban đêm đối với cơ sở nhạy cảm về ANTT', approvingDept: 'Đội Quản lý Ngành nghề KD có điều kiện - Phòng PC06', approverName: 'Thiếu tá Ngô Quốc Khánh (Đội trưởng Đội 3 - PC06)', role: 'Đội trưởng đề xuất', slaHours: 2, required: true },
+          { step: 2, stepType: 'approve_plan', name: 'Phê duyệt lệnh kiểm tra hành chính đột xuất & Thành lập Tổ kiểm tra', approvingDept: 'Trực ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)', approverName: 'Thượng tá Đặng Văn Hòa (Phó Trưởng phòng trực chỉ huy PC06)', role: 'Lãnh đạo trực chỉ huy PC06', slaHours: 2, required: true },
+          { step: 3, stepType: 'inspect', name: 'Kiểm tra đột xuất tại cơ sở, kiểm tra cư trú/nhân thân & Lập biên bản hiện trường', approvingDept: 'Tổ Kiểm tra Hành chính Đột xuất PC06', approverName: 'Thiếu tá Ngô Quốc Khánh (Tổ trưởng Tổ Kiểm tra)', role: 'Tổ trưởng kiểm tra', slaHours: 12, required: true },
+          { step: 4, stepType: 'accept_result', name: 'Nghiệm thu kết quả kiểm tra & Bàn giao xử lý theo thẩm quyền', approvingDept: 'Ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)', approverName: 'Đại tá Phạm Hồng Quân (Trưởng phòng PC06)', role: 'Trưởng phòng PC06', slaHours: 12, required: true }
+        ]),
+        'Trực ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)',
+        'Thượng tá Đặng Văn Hòa (Phó Trưởng phòng PC06)',
+        'Phó Trưởng phòng PC06',
+        'Trực ban Chỉ huy Phòng PC06',
+        'Thượng tá Đặng Văn Hòa (Phó Trưởng phòng PC06)',
+        'Phó Trưởng phòng PC06',
+        'Ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)',
+        'Đại tá Phạm Hồng Quân (Trưởng phòng PC06)',
+        'Trưởng phòng PC06',
+        'Quy trình kiểm tra hành chính đột xuất riêng của Phòng PC06.'
+      );
+
+      // 8. Công an Phường (CAP) - Quy trình Kiểm tra Định kỳ Địa bàn Phường
       insertWf.run(
         'WF_STANDARD',
-        'Quy trình Kiểm tra Định kỳ Chuẩn (UBND / Công an Phường)',
+        'Quy trình Kiểm tra Định kỳ Địa bàn Phường (Công an / UBND Phường)',
+        'CAP',
         'Công an / UBND Phường',
         'planned',
         JSON.stringify([
-          '1. Lập kế hoạch & cảnh báo trùng lặp',
-          '2. Phê duyệt kế hoạch & Thành lập đoàn kiểm tra',
-          '3. Gửi thông báo kiểm tra trước cho doanh nghiệp/cơ sở',
-          '4. Kiểm tra thực tế tại cơ sở & Chấm Checklist số',
-          '5. Lập biên bản, ký xác nhận & Nghiệm thu kết quả'
+          { step: 1, stepType: 'create', name: 'Cảnh sát khu vực / Tổ Tổng hợp rà soát địa bàn & Lập kế hoạch kiểm tra Quý', approvingDept: 'Tổ Cảnh sát Khu vực & Trật tự - Công an Phường', approverName: 'Đại úy Bùi Văn Kiên (Cán bộ Công an Phường)', role: 'Cán bộ lập kế hoạch', slaHours: 24, required: true },
+          { step: 2, stepType: 'approve_plan', name: 'Thẩm định & Phê duyệt Kế hoạch Kiểm tra Định kỳ của Phường', approvingDept: 'Ban Chỉ huy Công an Phường / Lãnh đạo UBND Phường', approverName: 'Trung tá Nguyễn Hoàng Nam (Trưởng Công an Phường)', role: 'Trưởng Công an Phường', slaHours: 24, required: true },
+          { step: 3, stepType: 'establish_team', name: 'Thành lập Tổ kiểm tra Phường & Gửi thông báo kiểm tra cho cơ sở', approvingDept: 'Ban Chỉ huy Công an Phường', approverName: 'Thiếu tá Lê Văn Cường (Phó Trưởng Công an Phường)', role: 'Phó Trưởng Công an Phường', slaHours: 16, required: true },
+          { step: 4, stepType: 'inspect', name: 'Kiểm tra thực tế tại cơ sở kinh doanh & Chấm Checklist điện tử', approvingDept: 'Tổ Kiểm tra Địa bàn Phường', approverName: 'Thiếu tá Lê Văn Cường (Tổ trưởng Tổ Kiểm tra Phường)', role: 'Tổ trưởng kiểm tra', slaHours: 48, required: true },
+          { step: 5, stepType: 'accept_result', name: 'Nghiệm thu biên bản kiểm tra & Duyệt báo cáo giải trình cơ sở chưa kiểm tra', approvingDept: 'Ban Chỉ huy Công an Phường', approverName: 'Trung tá Nguyễn Hoàng Nam (Trưởng Công an Phường)', role: 'Trưởng Công an Phường', slaHours: 24, required: true }
         ]),
-        'leader_mbf',
-        'leader_mbf',
-        'leader_mbf',
-        'Quy trình chuẩn áp dụng cho kiểm tra định kỳ theo kế hoạch Quý tại các Phường.'
+        'Ban Chỉ huy Công an Phường / Lãnh đạo UBND Phường',
+        'Trung tá Nguyễn Hoàng Nam (Trưởng Công an Phường)',
+        'Trưởng Công an Phường',
+        'Ban Chỉ huy Công an Phường',
+        'Thiếu tá Lê Văn Cường (Phó Trưởng Công an Phường)',
+        'Phó Trưởng Công an Phường',
+        'Ban Chỉ huy Công an Phường',
+        'Trung tá Nguyễn Hoàng Nam (Trưởng Công an Phường)',
+        'Trưởng Công an Phường',
+        'Quy trình chuẩn áp dụng cho kế hoạch kiểm tra định kỳ theo Quý tại các Phường.'
       );
-      insertWf.run(
-        'WF_PA04_FOREIGN',
-        'Quy trình Nghiệp vụ Đặc thù PA04 (An ninh Kinh tế & Yếu tố Nước ngoài)',
-        'Phòng An ninh Kinh tế (PA04)',
-        'professional_request',
-        JSON.stringify([
-          '1. Tiếp nhận yêu cầu nghiệp vụ / Rà soát yếu tố nước ngoài (FDI, lao động, dịch vụ xuyên biên giới)',
-          '2. Thẩm định hồ sơ pháp lý & Quyết định thành lập đoàn chuyên đề',
-          '3. Kiểm tra trực tiếp tại trụ sở chính và các chi nhánh/địa điểm hoạt động',
-          '4. Đối chiếu chấp hành quy định an ninh kinh tế & Lập biên bản',
-          '5. Báo cáo lãnh đạo PA04 nghiệm thu kết quả & Lưu hồ sơ nghiệp vụ'
-        ]),
-        'leader_mbf',
-        'leader_mbf',
-        'leader_mbf',
-        'Quy trình đặc thù của PA04 đối với doanh nghiệp có yếu tố nước ngoài hoặc theo yêu cầu nghiệp vụ chuyên sâu.'
-      );
-      insertWf.run(
-        'WF_INTER_AGENCY',
-        'Quy trình Kiểm tra Liên ngành (PA04 - QLTT - PCCC - Y tế - Phường)',
-        'Đoàn Kiểm tra Liên ngành TP / Quận',
-        'planned',
-        JSON.stringify([
-          '1. Rà soát danh sách cơ sở liên quan nhiều lĩnh vực / địa bàn',
-          '2. Ban hành quyết định thành lập Đoàn kiểm tra liên ngành (nhiều đơn vị)',
-          '3. Điều phối lịch kiểm tra chung & Phân công nhiệm vụ từng đơn vị thành viên',
-          '4. Kiểm tra đồng bộ các chuyên đề (PCCC, ATTP, Thuế, ANTT) tại địa điểm kinh doanh',
-          '5. Tổng hợp biên bản liên ngành & Nghiệm thu kết quả xử lý'
-        ]),
-        'leader_mbf',
-        'leader_mbf',
-        'leader_mbf',
-        'Quy trình phối hợp liên ngành giữa nhiều đơn vị chức năng cùng tham gia đoàn kiểm tra.'
-      );
+
+      // 9. Công an Phường (CAP) - Quy trình Kiểm tra Đột xuất Địa bàn Phường
       insertWf.run(
         'WF_ADHOC_FAST',
-        'Quy trình Kiểm tra Đột xuất (Phản ứng nhanh)',
-        'Đội Kiểm tra Chuyên ngành / Công an Phường',
+        'Quy trình Kiểm tra Đột xuất ANTT, PCCC Cơ sở & Trật tự Đô thị (Công an Phường)',
+        'CAP',
+        'Công an / UBND Phường',
         'adhoc',
         JSON.stringify([
-          '1. Tiếp nhận tin báo / Phát hiện dấu hiệu vi phạm đột xuất',
-          '2. Phê duyệt nhanh đề xuất kiểm tra đột xuất (không báo trước)',
-          '3. Kiểm tra hiện trường, thu thập bằng chứng số & Lập biên bản vi phạm',
-          '4. Nghiệm thu kết quả & Theo dõi khắc phục sau vi phạm'
+          { step: 1, stepType: 'create', name: 'Tiếp nhận phản ánh của người dân / Phát hiện vi phạm trên địa bàn Phường', approvingDept: 'Trực ban Công an Phường', approverName: 'Đại úy Bùi Văn Kiên (Cán bộ trực ban Phường)', role: 'Cán bộ đề xuất', slaHours: 2, required: true },
+          { step: 2, stepType: 'approve_plan', name: 'Phê duyệt nhanh đề xuất kiểm tra đột xuất & Phân công Tổ công tác Phường', approvingDept: 'Ban Chỉ huy Công an Phường', approverName: 'Trung tá Nguyễn Hoàng Nam (Trưởng Công an Phường)', role: 'Trưởng Công an Phường', slaHours: 4, required: true },
+          { step: 3, stepType: 'inspect', name: 'Kiểm tra đột xuất tại cơ sở, thu thập bằng chứng & Lập biên bản hiện trường', approvingDept: 'Tổ Kiểm tra Cơ động Công an Phường', approverName: 'Thiếu tá Lê Văn Cường (Phó Trưởng CAP - Tổ trưởng)', role: 'Tổ trưởng kiểm tra', slaHours: 16, required: true },
+          { step: 4, stepType: 'accept_result', name: 'Nghiệm thu kết quả kiểm tra đột xuất & Trình UBND Phường xử phạt', approvingDept: 'Ban Chỉ huy Công an Phường & UBND Phường', approverName: 'Trung tá Nguyễn Hoàng Nam (Trưởng Công an Phường)', role: 'Trưởng Công an Phường', slaHours: 12, required: true }
         ]),
-        'leader_mbf',
-        'officer_mbf',
-        'leader_mbf',
-        'Quy trình rút gọn phục vụ kiểm tra đột xuất khi phát hiện dấu hiệu vi phạm.'
+        'Ban Chỉ huy Công an Phường',
+        'Trung tá Nguyễn Hoàng Nam (Trưởng Công an Phường)',
+        'Trưởng Công an Phường',
+        'Ban Chỉ huy Công an Phường',
+        'Thiếu tá Lê Văn Cường (Phó Trưởng Công an Phường)',
+        'Phó Trưởng Công an Phường',
+        'Ban Chỉ huy Công an Phường & UBND Phường',
+        'Trung tá Nguyễn Hoàng Nam (Trưởng Công an Phường)',
+        'Trưởng Công an Phường',
+        'Quy trình kiểm tra đột xuất của Công an Phường khi có phản ánh hoặc phát hiện vi phạm tại địa bàn.'
       );
+
+      // 10. Đoàn Liên ngành - Quy trình Kiểm tra Liên ngành
+      insertWf.run(
+        'WF_INTER_AGENCY',
+        'Quy trình Kiểm tra Liên ngành (PC07 - PC04 - PC06 - QLTT - UBND Phường)',
+        'LIEN_NGANH',
+        'Ban Chỉ đạo / Đoàn Kiểm tra Liên ngành',
+        'planned',
+        JSON.stringify([
+          { step: 1, stepType: 'create', name: 'Tổng hợp danh sách cơ sở liên quan nhiều lĩnh vực (PCCC, Kinh tế, ANTT, Thuế)', approvingDept: 'Thường trực Ban Chỉ đạo Liên ngành (Phòng PC04 chủ trì)', approverName: 'Trung tá Đỗ Quang Huy (Ủy viên Thường trực)', role: 'Đơn vị chủ trì lập KH', slaHours: 24, required: true },
+          { step: 2, stepType: 'approve_plan', name: 'Hội đồng / Lãnh đạo Liên ngành phê duyệt Kế hoạch Kiểm tra Liên ngành', approvingDept: 'Lãnh đạo Ban Chỉ đạo Kiểm tra Liên ngành (PC04 - PC07 - PC06)', approverName: 'Đại tá Trần Quốc Tuấn (Trưởng Ban Chỉ đạo Liên ngành)', role: 'Trưởng Ban Chỉ đạo', slaHours: 24, required: true },
+          { step: 3, stepType: 'establish_team', name: 'Ban hành Quyết định thành lập Đoàn kiểm tra Liên ngành & Trưng tập cán bộ các đơn vị', approvingDept: 'Ban Chỉ đạo Kiểm tra Liên ngành', approverName: 'Đại tá Lê Minh Hải (Phó Trưởng Ban Chỉ đạo - Trưởng phòng PC07)', role: 'Lãnh đạo ký QĐ lập đoàn', slaHours: 24, required: true },
+          { step: 4, stepType: 'inspect', name: 'Kiểm tra đồng bộ các chuyên đề tại cơ sở & Lập biên bản liên ngành', approvingDept: 'Đoàn Kiểm tra Liên ngành (PC04, PC07, PC06, QLTT, Phường)', approverName: 'Thượng tá Nguyễn Văn Bình (Trưởng đoàn Liên ngành)', role: 'Trưởng đoàn Liên ngành', slaHours: 72, required: true },
+          { step: 5, stepType: 'accept_result', name: 'Họp nghiệm thu kết quả kiểm tra liên ngành & Chuyển hồ sơ xử lý theo thẩm quyền từng ngành', approvingDept: 'Lãnh đạo Ban Chỉ đạo Kiểm tra Liên ngành', approverName: 'Đại tá Trần Quốc Tuấn (Trưởng Ban Chỉ đạo Liên ngành)', role: 'Trưởng Ban Chỉ đạo', slaHours: 24, required: true }
+        ]),
+        'Lãnh đạo Ban Chỉ đạo Kiểm tra Liên ngành (PC04 - PC07 - PC06)',
+        'Đại tá Trần Quốc Tuấn (Trưởng Ban Chỉ đạo Liên ngành)',
+        'Trưởng Ban Chỉ đạo Liên ngành',
+        'Ban Chỉ đạo Kiểm tra Liên ngành',
+        'Đại tá Lê Minh Hải (Phó Trưởng Ban Chỉ đạo - Trưởng phòng PC07)',
+        'Phó Trưởng Ban Chỉ đạo',
+        'Lãnh đạo Ban Chỉ đạo Kiểm tra Liên ngành',
+        'Đại tá Trần Quốc Tuấn (Trưởng Ban Chỉ đạo Liên ngành)',
+        'Trưởng Ban Chỉ đạo Liên ngành',
+        'Quy trình phối hợp liên ngành giữa PC07, PC04, PC06, Quản lý thị trường và UBND Phường.'
+      );
+    }
+
+    // Enrich existing plans and adhoc requests with dynamic workflow assignment (unitName, workflowCode, workflowName, approvingDept, assignedApproverName)
+    try {
+      db.exec(`
+        UPDATE plans SET
+          unitName = CASE
+            WHEN id % 3 = 1 THEN 'Phòng Cảnh sát PCCC & CNCH (PC07)'
+            WHEN id % 3 = 2 THEN 'Phòng Cảnh sát Kinh tế / An ninh Kinh tế (PC04 / PA04)'
+            ELSE 'Công an / UBND Phường'
+          END,
+          workflowCode = CASE
+            WHEN id % 3 = 1 THEN 'WF_PC07_PLANNED'
+            WHEN id % 3 = 2 THEN 'WF_PC04_PLANNED'
+            ELSE 'WF_STANDARD'
+          END,
+          workflowName = CASE
+            WHEN id % 3 = 1 THEN 'Quy trình Kiểm tra Định kỳ An toàn PCCC & CNCH (PC07)'
+            WHEN id % 3 = 2 THEN 'Quy trình Kiểm tra Định kỳ Chấp hành Pháp luật Kinh tế & Thương mại (PC04)'
+            ELSE 'Quy trình Kiểm tra Định kỳ Địa bàn Phường (Công an / UBND Phường)'
+          END,
+          approvingDept = CASE
+            WHEN id % 3 = 1 THEN 'Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)'
+            WHEN id % 3 = 2 THEN 'Ban Chỉ huy Phòng Cảnh sát Kinh tế (PC04)'
+            ELSE 'Ban Chỉ huy Công an Phường / Lãnh đạo UBND Phường'
+          END,
+          assignedApproverName = CASE
+            WHEN id % 3 = 1 THEN 'Đại tá Lê Minh Hải (Trưởng phòng PC07)'
+            WHEN id % 3 = 2 THEN 'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04)'
+            ELSE 'Trung tá Nguyễn Hoàng Nam (Trưởng Công an Phường)'
+          END
+        WHERE workflowCode IS NULL;
+
+        UPDATE adhoc_inspection_requests SET
+          unitName = CASE
+            WHEN inspectionType = 'professional_request' THEN 'Phòng Cảnh sát Kinh tế / An ninh Kinh tế (PC04 / PA04)'
+            WHEN id % 2 = 1 THEN 'Phòng Cảnh sát PCCC & CNCH (PC07)'
+            ELSE 'Phòng Cảnh sát Kinh tế / An ninh Kinh tế (PC04 / PA04)'
+          END,
+          workflowCode = CASE
+            WHEN inspectionType = 'professional_request' THEN 'WF_PA04_FOREIGN'
+            WHEN id % 2 = 1 THEN 'WF_PC07_ADHOC'
+            ELSE 'WF_PC04_ADHOC'
+          END,
+          workflowName = CASE
+            WHEN inspectionType = 'professional_request' THEN 'Quy trình Kiểm tra Theo Yêu cầu Nghiệp vụ Doanh nghiệp FDI & Yếu tố Nước ngoài (PC04 / PA04)'
+            WHEN id % 2 = 1 THEN 'Quy trình Kiểm tra Đột xuất Nguy cơ Cháy nổ Cao / Phản ánh Vi phạm (PC07)'
+            ELSE 'Quy trình Kiểm tra Đột xuất Dấu hiệu Vi phạm Kinh tế, Hàng giả & Buôn lậu (PC04)'
+          END,
+          approvingDept = CASE
+            WHEN inspectionType = 'professional_request' THEN 'Ban Chỉ huy Phòng PC04 / PA04'
+            WHEN id % 2 = 1 THEN 'Trực ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)'
+            ELSE 'Ban Chỉ huy Phòng Cảnh sát Kinh tế (PC04)'
+          END,
+          assignedApproverName = CASE
+            WHEN inspectionType = 'professional_request' THEN 'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04/PA04)'
+            WHEN id % 2 = 1 THEN 'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)'
+            ELSE 'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04)'
+          END
+        WHERE workflowCode IS NULL;
+      `);
+    } catch (e) {
+      console.warn('⚠️ Enrich plans workflow note:', e);
     }
 
     // Auto-populate default business_locations & foreign element flags if empty

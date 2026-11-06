@@ -174,10 +174,30 @@ export class PlansController {
 
       const digitalSignature = digitalSignatures.find(s => s.signatureType === 'digital_token') || digitalSignatures[0] || null;
 
+      // Lookup dynamic unit_workflow for this plan
+      const wfCode = (plan as any).workflowCode || 'WF_PC07_PLANNED';
+      const wfRow = db.prepare('SELECT * FROM unit_workflows WHERE code = ?').get(wfCode) as any
+        || db.prepare('SELECT * FROM unit_workflows ORDER BY id ASC LIMIT 1').get() as any;
+
+      let workflowDetail: any = null;
+      if (wfRow) {
+        let parsedSteps: any[] = [];
+        try {
+          parsedSteps = JSON.parse(wfRow.stepsJson || '[]');
+        } catch {
+          parsedSteps = [];
+        }
+        workflowDetail = {
+          ...wfRow,
+          steps: parsedSteps
+        };
+      }
+
       res.json({
         success: true,
         data: {
           ...plan,
+          workflowDetail,
           items: annotatedItems,
           crossWardConflicts,
           hasCrossWardConflicts: crossWardConflicts.length > 0,
@@ -195,7 +215,21 @@ export class PlansController {
    */
   static create(req: AuthenticatedRequest, res: Response): void {
     try {
-      const { quarter, year, ward, inspectionType = 'planned', scheduledStartDate, scheduledEndDate, inspectionLocation, inspectionContent, objectIds = [] } = req.body;
+      const {
+        quarter,
+        year,
+        ward,
+        unitName,
+        workflowCode,
+        approvingDept,
+        assignedApproverName,
+        inspectionType = 'planned',
+        scheduledStartDate,
+        scheduledEndDate,
+        inspectionLocation,
+        inspectionContent,
+        objectIds = []
+      } = req.body;
       const userId = req.user?.id || null;
 
       if (!quarter || !ward) {
@@ -204,6 +238,17 @@ export class PlansController {
       }
 
       const planYear = year ? parseInt(year, 10) : (quarter.includes('/') ? parseInt(quarter.split('/')[1], 10) : new Date().getFullYear());
+
+      // Resolve dynamic workflow details from unit_workflows
+      const wfRow = workflowCode
+        ? (db.prepare('SELECT * FROM unit_workflows WHERE code = ?').get(workflowCode) as any)
+        : (db.prepare("SELECT * FROM unit_workflows WHERE inspectionType = ? ORDER BY id ASC LIMIT 1").get(inspectionType || 'planned') as any);
+
+      const resolvedUnitName = unitName || wfRow?.unitName || 'Phòng Cảnh sát PCCC & CNCH (PC07)';
+      const resolvedWfCode = wfRow?.code || workflowCode || 'WF_PC07_PLANNED';
+      const resolvedWfName = wfRow?.name || 'Quy trình Kiểm tra Định kỳ An toàn PCCC & CNCH (PC07)';
+      const resolvedApprovingDept = approvingDept || wfRow?.planApprovalDept || 'Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)';
+      const resolvedApproverName = assignedApproverName || wfRow?.planApproverName || 'Đại tá Lê Minh Hải (Trưởng phòng PC07)';
 
       // Collect duplicate warnings (Warn-only, DO NOT hard-block per Requirement #2 & #3)
       const warnings: any[] = [];
@@ -224,13 +269,22 @@ export class PlansController {
 
       const createPlanTx = db.transaction(() => {
         const stmt = db.prepare(`
-          INSERT INTO plans (quarter, year, ward, inspectionType, scheduledStartDate, scheduledEndDate, inspectionLocation, inspectionContent, status, dueDate, submittedBy, createdAt)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, datetime('now'))
+          INSERT INTO plans (
+            quarter, year, ward, unitName, workflowCode, workflowName, approvingDept, assignedApproverName,
+            inspectionType, scheduledStartDate, scheduledEndDate, inspectionLocation, inspectionContent,
+            status, dueDate, submittedBy, createdAt
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, datetime('now'))
         `);
         const result = stmt.run(
           quarter,
           planYear,
           ward,
+          resolvedUnitName,
+          resolvedWfCode,
+          resolvedWfName,
+          resolvedApprovingDept,
+          resolvedApproverName,
           inspectionType || 'planned',
           scheduledStartDate || '2026-04-01',
           scheduledEndDate || '2026-06-30',
@@ -413,6 +467,10 @@ export class PlansController {
       const {
         quarter,
         ward,
+        unitName,
+        workflowCode,
+        approvingDept,
+        assignedApproverName,
         inspectionType,
         scheduledStartDate,
         scheduledEndDate,
@@ -429,11 +487,20 @@ export class PlansController {
         return;
       }
 
+      const wfRow = workflowCode
+        ? (db.prepare('SELECT * FROM unit_workflows WHERE code = ?').get(workflowCode) as any)
+        : null;
+
       db.transaction(() => {
         db.prepare(`
           UPDATE plans
           SET quarter = COALESCE(?, quarter),
               ward = COALESCE(?, ward),
+              unitName = COALESCE(?, unitName),
+              workflowCode = COALESCE(?, workflowCode),
+              workflowName = COALESCE(?, workflowName),
+              approvingDept = COALESCE(?, approvingDept),
+              assignedApproverName = COALESCE(?, assignedApproverName),
               inspectionType = COALESCE(?, inspectionType),
               scheduledStartDate = COALESCE(?, scheduledStartDate),
               scheduledEndDate = COALESCE(?, scheduledEndDate),
@@ -446,12 +513,17 @@ export class PlansController {
         `).run(
           quarter || null,
           ward || null,
+          unitName || wfRow?.unitName || null,
+          workflowCode || null,
+          wfRow?.name || null,
+          approvingDept || wfRow?.planApprovalDept || null,
+          assignedApproverName || wfRow?.planApproverName || null,
           inspectionType || null,
           scheduledStartDate || null,
           scheduledEndDate || null,
           inspectionLocation || null,
           inspectionContent || null,
-          adjustmentNote || 'Điều chỉnh thời gian, địa điểm và nội dung kiểm tra trong quá trình triển khai',
+          adjustmentNote || 'Điều chỉnh quy trình, thời gian, địa điểm và nội dung kiểm tra trong quá trình triển khai',
           userId,
           id
         );

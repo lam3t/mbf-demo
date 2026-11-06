@@ -50,7 +50,7 @@ import { BusinessObject } from '../../../core/models';
               [style.border-color]="inspectionType === 'adhoc' ? '#7c3aed' : '#cbd5e1'"
               [style.background]="inspectionType === 'adhoc' ? '#f5f3ff' : '#fff'"
             >
-              <input type="radio" name="inspType" value="adhoc" [(ngModel)]="inspectionType" />
+              <input type="radio" name="inspType" value="adhoc" [(ngModel)]="inspectionType" (change)="onInspectionTypeChange()" />
               <div>
                 <strong style="display:block;font-size:13px;color:#1e293b;">⚡ Kiểm tra đột xuất</strong>
                 <span style="font-size:11.5px;color:#64748b;">Khi có dấu hiệu vi phạm, phản ánh nóng, sự cố ATTP/PCCC</span>
@@ -61,12 +61,56 @@ import { BusinessObject } from '../../../core/models';
               [style.border-color]="inspectionType === 'professional_request' ? '#1d4ed8' : '#cbd5e1'"
               [style.background]="inspectionType === 'professional_request' ? '#eff6ff' : '#fff'"
             >
-              <input type="radio" name="inspType" value="professional_request" [(ngModel)]="inspectionType" />
+              <input type="radio" name="inspType" value="professional_request" [(ngModel)]="inspectionType" (change)="onInspectionTypeChange()" />
               <div>
                 <strong style="display:block;font-size:13px;color:#1e293b;">📋 Kiểm tra theo yêu cầu nghiệp vụ</strong>
-                <span style="font-size:11.5px;color:#64748b;">Theo chuyên đề ngành dọc (PA04, PC06, PC07...) hoặc yêu cầu nghiệp vụ riêng</span>
+                <span style="font-size:11.5px;color:#64748b;">Theo chuyên đề ngành dọc (PC07, PC04/PA04, PC06...) hoặc yêu cầu nghiệp vụ riêng</span>
               </div>
             </label>
+          </div>
+        </div>
+
+        <!-- Section 0B: Dynamic Unit Workflow & Approving Department / Approver Person -->
+        <div class="form-section" style="background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 10px; padding: 12px 14px;">
+          <label class="section-label" style="color: #0369a1; display: flex; align-items: center; gap: 6px;">
+            <mat-icon style="font-size: 18px; width: 18px; height: 18px;">account_tree</mat-icon>
+            <span>Cấu hình Quy trình Động của Đơn vị (PC07, PC04, PC06, Phường) — Phòng ban duyệt & Người duyệt:</span>
+          </label>
+          <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 6px;">
+            <div>
+              <span style="font-size: 11.5px; font-weight: 600; color: #334155;">Chọn Quy trình Động theo Đơn vị & Loại hình:</span>
+              <select
+                [(ngModel)]="selectedWorkflowCode"
+                (change)="onWorkflowChange()"
+                style="width: 100%; height: 36px; padding: 0 10px; border: 1px solid #7dd3fc; border-radius: 6px; font-size: 12.5px; font-weight: 600; background: #fff; color: #0f172a; margin-top: 3px;">
+                <option *ngFor="let wf of filteredWorkflows" [value]="wf.code">
+                  [{{ wf.unitCode }}] {{ wf.name }} ({{ wf.unitName }})
+                </option>
+              </select>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div>
+                <span style="font-size: 11.5px; font-weight: 600; color: #1d4ed8;">🏢 Phòng ban phê duyệt kế hoạch/đề xuất:</span>
+                <input
+                  type="text"
+                  [(ngModel)]="approvingDept"
+                  style="width: 100%; height: 34px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; background: #fff; margin-top: 3px; box-sizing: border-box;" />
+              </div>
+              <div>
+                <span style="font-size: 11.5px; font-weight: 600; color: #047857;">👤 Người duyệt được phân công:</span>
+                <input
+                  type="text"
+                  [(ngModel)]="assignedApproverName"
+                  style="width: 100%; height: 34px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; background: #fff; margin-top: 3px; box-sizing: border-box;" />
+              </div>
+            </div>
+          </div>
+          <div *ngIf="selectedWorkflowObj?.steps?.length" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+            <span
+              *ngFor="let st of selectedWorkflowObj.steps; let i = index"
+              style="font-size: 11px; background: #ffffff; border: 1px solid #bae6fd; border-radius: 5px; padding: 3px 8px; color: #0c4a6e;">
+              <strong>B{{ i + 1 }}:</strong> {{ st.name }} (<em>{{ st.approvingDept }} — {{ st.approverName }}</em>)
+            </span>
           </div>
         </div>
 
@@ -712,6 +756,13 @@ export class CreateAdhocDialogComponent implements OnInit {
   selectedObject: BusinessObject | null = null;
   selectedLocationId: number | null = null;
   inspectionType: 'adhoc' | 'professional_request' = 'adhoc';
+  allWorkflows: any[] = [];
+  filteredWorkflows: any[] = [];
+  selectedWorkflowCode = 'WF_PC07_ADHOC';
+  selectedWorkflowObj: any = null;
+  unitName = 'Phòng Cảnh sát PCCC & CNCH (PC07)';
+  approvingDept = 'Trực ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)';
+  assignedApproverName = 'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)';
   scheduledDate = new Date().toISOString().substring(0, 10);
   inspectionContent = '';
   reason = '';
@@ -729,8 +780,39 @@ export class CreateAdhocDialogComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Initial fetch of active objects in ward
+    this.loadWorkflows();
     this.fetchObjects();
+  }
+
+  loadWorkflows(): void {
+    this.api.get<any>('/configs/workflows').subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.allWorkflows = res.data;
+          this.onInspectionTypeChange();
+        }
+      }
+    });
+  }
+
+  onInspectionTypeChange(): void {
+    const targetType = this.inspectionType;
+    const matches = this.allWorkflows.filter(w => w.inspectionType === targetType);
+    this.filteredWorkflows = matches.length > 0 ? matches : this.allWorkflows;
+    if (this.filteredWorkflows.length > 0) {
+      this.selectedWorkflowCode = this.filteredWorkflows[0].code;
+      this.onWorkflowChange();
+    }
+  }
+
+  onWorkflowChange(): void {
+    const found = this.allWorkflows.find(w => w.code === this.selectedWorkflowCode);
+    if (found) {
+      this.selectedWorkflowObj = found;
+      this.unitName = found.unitName;
+      this.approvingDept = found.planApprovalDept || found.unitName;
+      this.assignedApproverName = found.planApproverName || found.planApprovalRole;
+    }
   }
 
   onSearchInput(): void {
@@ -799,6 +881,10 @@ export class CreateAdhocDialogComponent implements OnInit {
       locationId: this.selectedLocationId,
       locationName: selectedLoc?.name || undefined,
       inspectionType: this.inspectionType,
+      unitName: this.unitName,
+      workflowCode: this.selectedWorkflowCode,
+      approvingDept: this.approvingDept,
+      assignedApproverName: this.assignedApproverName,
       scheduledDate: this.scheduledDate,
       inspectionContent: this.inspectionContent.trim() || undefined,
       reason: this.reason.trim(),

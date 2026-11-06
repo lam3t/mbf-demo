@@ -111,21 +111,71 @@ export class ConfigsController {
   }
 
   /**
-   * 7. Quản lý Quy trình kiểm tra đặc thù theo từng đơn vị nghiệp vụ
+   * 7. Quản lý Quy trình kiểm tra động theo từng đơn vị nghiệp vụ (PC07, PC04, PC06, Phường...) & loại hình kế hoạch
    * GET /api/configs/workflows
    */
   static getWorkflows(req: Request, res: Response): void {
     try {
-      const rows = db.prepare(`SELECT * FROM unit_workflows ORDER BY id ASC`).all() as any[];
+      const { unitCode, unitName, inspectionType } = req.query;
+      let query = `SELECT * FROM unit_workflows WHERE 1=1`;
+      const params: any[] = [];
+
+      if (unitCode) {
+        query += ` AND unitCode = ?`;
+        params.push(unitCode);
+      }
+      if (unitName) {
+        query += ` AND unitName = ?`;
+        params.push(unitName);
+      }
+      if (inspectionType && inspectionType !== 'all') {
+        query += ` AND (inspectionType = ? OR inspectionType = 'all')`;
+        params.push(inspectionType);
+      }
+      query += ` ORDER BY unitCode ASC, CASE inspectionType WHEN 'planned' THEN 1 WHEN 'adhoc' THEN 2 ELSE 3 END ASC, id ASC`;
+
+      const rows = db.prepare(query).all(...params) as any[];
       const data = rows.map(r => {
-        let steps: any[] = [];
+        let rawSteps: any[] = [];
         try {
-          steps = JSON.parse(r.stepsJson || '[]');
+          rawSteps = JSON.parse(r.stepsJson || '[]');
         } catch {
-          steps = [];
+          rawSteps = [];
         }
+        const steps = (Array.isArray(rawSteps) ? rawSteps : []).map((s: any, idx: number) => {
+          if (typeof s === 'string') {
+            return {
+              step: idx + 1,
+              stepType: idx === 0 ? 'create' : idx === 1 ? 'approve_plan' : idx === 2 ? 'establish_team' : idx === 3 ? 'inspect' : 'accept_result',
+              name: s.replace(/^\d+\.\s*/, ''),
+              approvingDept: r.planApprovalDept || r.unitName,
+              approverName: r.planApproverName || r.planApprovalRole || 'Lãnh đạo đơn vị',
+              role: r.planApprovalRole || 'Lãnh đạo đơn vị',
+              slaHours: 24,
+              required: true
+            };
+          }
+          return {
+            step: s.step || idx + 1,
+            stepType: s.stepType || 'approve_plan',
+            name: s.name || `Bước ${idx + 1}`,
+            approvingDept: s.approvingDept || r.planApprovalDept || r.unitName,
+            approverName: s.approverName || r.planApproverName || s.role || 'Lãnh đạo đơn vị',
+            role: s.role || 'Cán bộ phê duyệt',
+            slaHours: s.slaHours || 24,
+            required: s.required !== false
+          };
+        });
+
         return {
           ...r,
+          unitCode: r.unitCode || 'PC07',
+          planApprovalDept: r.planApprovalDept || `Ban Chỉ huy ${r.unitName}`,
+          planApproverName: r.planApproverName || r.planApprovalRole || 'Trưởng đơn vị',
+          teamEstablishDept: r.teamEstablishDept || `Ban Chỉ huy ${r.unitName}`,
+          teamApproverName: r.teamApproverName || r.teamEstablishRole || 'Phó Trưởng đơn vị',
+          resultAcceptanceDept: r.resultAcceptanceDept || `Ban Chỉ huy ${r.unitName}`,
+          resultApproverName: r.resultApproverName || r.resultAcceptanceRole || 'Trưởng đơn vị',
           isActive: Boolean(r.isActive),
           steps
         };
@@ -145,12 +195,20 @@ export class ConfigsController {
       const {
         code,
         name,
+        unitCode,
         unitName,
         inspectionType,
         steps,
+        planApprovalDept,
+        planApproverName,
         planApprovalRole,
+        teamEstablishDept,
+        teamApproverName,
         teamEstablishRole,
+        resultAcceptanceDept,
+        resultApproverName,
         resultAcceptanceRole,
+        description,
         isActive
       } = req.body;
 
@@ -159,65 +217,124 @@ export class ConfigsController {
         return;
       }
 
-      const stepsJson = JSON.stringify(Array.isArray(steps) ? steps : []);
-      const wfCode = (code || `WF_${Date.now()}`).toString().toUpperCase().replace(/\s+/g, '_');
+      const normalizedSteps = (Array.isArray(steps) ? steps : []).map((s: any, idx: number) => ({
+        step: idx + 1,
+        stepType: s.stepType || 'approve_plan',
+        name: s.name || `Bước ${idx + 1}`,
+        approvingDept: s.approvingDept || planApprovalDept || unitName,
+        approverName: s.approverName || planApproverName || 'Lãnh đạo đơn vị',
+        role: s.role || s.approverName || 'Lãnh đạo phê duyệt',
+        slaHours: Number(s.slaHours) || 24,
+        required: s.required !== false
+      }));
+
+      const stepsJson = JSON.stringify(normalizedSteps);
+      const wfCode = (code || `WF_${unitCode || 'UNIT'}_${Date.now()}`).toString().toUpperCase().replace(/\s+/g, '_');
+      const uCode = unitCode || (unitName.includes('PC07') ? 'PC07' : unitName.includes('PC04') || unitName.includes('PA04') ? 'PC04' : unitName.includes('PC06') ? 'PC06' : unitName.includes('Liên ngành') ? 'LIEN_NGANH' : 'CAP');
+
+      // Extract from approve_plan / establish_team / accept_result steps if not explicitly provided
+      const approveStep = normalizedSteps.find(s => s.stepType === 'approve_plan') || normalizedSteps[1] || normalizedSteps[0];
+      const teamStep = normalizedSteps.find(s => s.stepType === 'establish_team') || approveStep;
+      const acceptStep = normalizedSteps.find(s => s.stepType === 'accept_result') || normalizedSteps[normalizedSteps.length - 1] || approveStep;
+
+      const finalPlanDept = planApprovalDept || approveStep?.approvingDept || `Ban Chỉ huy ${unitName}`;
+      const finalPlanApprover = planApproverName || approveStep?.approverName || 'Lãnh đạo đơn vị';
+      const finalTeamDept = teamEstablishDept || teamStep?.approvingDept || finalPlanDept;
+      const finalTeamApprover = teamApproverName || teamStep?.approverName || finalPlanApprover;
+      const finalAcceptDept = resultAcceptanceDept || acceptStep?.approvingDept || finalPlanDept;
+      const finalAcceptApprover = resultApproverName || acceptStep?.approverName || finalPlanApprover;
 
       if (id) {
         db.prepare(`
           UPDATE unit_workflows SET
             code = ?,
             name = ?,
+            unitCode = ?,
             unitName = ?,
             inspectionType = ?,
             stepsJson = ?,
+            planApprovalDept = ?,
+            planApproverName = ?,
             planApprovalRole = ?,
+            teamEstablishDept = ?,
+            teamApproverName = ?,
             teamEstablishRole = ?,
+            resultAcceptanceDept = ?,
+            resultApproverName = ?,
             resultAcceptanceRole = ?,
+            description = ?,
             isActive = ?,
             updatedAt = datetime('now', 'localtime')
           WHERE id = ?
         `).run(
           wfCode,
           name,
+          uCode,
           unitName,
-          inspectionType || 'all',
+          inspectionType || 'planned',
           stepsJson,
-          planApprovalRole || 'Trưởng Công an Phường / Lãnh đạo Phòng Nghiệp vụ',
-          teamEstablishRole || 'Trưởng đơn vị chủ trì / Trưởng phòng Nghiệp vụ',
-          resultAcceptanceRole || 'Lãnh đạo đơn vị phê duyệt kế hoạch / Trưởng đoàn kiểm tra',
+          finalPlanDept,
+          finalPlanApprover,
+          planApprovalRole || finalPlanApprover,
+          finalTeamDept,
+          finalTeamApprover,
+          teamEstablishRole || finalTeamApprover,
+          finalAcceptDept,
+          finalAcceptApprover,
+          resultAcceptanceRole || finalAcceptApprover,
+          description || null,
           isActive !== undefined ? (isActive ? 1 : 0) : 1,
           id
         );
       } else {
         db.prepare(`
           INSERT INTO unit_workflows (
-            code, name, unitName, inspectionType, stepsJson,
-            planApprovalRole, teamEstablishRole, resultAcceptanceRole, isActive, updatedAt
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
+            code, name, unitCode, unitName, inspectionType, stepsJson,
+            planApprovalDept, planApproverName, planApprovalRole,
+            teamEstablishDept, teamApproverName, teamEstablishRole,
+            resultAcceptanceDept, resultApproverName, resultAcceptanceRole,
+            description, isActive, updatedAt
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
           ON CONFLICT(code) DO UPDATE SET
             name = excluded.name,
+            unitCode = excluded.unitCode,
             unitName = excluded.unitName,
             inspectionType = excluded.inspectionType,
             stepsJson = excluded.stepsJson,
+            planApprovalDept = excluded.planApprovalDept,
+            planApproverName = excluded.planApproverName,
             planApprovalRole = excluded.planApprovalRole,
+            teamEstablishDept = excluded.teamEstablishDept,
+            teamApproverName = excluded.teamApproverName,
             teamEstablishRole = excluded.teamEstablishRole,
+            resultAcceptanceDept = excluded.resultAcceptanceDept,
+            resultApproverName = excluded.resultApproverName,
             resultAcceptanceRole = excluded.resultAcceptanceRole,
+            description = excluded.description,
             isActive = excluded.isActive,
             updatedAt = datetime('now', 'localtime')
         `).run(
           wfCode,
           name,
+          uCode,
           unitName,
-          inspectionType || 'all',
+          inspectionType || 'planned',
           stepsJson,
-          planApprovalRole || 'Trưởng Công an Phường / Lãnh đạo Phòng Nghiệp vụ',
-          teamEstablishRole || 'Trưởng đơn vị chủ trì / Trưởng phòng Nghiệp vụ',
-          resultAcceptanceRole || 'Lãnh đạo đơn vị phê duyệt kế hoạch / Trưởng đoàn kiểm tra',
+          finalPlanDept,
+          finalPlanApprover,
+          planApprovalRole || finalPlanApprover,
+          finalTeamDept,
+          finalTeamApprover,
+          teamEstablishRole || finalTeamApprover,
+          finalAcceptDept,
+          finalAcceptApprover,
+          resultAcceptanceRole || finalAcceptApprover,
+          description || null,
           isActive !== undefined ? (isActive ? 1 : 0) : 1
         );
       }
 
-      res.json({ success: true, message: 'Đã lưu cấu hình quy trình kiểm tra của đơn vị nghiệp vụ.' });
+      res.json({ success: true, message: 'Đã lưu cấu hình quy trình động của đơn vị nghiệp vụ.' });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
     }

@@ -146,6 +146,55 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
             <span class="ward-switcher-hint">Đang quản lý giỏ kế hoạch của <strong>{{ userWard }}</strong></span>
           </div>
 
+          <!-- Dynamic Unit Workflow & Approver Selector for Cart Plan -->
+          <div style="background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 10px; padding: 12px 16px; margin-bottom: 12px;" *ngIf="currentDraftPlan">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
+              <div style="display: flex; align-items: center; gap: 6px; color: #0c4a6e; font-weight: 700; font-size: 13.5px;">
+                <mat-icon style="color: #0284c7; font-size: 20px; width: 20px; height: 20px;">account_tree</mat-icon>
+                <span>Quy trình Động & Phân công Phòng ban / Người duyệt Kế hoạch ({{ userWard }}):</span>
+              </div>
+              <span style="font-size: 11.5px; background: #0284c7; color: #fff; padding: 2px 10px; border-radius: 999px; font-weight: 700;">
+                {{ $any(currentDraftPlan).unitName || 'Phòng Cảnh sát PCCC & CNCH (PC07)' }}
+              </span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1.3fr 1fr 1fr auto; gap: 10px; align-items: end;">
+              <div>
+                <label style="display: block; font-size: 11.5px; font-weight: 600; color: #334155; margin-bottom: 3px;">Chọn Quy trình Động của Đơn vị (PC07, PC04, PC06, Phường...):</label>
+                <select
+                  class="cids-select"
+                  style="width: 100%; height: 36px; border: 1px solid #7dd3fc; border-radius: 6px; padding: 0 10px; font-size: 12.5px; font-weight: 600; background: #fff;"
+                  [(ngModel)]="$any(currentDraftPlan).workflowCode"
+                  (change)="onCartWorkflowSelect($any(currentDraftPlan).workflowCode)">
+                  <option *ngFor="let wf of unitWorkflows" [value]="wf.code">
+                    [{{ $any(wf).unitCode || 'UNIT' }}] {{ wf.name }} ({{ wf.inspectionType === 'adhoc' ? 'Đột xuất' : wf.inspectionType === 'professional_request' ? 'Nghiệp vụ' : 'Định kỳ' }})
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-size: 11.5px; font-weight: 600; color: #1d4ed8; margin-bottom: 3px;">🏢 Phòng ban phê duyệt kế hoạch:</label>
+                <input
+                  type="text"
+                  style="width: 100%; height: 36px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 10px; font-size: 12.5px; background: #fff; box-sizing: border-box;"
+                  [(ngModel)]="$any(currentDraftPlan).approvingDept" />
+              </div>
+              <div>
+                <label style="display: block; font-size: 11.5px; font-weight: 600; color: #047857; margin-bottom: 3px;">👤 Người duyệt được phân công:</label>
+                <input
+                  type="text"
+                  style="width: 100%; height: 36px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 10px; font-size: 12.5px; background: #fff; box-sizing: border-box;"
+                  [(ngModel)]="$any(currentDraftPlan).assignedApproverName" />
+              </div>
+              <button
+                type="button"
+                class="btn-cids-primary"
+                style="height: 36px; padding: 0 14px; font-size: 12.5px;"
+                (click)="saveCartWorkflowAssignment()">
+                <mat-icon style="font-size: 16px; width: 16px; height: 16px;">save</mat-icon>
+                <span>Lưu quy trình</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Quota & Cut-off Status Banner -->
           <div class="quota-banner-box" [ngClass]="getQuotaBannerClass()">
             <div class="banner-left">
@@ -1677,23 +1726,37 @@ export class PlansListComponent implements OnInit {
       width: '22%',
       formatter: (val, row) => `Kế hoạch ${row.quarter} - ${row.ward}`
     },
-    { key: 'ward', label: 'Đơn vị cơ sở', sortable: true, width: '16%' },
+    { key: 'ward', label: 'Địa bàn / Phường', sortable: true, width: '13%' },
+    {
+      key: 'workflowName',
+      label: 'Đơn vị & Quy trình Động áp dụng',
+      sortable: true,
+      width: '22%',
+      formatter: (val, row) => `${row.unitName ? '[' + row.unitName + '] ' : ''}${val || 'Quy trình Kiểm tra Định kỳ (PC07)'}`
+    },
+    {
+      key: 'assignedApproverName',
+      label: 'Phòng ban & Người duyệt KH',
+      sortable: true,
+      width: '21%',
+      formatter: (val, row) => `${row.approvingDept || 'Ban Chỉ huy Phòng'} — ${val || 'Lãnh đạo phê duyệt'}`
+    },
     {
       key: 'totalObjects',
       label: 'Số lượng cơ sở',
       sortable: true,
       type: 'badge',
-      width: '14%',
-      formatter: (val) => `${val || 0} đối tượng`,
+      width: '10%',
+      formatter: (val) => `${val || 0} cơ sở`,
       badgeMapping: {
-        '0': { label: '0 đối tượng', cssClass: 'badge-closed' }
+        '0': { label: '0 cơ sở', cssClass: 'badge-closed' }
       }
     },
     {
       key: 'dueDate',
-      label: 'Hạn trình duyệt (Cut-off)',
+      label: 'Hạn trình duyệt',
       sortable: true,
-      width: '18%',
+      width: '13%',
       formatter: (val, row) => {
         if (!val) return '--';
         const formatted = val.substring(0, 16).replace('T', ' ');
@@ -2680,6 +2743,39 @@ export class PlansListComponent implements OnInit {
             }
           }
         });
+      }
+    });
+  }
+
+  onCartWorkflowSelect(wfCode: string): void {
+    if (!this.currentDraftPlan) return;
+    const found: any = this.unitWorkflows.find((w: any) => w.code === wfCode);
+    if (found) {
+      const pAny = this.currentDraftPlan as any;
+      pAny.unitName = found.unitName;
+      pAny.workflowCode = found.code;
+      pAny.workflowName = found.name;
+      pAny.approvingDept = found.planApprovalDept || found.unitName;
+      pAny.assignedApproverName = found.planApproverName || found.planApprovalRole;
+    }
+  }
+
+  saveCartWorkflowAssignment(): void {
+    if (!this.currentDraftPlan) return;
+    const pAny = this.currentDraftPlan as any;
+    this.api.put<any>(`/plans/${this.currentDraftPlan.id}/adjust`, {
+      unitName: pAny.unitName,
+      workflowCode: pAny.workflowCode,
+      approvingDept: pAny.approvingDept,
+      assignedApproverName: pAny.assignedApproverName,
+      adjustmentNote: `Cập nhật Quy trình động [${pAny.workflowCode}] - Phòng ban duyệt: ${pAny.approvingDept} - Người duyệt: ${pAny.assignedApproverName}`
+    }).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.snackBar.open('Đã lưu phân công Quy trình Động, Phòng ban duyệt & Người duyệt cho Kế hoạch!', 'Đóng', { duration: 3000 });
+          this.loadPlans();
+          this.loadCartPlan();
+        }
       }
     });
   }

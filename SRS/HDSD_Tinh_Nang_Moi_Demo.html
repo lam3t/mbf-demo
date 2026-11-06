@@ -388,35 +388,44 @@
     </ol>
   </div>
 
-  <!-- MỤC 7: PHÂN QUYỀN & QUY TRÌNH NGHIỆP VỤ -->
+  <!-- MỤC 7: PHÂN QUYỀN & QUY TRÌNH ĐỘNG THEO ĐƠN VỊ (PC07, PC04, PC06, PHƯỜNG) -->
   <div class="section-card">
     <div class="section-header">
       <span class="sec-num">YÊU CẦU 7</span>
-      <h2>Phân quyền Chi tiết, Thẩm quyền 3 Cấp & Cấu hình Quy trình theo Đơn vị</h2>
+      <h2>Quy trình Động theo Đơn vị (PC07, PC04, PC06, Phường) & Loại Kế hoạch (Phòng ban duyệt + Người duyệt)</h2>
     </div>
-    <div class="menu-path">📍 Đường dẫn: Menu "Quản trị hệ thống" ➔ Tab 2 "2. Phân quyền & Quy trình nghiệp vụ"</div>
+    <div class="menu-path">📍 Đường dẫn: Menu "Quản trị hệ thống" ➔ Tab 2 "2. Phân quyền & Quy trình nghiệp vụ" & Menu "Kế hoạch kiểm tra"</div>
     <ol>
-      <li><strong>Phân định rõ 03 cấp thẩm quyền độc lập:</strong>
+      <li><strong>Mỗi Đơn vị Nghiệp vụ (PC07, PC04/PA04, PC06, Công an Phường, Liên ngành) có nhiều Quy trình Động riêng theo từng Loại Kế hoạch:</strong>
         <ul>
-          <li><strong>Cấp 1 - Thẩm quyền Phê duyệt & Điều chỉnh Kế hoạch kiểm tra</strong> (Tại màn hình <em>Kế hoạch kiểm tra</em>).</li>
-          <li><strong>Cấp 2 - Thẩm quyền Thành lập & Điều chỉnh Đoàn kiểm tra / Liên ngành</strong> (Tại Tab 3 <em>Quản lý Đoàn kiểm tra</em>).</li>
-          <li><strong>Cấp 3 - Thẩm quyền Nghiệm thu Kết quả Kiểm tra</strong>: Mở Biên bản kiểm tra đã hoàn thành tại menu <em>Thực hiện kiểm tra</em> ➔ Tại khối <strong>"Thẩm quyền Nghiệm thu Kết quả Kiểm tra"</strong>, lãnh đạo nhập nhận xét và bấm <strong>"Nghiệm thu Đạt"</strong> hoặc <strong>"Yêu cầu Bổ sung"</strong>.</li>
+          <li>Tại Tab 2 <em>"Phân quyền & Quy trình nghiệp vụ"</em>, sử dụng thanh lọc theo <strong>Đơn vị nghiệp vụ</strong> (<code>PC07</code>, <code>PC04 / PA04</code>, <code>PC06</code>, <code>Công an Phường</code>, <code>Liên ngành</code>) và <strong>Loại kế hoạch</strong> (<code>📅 Quy trình Kiểm tra Định kỳ</code>, <code>⚡ Quy trình Kiểm tra Đột xuất</code>, <code>🎯 Quy trình Yêu cầu Nghiệp vụ</code>).</li>
+          <li>Ví dụ cài đặt sẵn trên hệ thống:
+            <ul>
+              <li><strong>Phòng Cảnh sát PCCC & CNCH (PC07)</strong>: Có riêng <em>Quy trình Kiểm tra Định kỳ PCCC (WF_PC07_PLANNED)</em> và <em>Quy trình Kiểm tra Đột xuất Nguy cơ Cháy nổ (WF_PC07_ADHOC)</em>.</li>
+              <li><strong>Phòng Cảnh sát Kinh tế / ANKT (PC04 / PA04)</strong>: Có riêng <em>Quy trình Kiểm tra Định kỳ Kinh tế (WF_PC04_PLANNED)</em>, <em>Quy trình Kiểm tra Đột xuất Kinh tế (WF_PC04_ADHOC)</em> và <em>Quy trình Yêu cầu Nghiệp vụ FDI/Nước ngoài (WF_PA04_FOREIGN)</em>.</li>
+              <li><strong>Phòng Cảnh sát QLHC về TTXH (PC06) & Công an Phường</strong>: Mỗi đơn vị đều có bộ quy trình Định kỳ và Đột xuất riêng.</li>
+            </ul>
+          </li>
         </ul>
       </li>
-      <li><strong>Ma trận Phân quyền chi tiết theo đơn vị & vai trò:</strong>
+      <li><strong>Cấu hình rõ "Phòng ban nào duyệt" và "Người duyệt cụ thể" ở từng cấp và từng bước quy trình:</strong>
         <ul>
-          <li>Tích chọn bật/tắt trực tiếp các quyền: Thêm/sửa doanh nghiệp & cơ sở, Lập/sửa/duyệt/điều chỉnh kế hoạch, Thành lập/điều chỉnh đoàn kiểm tra, Giải trình và Nghiệm thu kết quả ➔ Bấm <strong>"Lưu Cấu hình Phân quyền"</strong>.</li>
+          <li>Bấm nút <strong>"+ Thêm Quy trình Động cho Đơn vị"</strong>, <strong>"Cấu hình Phòng ban & Người duyệt"</strong> hoặc <strong>"Nhân bản"</strong> trên bất kỳ quy trình nào:
+            <ul>
+              <li>Cấu hình 3 mốc thẩm quyền của đơn vị: (1) <strong>Cấp Phê duyệt Kế hoạch</strong> (Chọn Phòng ban duyệt + Người duyệt cụ thể, VD: <em>Ban Chỉ huy Phòng PC07 — Đại tá Lê Minh Hải, Trưởng phòng PC07</em>), (2) <strong>Cấp Duyệt Thành lập Đoàn</strong> (Phòng ban + Người ký QĐ), (3) <strong>Cấp Nghiệm thu Kết quả</strong> (Phòng ban + Người duyệt nghiệm thu).</li>
+              <li>Cấu hình <strong>Luồng các bước quy trình động (Bước 1, Bước 2, Bước 3...)</strong>: Cho phép thêm/xóa bước linh hoạt; tại mỗi bước chỉ định rõ <strong>Loại bước</strong>, <strong>Tên bước</strong>, <strong>🏢 Phòng ban / Đội nghiệp vụ duyệt bước đó</strong>, <strong>👤 Người duyệt cụ thể</strong> và <strong>Thời hạn xử lý (SLA giờ)</strong>.</li>
+            </ul>
+          </li>
         </ul>
       </li>
-      <li><strong>Cấu hình & Bổ sung Quy trình Kiểm tra riêng theo từng Đơn vị nghiệp vụ / Ngành dọc:</strong>
+      <li><strong>Áp dụng Quy trình Động trực tiếp vào Kế hoạch Định kỳ & Đề xuất Đột xuất:</strong>
         <ul>
-          <li>Danh sách hiển thị sẵn các quy trình đặc thù (Quy trình PA04 cho cơ sở có yếu tố nước ngoài, Quy trình Đoàn liên ngành, Quy trình Kiểm tra định kỳ Phường, Quy trình Đột xuất...).</li>
-          <li>Bấm <strong>"+ Thêm / Bổ sung Quy trình Đơn vị"</strong> hoặc <strong>"Điều chỉnh / Bổ sung bước"</strong> trên từng quy trình để thêm bước mới, sửa tên bước, gắn vai trò thực hiện và cấu hình thẩm quyền 3 cấp khi có yêu cầu mới từ ngành dọc.</li>
+          <li>Tại màn hình <em>Kế hoạch kiểm tra</em> (Giỏ kế hoạch, Danh sách kế hoạch, Chi tiết kế hoạch và Tạo đề xuất Đột xuất/Nghiệp vụ): Khi chọn Quy trình động của đơn vị (VD: <code>PC07 - Định kỳ</code> hoặc <code>PC04 - Đột xuất</code>), hệ thống tự động gắn <strong>Phòng ban phê duyệt</strong>, <strong>Người duyệt được phân công</strong> và hiển thị sơ đồ trạng thái từng bước phê duyệt của kế hoạch đó.</li>
         </ul>
       </li>
     </ol>
     <div class="tip-note">
-      💡 <strong>Gợi ý trình tự Demo nhanh (10 phút):</strong> (1) Mở <strong>Bản đồ vi phạm</strong> xem Cluster & Heatmap ➔ (2) Mở <strong>Đối tượng quản lý</strong> lọc DN có yếu tố nước ngoài & xem Hồ sơ đa địa điểm + Lịch sử vi phạm từng cơ sở ➔ (3) Mở <strong>Kế hoạch kiểm tra</strong> thử chọn cơ sở trùng, điều chỉnh kế hoạch & xem Tab 3 <strong>Đoàn kiểm tra liên ngành</strong> ➔ (4) Mở <strong>Thực hiện kiểm tra</strong> thực hiện Nghiệm thu kết quả ➔ (5) Mở <strong>Báo cáo thống kê (Tab 3)</strong> nhập giải trình cơ sở chưa kiểm tra ➔ (6) Mở <strong>Quản trị hệ thống (Tab 2)</strong> trình diễn Phân quyền & Cấu hình Quy trình đặc thù đơn vị.
+      💡 <strong>Gợi ý trình tự Demo nhanh (10 phút):</strong> (1) Mở <strong>Bản đồ vi phạm</strong> xem Cluster & Heatmap ➔ (2) Mở <strong>Đối tượng quản lý</strong> lọc DN có yếu tố nước ngoài & xem Hồ sơ đa địa điểm + Lịch sử vi phạm từng cơ sở ➔ (3) Mở <strong>Quản trị hệ thống (Tab 2)</strong> lọc quy trình riêng của <strong>PC07</strong> và <strong>PC04</strong> (Định kỳ vs Đột xuất), bấm sửa Phòng ban duyệt & Người duyệt ➔ (4) Mở <strong>Kế hoạch kiểm tra</strong> xem Quy trình động gắn trên từng Kế hoạch & Tab 3 <strong>Đoàn kiểm tra liên ngành</strong> ➔ (5) Mở <strong>Báo cáo thống kê (Tab 3)</strong> nhập giải trình cơ sở chưa kiểm tra.
     </div>
   </div>
 
@@ -426,3 +435,4 @@
 
 </body>
 </html>
+
