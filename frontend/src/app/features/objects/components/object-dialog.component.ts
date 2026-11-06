@@ -11,7 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ApiService } from '../../../core/services/api.service';
-import { BusinessObject, BusinessObjectType } from '../../../core/models';
+import { BusinessObject, BusinessObjectType, BusinessLocation, LocationType } from '../../../core/models';
 
 export interface ObjectDialogData {
   isEdit: boolean;
@@ -76,21 +76,21 @@ export interface ObjectDialogData {
           </button>
         </div>
 
-        <!-- Warning / Error Banner: SINGLE CHECK / 1 NĂM 1 LẦN -->
-        <div *ngIf="isBlocked" class="alert-banner-danger">
+        <!-- Warning Banner: CẢNH BÁO TRÙNG NHƯNG KHÔNG CHẶN -->
+        <div *ngIf="warningMessage" class="alert-banner-warning">
           <div class="alert-icon-box">
-            <mat-icon>block</mat-icon>
+            <mat-icon>warning_amber</mat-icon>
           </div>
           <div class="alert-text">
-            <strong>CẢNH BÁO NGUYÊN TẮC KIỂM TRA (1 NĂM / 1 LẦN DUY NHẤT):</strong>
-            <p>{{ blockReason }}</p>
+            <strong>CẢNH BÁO TRÙNG LẶP / ĐÃ CÓ LỊCH SỬ KIỂM TRA (KHÔNG CHẶN):</strong>
+            <p>{{ warningMessage }}</p>
           </div>
         </div>
 
         <!-- Info Banner: AUTO-FILLED -->
-        <div *ngIf="isAutoFilled && !isBlocked" class="alert-banner-info">
+        <div *ngIf="isAutoFilled" class="alert-banner-info">
           <mat-icon>info</mat-icon>
-          <span>Đã tìm thấy thông tin đối tượng trên hệ thống. Dữ liệu đã được tự động điền.</span>
+          <span>Đã tìm thấy thông tin đối tượng trên hệ thống. Bạn vẫn có thể cập nhật hoặc bổ sung thêm chi nhánh/cơ sở mới.</span>
         </div>
 
         <form class="object-form">
@@ -211,6 +211,101 @@ export interface ObjectDialogData {
                 <mat-option value="suspended">Tạm ngừng hoạt động</mat-option>
               </mat-select>
             </mat-form-field>
+
+            <mat-form-field appearance="outline" *ngIf="formData.type === 'enterprise'">
+              <mat-label>Ngành nghề / Lĩnh vực chính</mat-label>
+              <input
+                matInput
+                [(ngModel)]="formData.field"
+                name="entField"
+                placeholder="vd: Thương mại, Khách sạn, Viễn thông, F&B..."
+              />
+              <mat-icon matPrefix>category</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <!-- Foreign Element Section (Yếu tố nước ngoài) -->
+          <div class="foreign-element-box">
+            <label class="foreign-checkbox-label">
+              <input
+                type="checkbox"
+                [(ngModel)]="formData.hasForeignElement"
+                name="hasForeignElement"
+              />
+              <mat-icon class="foreign-icon">public</mat-icon>
+              <span>Doanh nghiệp / Dịch vụ có yếu tố nước ngoài (Vốn FDI, lao động nước ngoài, dịch vụ xuyên biên giới...)</span>
+            </label>
+            <div *ngIf="formData.hasForeignElement" class="foreign-detail-row">
+              <input
+                type="text"
+                class="foreign-input"
+                [(ngModel)]="formData.foreignElementDetail"
+                name="foreignElementDetail"
+                placeholder="Nhập chi tiết yếu tố nước ngoài (VD: Vốn đầu tư Nhật Bản 100%, có chuyên gia nước ngoài lưu trú/làm việc...)"
+              />
+            </div>
+          </div>
+
+          <!-- Multi-Location Management Section (Trụ sở, Chi nhánh, Cơ sở, Địa điểm KD) -->
+          <div class="locations-section">
+            <div class="locations-header">
+              <div class="loc-title">
+                <mat-icon>account_tree</mat-icon>
+                <span>Danh sách Trụ sở, Chi nhánh, Cơ sở & Địa điểm kinh doanh ({{ formData.locations.length }})</span>
+              </div>
+              <button type="button" class="btn-add-loc" (click)="addLocationRow()">
+                <mat-icon>add_location_alt</mat-icon>
+                <span>+ Thêm cơ sở / địa điểm</span>
+              </button>
+            </div>
+
+            <div class="locations-list">
+              <div *ngFor="let loc of formData.locations; let i = index" class="location-item-card">
+                <div class="loc-row-top">
+                  <select [(ngModel)]="loc.locationType" [name]="'locType_' + i" class="loc-select-type">
+                    <option value="headquarters">🏢 Trụ sở chính</option>
+                    <option value="branch">🏛️ Chi nhánh</option>
+                    <option value="facility">🏭 Cơ sở sản xuất / Dịch vụ</option>
+                    <option value="business_location">🏪 Địa điểm kinh doanh</option>
+                  </select>
+                  <input
+                    type="text"
+                    [(ngModel)]="loc.name"
+                    [name]="'locName_' + i"
+                    placeholder="Tên trụ sở / chi nhánh / cơ sở / địa điểm KD *"
+                    class="loc-input-name"
+                  />
+                  <button
+                    *ngIf="formData.locations.length > 1"
+                    type="button"
+                    class="btn-remove-loc"
+                    (click)="removeLocationRow(i)"
+                    title="Xóa địa điểm này"
+                  >
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+                <div class="loc-row-bottom">
+                  <input
+                    type="text"
+                    [(ngModel)]="loc.address"
+                    [name]="'locAddr_' + i"
+                    placeholder="Địa chỉ chi tiết của cơ sở / địa điểm này *"
+                    class="loc-input-addr"
+                  />
+                  <select [(ngModel)]="loc.ward" [name]="'locWard_' + i" class="loc-select-ward">
+                    <option *ngFor="let w of wardList" [value]="w">{{ w }}</option>
+                  </select>
+                  <input
+                    type="text"
+                    [(ngModel)]="loc.contactPerson"
+                    [name]="'locContact_' + i"
+                    placeholder="Người phụ trách cơ sở"
+                    class="loc-input-contact"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </form>
       </div>
@@ -233,10 +328,187 @@ export interface ObjectDialogData {
   `,
   styles: [`
     .dialog-wrapper {
-      padding: 24px;
-      min-width: 520px;
-      max-width: 640px;
+      padding: 20px 24px;
+      min-width: 620px;
+      max-width: 760px;
+      max-height: 88vh;
+      overflow-y: auto;
       background: #ffffff;
+    }
+
+    .alert-banner-warning {
+      display: flex;
+      gap: 12px;
+      padding: 10px 14px;
+      background-color: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      color: #92400e;
+      margin-bottom: 14px;
+
+      .alert-icon-box mat-icon {
+        color: #d97706;
+        font-size: 22px;
+        width: 22px;
+        height: 22px;
+      }
+
+      .alert-text {
+        font-size: 12.5px;
+        line-height: 1.4;
+        strong { display: block; margin-bottom: 2px; color: #b45309; }
+        p { margin: 0; }
+      }
+    }
+
+    .foreign-element-box {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+
+      .foreign-checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e293b;
+        cursor: pointer;
+
+        input[type="checkbox"] {
+          width: 16px;
+          height: 16px;
+          accent-color: #1e3a8a;
+        }
+
+        .foreign-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+          color: #0284c7;
+        }
+      }
+
+      .foreign-detail-row {
+        margin-top: 8px;
+
+        .foreign-input {
+          width: 100%;
+          padding: 8px 10px;
+          border: 1px solid #93c5fd;
+          border-radius: 6px;
+          font-size: 12.5px;
+          background: #ffffff;
+          box-sizing: border-box;
+        }
+      }
+    }
+
+    .locations-section {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+
+      .locations-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+
+        .loc-title {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 13px;
+          font-weight: 700;
+          color: #1e3a8a;
+
+          mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+          }
+        }
+
+        .btn-add-loc {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 5px 10px;
+          background: #eff6ff;
+          border: 1px solid #bfdbfe;
+          color: #1d4ed8;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+
+          mat-icon { font-size: 15px; width: 15px; height: 15px; }
+          &:hover { background: #dbeafe; }
+        }
+      }
+
+      .locations-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 210px;
+        overflow-y: auto;
+
+        .location-item-card {
+          background: #ffffff;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          padding: 8px 10px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+
+          .loc-row-top {
+            display: grid;
+            grid-template-columns: 185px 1fr auto;
+            gap: 6px;
+            align-items: center;
+          }
+
+          .loc-row-bottom {
+            display: grid;
+            grid-template-columns: 1fr 150px 150px;
+            gap: 6px;
+            align-items: center;
+          }
+
+          .loc-select-type, .loc-select-ward, .loc-input-name, .loc-input-addr, .loc-input-contact {
+            height: 32px;
+            padding: 0 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #1e293b;
+            background: #ffffff;
+            box-sizing: border-box;
+          }
+
+          .btn-remove-loc {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            border-radius: 5px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+
+            mat-icon { font-size: 16px; width: 16px; height: 16px; }
+          }
+        }
+      }
     }
 
     .dialog-header {
@@ -449,6 +721,7 @@ export class ObjectDialogComponent implements OnInit, OnDestroy {
   isAutoFilled = false;
   isBlocked = false;
   blockReason: string | null = null;
+  warningMessage: string | null = null;
   lockedByWard: string | null = null;
   isCompletedThisYear = false;
   currentYear = new Date().getFullYear();
@@ -457,11 +730,11 @@ export class ObjectDialogComponent implements OnInit, OnDestroy {
   private searchSubscription?: Subscription;
 
   wardList = [
-    'Phường Khương Mai',
-    'Phường Hàng Bài',
-    'Phường Mỹ Đình 1',
-    'Phường Quảng An',
-    'Phường Đồng Tâm'
+    'Phường Hoàn Kiếm',
+    'Phường Ba Đình',
+    'Phường Đống Đa',
+    'Phường Hai Bà Trưng',
+    'Phường Cầu Giấy'
   ];
 
   formData: {
@@ -474,6 +747,9 @@ export class ObjectDialogComponent implements OnInit, OnDestroy {
     address: string;
     ward: string;
     status: 'active' | 'suspended';
+    hasForeignElement: boolean;
+    foreignElementDetail: string;
+    locations: BusinessLocation[];
   } = {
     type: 'enterprise',
     taxCode: '',
@@ -482,8 +758,19 @@ export class ObjectDialogComponent implements OnInit, OnDestroy {
     representative: '',
     field: '',
     address: '',
-    ward: 'Phường Khương Mai',
-    status: 'active'
+    ward: 'Phường Hoàn Kiếm',
+    status: 'active',
+    hasForeignElement: false,
+    foreignElementDetail: '',
+    locations: [
+      {
+        locationType: 'headquarters',
+        name: 'Trụ sở chính',
+        address: '',
+        ward: 'Phường Hoàn Kiếm',
+        contactPerson: ''
+      }
+    ]
   };
 
   constructor(
@@ -495,15 +782,31 @@ export class ObjectDialogComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (this.data.isEdit && this.data.object) {
       const obj = this.data.object;
+      const existingLocations = Array.isArray(obj.locations) && obj.locations.length > 0
+        ? obj.locations.map(l => ({ ...l }))
+        : [
+            {
+              locationType: 'headquarters' as LocationType,
+              name: `Trụ sở chính - ${obj.name}`,
+              address: obj.address,
+              ward: obj.ward,
+              contactPerson: obj.representative || ''
+            }
+          ];
+
       this.formData = {
         type: obj.type,
         taxCode: obj.taxCode || '',
         idNumber: obj.idNumber || '',
         name: obj.name,
         representative: obj.representative || '',
+        field: obj.field || '',
         address: obj.address,
         ward: obj.ward,
-        status: obj.status
+        status: obj.status,
+        hasForeignElement: Boolean(obj.hasForeignElement),
+        foreignElementDetail: obj.foreignElementDetail || '',
+        locations: existingLocations
       };
       this.identifierInput = obj.taxCode || obj.idNumber || '';
     } else {
@@ -523,10 +826,26 @@ export class ObjectDialogComponent implements OnInit, OnDestroy {
     this.searchSubscription?.unsubscribe();
   }
 
+  addLocationRow(): void {
+    this.formData.locations.push({
+      locationType: this.formData.locations.length === 0 ? 'headquarters' : 'business_location',
+      name: `Cơ sở / Địa điểm KD số ${this.formData.locations.length + 1}`,
+      address: this.formData.address || '',
+      ward: this.formData.ward || 'Phường Hoàn Kiếm',
+      contactPerson: this.formData.representative || ''
+    });
+  }
+
+  removeLocationRow(index: number): void {
+    if (this.formData.locations.length <= 1) return;
+    this.formData.locations.splice(index, 1);
+  }
+
   setType(type: BusinessObjectType): void {
     this.formData.type = type;
     this.isBlocked = false;
     this.blockReason = null;
+    this.warningMessage = null;
     this.lockedByWard = null;
     this.isCompletedThisYear = false;
     this.isAutoFilled = false;
@@ -542,6 +861,7 @@ export class ObjectDialogComponent implements OnInit, OnDestroy {
     } else {
       this.isBlocked = false;
       this.blockReason = null;
+      this.warningMessage = null;
       this.lockedByWard = null;
       this.isCompletedThisYear = false;
       this.isAutoFilled = false;
@@ -554,12 +874,9 @@ export class ObjectDialogComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.isChecking = false;
         if (res.success && res.exists) {
-          this.isBlocked = !!res.blocked;
-          this.blockReason = res.blockReason || null;
-          this.lockedByWard = res.lockedByWard || null;
-          this.isCompletedThisYear = !!res.isCompletedThisYear;
-
-          if (!res.blocked && res.objectData) {
+          this.isBlocked = false; // Warn only, never hard-block!
+          this.warningMessage = res.warningMessage || res.blockReason || 'Mã định danh này đã tồn tại trên hệ thống. Hệ thống cảnh báo trùng nhưng vẫn cho phép cập nhật hoặc mở thêm chi nhánh/cơ sở.';
+          if (res.objectData) {
             this.isAutoFilled = true;
             this.formData.name = res.objectData.name || this.formData.name;
             this.formData.representative = res.objectData.representative || this.formData.representative;
@@ -570,25 +887,17 @@ export class ObjectDialogComponent implements OnInit, OnDestroy {
         } else {
           this.isBlocked = false;
           this.blockReason = null;
-          this.lockedByWard = null;
-          this.isCompletedThisYear = false;
+          this.warningMessage = null;
           this.isAutoFilled = false;
         }
       },
-      error: (err) => {
+      error: () => {
         this.isChecking = false;
-        if (err.error?.message) {
-          this.isBlocked = true;
-          this.blockReason = err.error.message;
-        }
       }
     });
   }
 
   isSaveDisabled(): boolean {
-    if (this.isBlocked || this.lockedByWard || this.isCompletedThisYear) {
-      return true;
-    }
     if (!this.identifierInput || !this.formData.name || !this.formData.address || !this.formData.ward) {
       return true;
     }
@@ -606,6 +915,16 @@ export class ObjectDialogComponent implements OnInit, OnDestroy {
       this.formData.idNumber = '';
     } else {
       this.formData.idNumber = this.identifierInput;
+    }
+
+    // Sync first headquarters location if empty
+    if (this.formData.locations.length > 0) {
+      if (!this.formData.locations[0].address) {
+        this.formData.locations[0].address = this.formData.address;
+      }
+      if (!this.formData.locations[0].ward) {
+        this.formData.locations[0].ward = this.formData.ward;
+      }
     }
 
     this.dialogRef.close(this.formData);

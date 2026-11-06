@@ -121,6 +121,15 @@
         </div>
 
         <div class="filter-select-wrap">
+          <select [(ngModel)]="selectedInspectionType" (change)="onFilterChange()" class="custom-select">
+            <option value="">Tất cả loại hình KT</option>
+            <option value="planned">📅 Theo kế hoạch / Định kỳ</option>
+            <option value="adhoc">⚡ Kiểm tra đột xuất</option>
+            <option value="professional_request">📋 Theo yêu cầu nghiệp vụ</option>
+          </select>
+        </div>
+
+        <div class="filter-select-wrap">
           <select [(ngModel)]="selectedQuarter" (change)="onFilterChange()" class="custom-select">
             <option value="">Tất cả Quý</option>
             <option *ngFor="let q of QUARTERS" [value]="q">{{ q }}</option>
@@ -147,7 +156,7 @@
 
           <!-- Object Name Column -->
           <ng-container matColumnDef="objectName">
-            <th mat-header-cell *matHeaderCellDef>Cơ sở kinh doanh</th>
+            <th mat-header-cell *matHeaderCellDef>Doanh nghiệp & Cơ sở / Địa điểm KT</th>
             <td mat-cell *matCellDef="let row">
               <div class="object-cell">
                 <div class="object-name-line">
@@ -155,14 +164,24 @@
                   <span class="type-tag" [ngClass]="row.objectType || 'enterprise'">
                     {{ row.objectType === 'enterprise' ? 'DN' : (row.objectType === 'household' ? 'Hộ KD' : 'Cá nhân') }}
                   </span>
-                  <span *ngIf="row.isAdhoc" class="badge-adhoc" title="Kiểm tra phát sinh ngoài kế hoạch">
-                    <mat-icon class="adhoc-icon">bolt</mat-icon> Phát sinh
+                  <span *ngIf="row.hasForeignElement" style="background:#fef3c7;color:#b45309;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:4px;">
+                    🌐 Yếu tố NN
                   </span>
+                  <span
+                    style="font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:4px;"
+                    [style.background]="row.inspectionType === 'professional_request' ? '#dbeafe' : (row.inspectionType === 'adhoc' || row.isAdhoc ? '#f3e8ff' : '#f1f5f9')"
+                    [style.color]="row.inspectionType === 'professional_request' ? '#1e40af' : (row.inspectionType === 'adhoc' || row.isAdhoc ? '#7c3aed' : '#475569')"
+                  >
+                    {{ getInspectionTypeLabel(row.inspectionType, row.isAdhoc) }}
+                  </span>
+                </div>
+                <div *ngIf="row.locationName" style="font-size:11.5px;color:#1e40af;font-weight:600;margin-top:2px;">
+                  🏢 {{ row.locationName }} {{ row.teamName ? '• 🤝 ' + row.teamName : '' }}
                 </div>
                 <div class="object-meta">
                   <span class="meta-code" *ngIf="row.taxCode">MST: {{ row.taxCode }}</span>
                   <span class="meta-code" *ngIf="row.idNumber">CCCD: {{ row.idNumber }}</span>
-                  <span class="meta-address">{{ row.objectAddress }}</span>
+                  <span class="meta-address">{{ row.locationAddress || row.objectAddress }}</span>
                 </div>
               </div>
             </td>
@@ -246,6 +265,14 @@
 
                 <span class="badge badge-danger" *ngIf="row.isOverdue && row.status !== 'completed'">
                   <mat-icon class="badge-icon">warning</mat-icon> Quá hạn
+                </span>
+
+                <span *ngIf="row.status !== 'completed' && row.explanationContent" style="font-size:10.5px;background:#fef3c7;color:#b45309;padding:1px 6px;border-radius:4px;font-weight:600;">
+                  📝 Đã giải trình
+                </span>
+
+                <span *ngIf="row.status === 'completed' && row.acceptanceStatus === 'accepted'" style="font-size:10.5px;background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:4px;font-weight:700;">
+                  ✅ Đã nghiệm thu KQ
                 </span>
               </div>
             </td>

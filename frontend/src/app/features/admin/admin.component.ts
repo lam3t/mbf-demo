@@ -74,7 +74,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
           (click)="switchTab('roles')"
         >
           <mat-icon>security</mat-icon>
-          <span>2. Phân quyền</span>
+          <span>2. Phân quyền & Quy trình nghiệp vụ</span>
         </button>
 
         <button
@@ -149,53 +149,249 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
         ></app-data-table>
       </div>
 
-      <!-- TAB 2: ROLE & PERMISSION MATRIX -->
+      <!-- TAB 2: ROLE & PERMISSION MATRIX + 3-STAGE AUTHORITY + CUSTOM UNIT WORKFLOWS -->
       <div class="tab-view-container" *ngIf="activeTab === 'roles'">
         <app-page-header
-          title="Ma trận Phân quyền Vai trò"
-          subtitle="Thiết lập quyền truy cập chức năng theo 4 nhóm vai trò chuẩn"
+          title="Phân quyền Nghiệp vụ, Thẩm quyền 3 Cấp & Cấu hình Quy trình theo Đơn vị"
+          subtitle="Phân định thẩm quyền Phê duyệt KH - Thành lập đoàn - Nghiệm thu kết quả, phân quyền chi tiết và cấu hình quy trình riêng từng đơn vị nghiệp vụ/ngành dọc"
         ></app-page-header>
 
+        <!-- SECTION A: PHÂN ĐỊNH RÕ 3 THẨM QUYỀN CỐT LÕI -->
+        <div class="authority-3-grid" *ngIf="authoritySeparation">
+          <div class="auth-stage-card stage-plan">
+            <div class="stage-head">
+              <span class="stage-badge">THẨM QUYỀN CẤP 1</span>
+              <mat-icon>fact_check</mat-icon>
+            </div>
+            <h4>{{ authoritySeparation.planApproval?.title }}</h4>
+            <p class="stage-desc">{{ authoritySeparation.planApproval?.description }}</p>
+            <div class="stage-roles">
+              <span class="role-chip" *ngFor="let r of authoritySeparation.planApproval?.roles">{{ r }}</span>
+            </div>
+          </div>
+
+          <div class="auth-stage-card stage-team">
+            <div class="stage-head">
+              <span class="stage-badge">THẨM QUYỀN CẤP 2</span>
+              <mat-icon>groups</mat-icon>
+            </div>
+            <h4>{{ authoritySeparation.teamEstablishment?.title }}</h4>
+            <p class="stage-desc">{{ authoritySeparation.teamEstablishment?.description }}</p>
+            <div class="stage-roles">
+              <span class="role-chip" *ngFor="let r of authoritySeparation.teamEstablishment?.roles">{{ r }}</span>
+            </div>
+          </div>
+
+          <div class="auth-stage-card stage-accept">
+            <div class="stage-head">
+              <span class="stage-badge">THẨM QUYỀN CẤP 3</span>
+              <mat-icon>verified</mat-icon>
+            </div>
+            <h4>{{ authoritySeparation.resultAcceptance?.title }}</h4>
+            <p class="stage-desc">{{ authoritySeparation.resultAcceptance?.description }}</p>
+            <div class="stage-roles">
+              <span class="role-chip" *ngFor="let r of authoritySeparation.resultAcceptance?.roles">{{ r }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION B: MA TRẬN PHÂN QUYỀN CHI TIẾT THEO ĐƠN VỊ & VAI TRÒ -->
         <div class="matrix-card">
+          <div class="section-bar">
+            <div>
+              <h3 class="sec-title">
+                <mat-icon>admin_panel_settings</mat-icon>
+                Ma trận Phân quyền Chi tiết theo Đơn vị & Chức trách Nghiệp vụ
+              </h3>
+              <p class="sec-sub">
+                Cấu hình quyền lập/sửa/duyệt/điều chỉnh kế hoạch, thêm/cập nhật doanh nghiệp & cơ sở, thành lập đoàn và nghiệm thu kết quả (Click vào ô để bật/tắt quyền)
+              </p>
+            </div>
+            <button mat-flat-button class="btn-cids-primary" (click)="savePermissionMatrix()">
+              <mat-icon>save</mat-icon>
+              <span>Lưu Cấu hình Phân quyền</span>
+            </button>
+          </div>
+
           <table class="role-matrix-table">
             <thead>
               <tr>
-                <th style="width: 35%;">Chức năng / Phân hệ nghiệp vụ</th>
-                <th class="text-center">Admin Hệ thống</th>
-                <th class="text-center">Lãnh đạo MBF</th>
-                <th class="text-center">Cán bộ MBF</th>
-                <th class="text-center">Cán bộ Xã / Phường</th>
+                <th style="width: 18%;">Nhóm nghiệp vụ</th>
+                <th style="width: 34%;">Chức năng / Quyền hạn cụ thể</th>
+                <th class="text-center">Quản trị Hệ thống</th>
+                <th class="text-center">Lãnh đạo Phòng Nghiệp vụ / Chỉ huy</th>
+                <th class="text-center">Trưởng / Cán bộ Đơn vị (Phường/Đội)</th>
+                <th class="text-center">Cán bộ Kiểm tra / Thành viên Đoàn</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let perm of permissionMatrix">
+              <tr *ngFor="let perm of detailedPermissions">
+                <td>
+                  <span class="perm-group-pill">{{ perm.group }}</span>
+                </td>
                 <td>
                   <strong>{{ perm.name }}</strong>
-                  <span class="perm-desc">{{ perm.description }}</span>
+                  <span class="perm-desc">Mã quyền: {{ perm.code }}</span>
                 </td>
                 <td class="text-center">
-                  <mat-icon [class.active-perm]="perm.admin" class="perm-check">
-                    {{ perm.admin ? 'check_circle' : 'remove' }}
-                  </mat-icon>
+                  <input type="checkbox" class="perm-checkbox" [(ngModel)]="perm.admin" />
                 </td>
                 <td class="text-center">
-                  <mat-icon [class.active-perm]="perm.leader" class="perm-check">
-                    {{ perm.leader ? 'check_circle' : 'remove' }}
-                  </mat-icon>
+                  <input type="checkbox" class="perm-checkbox" [(ngModel)]="perm.unitLeader" />
                 </td>
                 <td class="text-center">
-                  <mat-icon [class.active-perm]="perm.officer" class="perm-check">
-                    {{ perm.officer ? 'check_circle' : 'remove' }}
-                  </mat-icon>
+                  <input type="checkbox" class="perm-checkbox" [(ngModel)]="perm.wardOfficer" />
                 </td>
                 <td class="text-center">
-                  <mat-icon [class.active-perm]="perm.ward" class="perm-check">
-                    {{ perm.ward ? 'check_circle' : 'remove' }}
-                  </mat-icon>
+                  <input type="checkbox" class="perm-checkbox" [(ngModel)]="perm.inspector" />
                 </td>
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- SECTION C: CẤU HÌNH QUY TRÌNH KIỂM TRA ĐẶC THÙ THEO ĐƠN VỊ NGHIỆP VỤ / NGÀNH DỌC -->
+        <div class="matrix-card">
+          <div class="section-bar">
+            <div>
+              <h3 class="sec-title">
+                <mat-icon>account_tree</mat-icon>
+                Cấu hình Quy trình Kiểm tra Đặc thù theo Đơn vị Nghiệp vụ & Ngành dọc ({{ unitWorkflows.length }} quy trình)
+              </h3>
+              <p class="sec-sub">
+                Cho phép cấu hình quy trình kiểm tra riêng cho từng đơn vị (PA04, PC06, PC07, PC03, Công an Phường...) và điều chỉnh, bổ sung các bước khi có yêu cầu mới
+              </p>
+            </div>
+            <button mat-flat-button class="btn-cids-primary" (click)="openWorkflowEditor()">
+              <mat-icon>add_circle</mat-icon>
+              <span>Thêm / Bổ sung Quy trình Đơn vị</span>
+            </button>
+          </div>
+
+          <!-- Inline Workflow Form Editor -->
+          <div class="workflow-editor-panel" *ngIf="showWorkflowForm">
+            <div class="wf-editor-header">
+              <h4>
+                <mat-icon>settings_suggest</mat-icon>
+                {{ workflowForm.id ? 'Điều chỉnh / Bổ sung Quy trình Kiểm tra Đơn vị' : 'Thiết lập Quy trình Kiểm tra Mới cho Đơn vị Nghiệp vụ' }}
+              </h4>
+              <button mat-icon-button (click)="closeWorkflowEditor()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+
+            <div class="wf-form-grid">
+              <div class="wf-field">
+                <label>Mã quy trình (*)</label>
+                <input type="text" class="cids-input" [(ngModel)]="workflowForm.code" placeholder="VD: WF_PA04_FOREIGN" />
+              </div>
+              <div class="wf-field">
+                <label>Tên quy trình nghiệp vụ (*)</label>
+                <input type="text" class="cids-input" [(ngModel)]="workflowForm.name" placeholder="VD: Quy trình kiểm tra cơ sở có yếu tố nước ngoài" />
+              </div>
+              <div class="wf-field">
+                <label>Đơn vị nghiệp vụ / Ngành dọc áp dụng (*)</label>
+                <input type="text" class="cids-input" [(ngModel)]="workflowForm.unitName" placeholder="VD: Phòng PA04 / Phòng PC06 / Công an Phường" />
+              </div>
+              <div class="wf-field">
+                <label>Loại hình kiểm tra áp dụng</label>
+                <select class="cids-select" [(ngModel)]="workflowForm.inspectionType">
+                  <option value="all">Tất cả loại hình (Định kỳ, Đột xuất, Yêu cầu nghiệp vụ)</option>
+                  <option value="planned">Kiểm tra theo kế hoạch / định kỳ</option>
+                  <option value="adhoc">Kiểm tra đột xuất</option>
+                  <option value="professional_request">Kiểm tra theo yêu cầu nghiệp vụ</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="wf-form-grid-3">
+              <div class="wf-field">
+                <label>1. Thẩm quyền Phê duyệt Kế hoạch</label>
+                <input type="text" class="cids-input" [(ngModel)]="workflowForm.planApprovalRole" />
+              </div>
+              <div class="wf-field">
+                <label>2. Thẩm quyền Thành lập Đoàn kiểm tra</label>
+                <input type="text" class="cids-input" [(ngModel)]="workflowForm.teamEstablishRole" />
+              </div>
+              <div class="wf-field">
+                <label>3. Thẩm quyền Nghiệm thu Kết quả</label>
+                <input type="text" class="cids-input" [(ngModel)]="workflowForm.resultAcceptanceRole" />
+              </div>
+            </div>
+
+            <div class="wf-steps-editor">
+              <div class="steps-head">
+                <label>Các bước thực hiện trong quy trình (Cho phép thêm, sửa, xóa bước linh hoạt khi có yêu cầu mới từ ngành dọc):</label>
+                <button mat-stroked-button color="primary" type="button" (click)="addWorkflowStep()">
+                  <mat-icon>add</mat-icon> Thêm bước quy trình
+                </button>
+              </div>
+
+              <div class="step-edit-row" *ngFor="let st of workflowForm.steps; let idx = index">
+                <span class="step-num">Bước {{ idx + 1 }}</span>
+                <input
+                  type="text"
+                  class="cids-input"
+                  style="flex: 1.3;"
+                  [(ngModel)]="st.name"
+                  placeholder="Tên bước (VD: Thẩm định hồ sơ / Kiểm tra thực địa...)" />
+                <input
+                  type="text"
+                  class="cids-input"
+                  style="flex: 1;"
+                  [(ngModel)]="st.role"
+                  placeholder="Vai trò thực hiện (VD: Trưởng đoàn KT)" />
+                <label class="req-check">
+                  <input type="checkbox" [(ngModel)]="st.required" /> Bắt buộc
+                </label>
+                <button mat-icon-button color="warn" type="button" (click)="removeWorkflowStep(idx)" *ngIf="workflowForm.steps.length > 1">
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <div class="wf-editor-actions">
+              <button mat-stroked-button type="button" (click)="closeWorkflowEditor()">Hủy</button>
+              <button mat-flat-button class="btn-cids-primary" type="button" (click)="saveWorkflowForm()">
+                <mat-icon>save</mat-icon>
+                <span>Lưu Quy trình Nghiệp vụ</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Unit Workflows List -->
+          <div class="workflows-cards-grid">
+            <div class="wf-card" *ngFor="let wf of unitWorkflows">
+              <div class="wf-card-top">
+                <div>
+                  <span class="wf-code-tag">{{ wf.code }}</span>
+                  <span class="wf-unit-tag">{{ wf.unitName }}</span>
+                  <h4 class="wf-title">{{ wf.name }}</h4>
+                </div>
+                <div class="wf-actions">
+                  <button mat-stroked-button color="primary" (click)="openWorkflowEditor(wf)">
+                    <mat-icon>edit</mat-icon> Điều chỉnh / Bổ sung bước
+                  </button>
+                </div>
+              </div>
+
+              <div class="wf-authorities-strip">
+                <div><strong>Duyệt KH:</strong> {{ wf.planApprovalRole }}</div>
+                <div><strong>Lập Đoàn:</strong> {{ wf.teamEstablishRole }}</div>
+                <div><strong>Nghiệm thu KQ:</strong> {{ wf.resultAcceptanceRole }}</div>
+              </div>
+
+              <div class="wf-steps-flow">
+                <div class="wf-step-pill" *ngFor="let s of wf.steps; let i = index">
+                  <span class="s-idx">{{ i + 1 }}</span>
+                  <div class="s-info">
+                    <div class="s-name">{{ s.name }}</div>
+                    <div class="s-role">{{ s.role }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -801,8 +997,356 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
     .text-center { text-align: center !important; }
     .w-100 { width: 100%; }
 
+    /* 3-Stage Authority Separation Grid */
+    .authority-3-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+
+      .auth-stage-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-top: 4px solid #1e3a8a;
+        border-radius: 8px;
+        padding: 14px 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+        &.stage-plan { border-top-color: #2563eb; }
+        &.stage-team { border-top-color: #7c3aed; }
+        &.stage-accept { border-top-color: #059669; }
+
+        .stage-head {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 6px;
+
+          .stage-badge {
+            font-size: 10.5px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #1e40af;
+          }
+
+          mat-icon {
+            color: #1e3a8a;
+            font-size: 20px;
+            width: 20px;
+            height: 20px;
+          }
+        }
+
+        h4 {
+          font-size: 13.5px;
+          font-weight: 700;
+          color: #0f172a;
+          margin: 0 0 6px 0;
+        }
+
+        .stage-desc {
+          font-size: 12px;
+          color: #475569;
+          margin: 0 0 10px 0;
+          line-height: 1.4;
+        }
+
+        .stage-roles {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 5px;
+
+          .role-chip {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+          }
+        }
+      }
+    }
+
+    .section-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      flex-wrap: wrap;
+
+      .sec-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+        color: #1e3a8a;
+
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+          color: #1a56db;
+        }
+      }
+
+      .sec-sub {
+        margin: 3px 0 0 0;
+        font-size: 12px;
+        color: #64748b;
+      }
+    }
+
+    .perm-group-pill {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: #eff6ff;
+      color: #1e40af;
+    }
+
+    .perm-checkbox {
+      width: 17px;
+      height: 17px;
+      accent-color: #059669;
+      cursor: pointer;
+    }
+
+    /* Workflow Editor & Cards */
+    .workflow-editor-panel {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+
+      .wf-editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+
+        h4 {
+          margin: 0;
+          font-size: 14px;
+          font-weight: 700;
+          color: #1e3a8a;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+      }
+
+      .wf-form-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .wf-form-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .wf-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        label {
+          font-size: 11.5px;
+          font-weight: 600;
+          color: #334155;
+        }
+
+        .cids-input, .cids-select {
+          height: 36px;
+          padding: 0 10px;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          font-size: 13px;
+          background: #ffffff;
+        }
+      }
+
+      .wf-steps-editor {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 12px;
+
+        .steps-head {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+
+          label {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #1e293b;
+          }
+        }
+
+        .step-edit-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 8px;
+
+          .step-num {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e40af;
+            background: #eff6ff;
+            padding: 4px 10px;
+            border-radius: 4px;
+            min-width: 68px;
+            text-align: center;
+          }
+
+          .cids-input {
+            height: 34px;
+            padding: 0 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+            font-size: 12.5px;
+          }
+
+          .req-check {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #475569;
+            white-space: nowrap;
+          }
+        }
+      }
+
+      .wf-editor-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+    }
+
+    .workflows-cards-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .wf-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 14px 16px;
+        background: #ffffff;
+
+        .wf-card-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 12px;
+          margin-bottom: 8px;
+
+          .wf-code-tag {
+            font-family: monospace;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: #f1f5f9;
+            color: #475569;
+            margin-right: 6px;
+          }
+
+          .wf-unit-tag {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: #ede9fe;
+            color: #6d28d9;
+          }
+
+          .wf-title {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+          }
+        }
+
+        .wf-authorities-strip {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 10px;
+          background: #f8fafc;
+          padding: 8px 12px;
+          border-radius: 6px;
+          font-size: 12px;
+          color: #334155;
+          margin-bottom: 10px;
+        }
+
+        .wf-steps-flow {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+
+          .wf-step-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            padding: 6px 10px;
+
+            .s-idx {
+              width: 20px;
+              height: 20px;
+              border-radius: 50%;
+              background: #1d4ed8;
+              color: #ffffff;
+              font-size: 11px;
+              font-weight: 700;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+
+            .s-info {
+              .s-name {
+                font-size: 12px;
+                font-weight: 600;
+                color: #1e3a8a;
+              }
+              .s-role {
+                font-size: 10.5px;
+                color: #64748b;
+              }
+            }
+          }
+        }
+      }
+    }
+
     @media (max-width: 1024px) {
-      .config-grid {
+      .config-grid, .authority-3-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -865,73 +1409,27 @@ export class AdminComponent implements OnInit {
     { id: 'toggle_active', label: 'Khóa / Mở khóa tài khoản', icon: 'lock_open' }
   ];
 
-  // 2. Role Matrix State
-  permissionMatrix = [
-    {
-      name: 'Quản lý Đối tượng Kinh doanh',
-      description: 'Tra cứu, xem hồ sơ, thêm mới và import danh sách cơ sở kinh doanh',
-      admin: true,
-      leader: true,
-      officer: true,
-      ward: true
-    },
-    {
-      name: 'Lập & Nộp Kế hoạch Kiểm tra',
-      description: 'Lựa chọn cơ sở theo quota, lập danh sách kiểm tra và gửi trình duyệt',
-      admin: true,
-      leader: false,
-      officer: false,
-      ward: true
-    },
-    {
-      name: 'Phê duyệt Kế hoạch Kiểm tra',
-      description: 'Xem xét đối chiếu quota, phê duyệt hoặc từ chối kế hoạch của phường',
-      admin: true,
-      leader: true,
-      officer: true,
-      ward: false
-    },
-    {
-      name: 'Giám sát Thực địa & Chấm Checklist',
-      description: 'Cập nhật biên bản kiểm tra, chấm checklist vi phạm, upload ảnh bằng chứng',
-      admin: true,
-      leader: false,
-      officer: true,
-      ward: true
-    },
-    {
-      name: 'Bản đồ Vi phạm (Online / Offline)',
-      description: 'Xem bản đồ nhiệt, lọc cơ sở theo mức độ vi phạm và trích xuất tọa độ GPS',
-      admin: true,
-      leader: true,
-      officer: true,
-      ward: true
-    },
-    {
-      name: 'Báo cáo & Thống kê Tiến độ',
-      description: 'Xuất báo cáo PDF/Excel, thống kê chỉ số hoàn thành toàn thành phố',
-      admin: true,
-      leader: true,
-      officer: true,
-      ward: true
-    },
-    {
-      name: 'Cấu hình Quota & Chốt sổ Cut-off',
-      description: 'Thiết lập số lượng cơ sở tối thiểu/tối đa và khóa nộp kế hoạch',
-      admin: true,
-      leader: false,
-      officer: false,
-      ward: false
-    },
-    {
-      name: 'Quản trị Người dùng & Phân quyền',
-      description: 'Tạo tài khoản cán bộ, khóa tài khoản và xem nhật ký Audit Log',
-      admin: true,
-      leader: false,
-      officer: false,
-      ward: false
-    }
-  ];
+  // 2. Role Matrix & Unit Workflows State (Requirement 7)
+  authoritySeparation: any = null;
+  detailedPermissions: any[] = [];
+  unitWorkflows: any[] = [];
+  showWorkflowForm = false;
+  workflowForm: any = {
+    id: null,
+    code: '',
+    name: '',
+    unitName: '',
+    inspectionType: 'all',
+    planApprovalRole: 'Lãnh đạo Phòng Nghiệp vụ / Trưởng Công an Phường',
+    teamEstablishRole: 'Trưởng đơn vị chủ trì / Trưởng phòng Nghiệp vụ',
+    resultAcceptanceRole: 'Lãnh đạo đơn vị phê duyệt kế hoạch / Trưởng đoàn kiểm tra',
+    steps: [
+      { step: 1, name: 'Lập & Phê duyệt kế hoạch kiểm tra', role: 'Lãnh đạo đơn vị', required: true },
+      { step: 2, name: 'Thành lập đoàn kiểm tra & Phân công nhiệm vụ', role: 'Trưởng đơn vị chủ trì', required: true },
+      { step: 3, name: 'Kiểm tra thực địa & Lập biên bản theo từng cơ sở', role: 'Trưởng đoàn kiểm tra', required: true },
+      { step: 4, name: 'Nghiệm thu kết quả kiểm tra & Lưu hồ sơ', role: 'Lãnh đạo phê duyệt', required: true }
+    ]
+  };
 
   // 3. Catalogs State
   catalogSubTab: 'violations' | 'tags' = 'violations';
@@ -1086,6 +1584,7 @@ export class AdminComponent implements OnInit {
     });
 
     this.loadUsers();
+    this.loadPermissionsAndWorkflows();
     this.loadViolations();
     this.loadRecommendationTags();
     this.loadQuotas();
@@ -1093,6 +1592,123 @@ export class AdminComponent implements OnInit {
     this.loadInspectionDeadlineDays();
     this.loadAuditLogs();
     this.loadAlerts();
+  }
+
+  // --- Requirement 7: Permissions & Unit Workflows Handlers ---
+  loadPermissionsAndWorkflows(): void {
+    this.api.get<any>('/configs/permissions').subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.authoritySeparation = res.data.authoritySeparation || null;
+          this.detailedPermissions = res.data.permissions || [];
+        }
+      }
+    });
+
+    this.api.get<any>('/configs/workflows').subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.unitWorkflows = res.data;
+        }
+      }
+    });
+  }
+
+  savePermissionMatrix(): void {
+    const payload = {
+      authoritySeparation: this.authoritySeparation,
+      permissions: this.detailedPermissions
+    };
+    this.api.put<any>('/configs/permissions', payload).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.snackBar.open('Đã lưu cấu hình Phân quyền & Thẩm quyền nghiệp vụ thành công!', 'Đóng', { duration: 2500 });
+        }
+      },
+      error: (err) => {
+        this.snackBar.open(err.error?.message || 'Lỗi khi lưu phân quyền', 'Đóng', { duration: 3000 });
+      }
+    });
+  }
+
+  openWorkflowEditor(wf?: any): void {
+    this.showWorkflowForm = true;
+    if (wf) {
+      this.workflowForm = {
+        id: wf.id,
+        code: wf.code,
+        name: wf.name,
+        unitName: wf.unitName,
+        inspectionType: wf.inspectionType || 'all',
+        planApprovalRole: wf.planApprovalRole,
+        teamEstablishRole: wf.teamEstablishRole,
+        resultAcceptanceRole: wf.resultAcceptanceRole,
+        steps: Array.isArray(wf.steps) && wf.steps.length > 0
+          ? wf.steps.map((s: any, i: number) => ({ step: i + 1, name: s.name, role: s.role, required: s.required !== false }))
+          : [{ step: 1, name: 'Bước 1', role: 'Cán bộ thực hiện', required: true }]
+      };
+    } else {
+      this.workflowForm = {
+        id: null,
+        code: `WF_UNIT_${this.unitWorkflows.length + 1}`,
+        name: '',
+        unitName: '',
+        inspectionType: 'all',
+        planApprovalRole: 'Lãnh đạo Phòng Nghiệp vụ / Trưởng Công an Phường',
+        teamEstablishRole: 'Trưởng đơn vị chủ trì / Trưởng phòng Nghiệp vụ',
+        resultAcceptanceRole: 'Lãnh đạo đơn vị phê duyệt kế hoạch / Trưởng đoàn kiểm tra',
+        steps: [
+          { step: 1, name: 'Lập & Phê duyệt kế hoạch kiểm tra', role: 'Lãnh đạo đơn vị', required: true },
+          { step: 2, name: 'Thành lập đoàn kiểm tra & Phân công nhiệm vụ', role: 'Trưởng đơn vị chủ trì', required: true },
+          { step: 3, name: 'Kiểm tra thực địa & Lập biên bản theo từng cơ sở', role: 'Trưởng đoàn kiểm tra', required: true },
+          { step: 4, name: 'Nghiệm thu kết quả kiểm tra & Lưu hồ sơ', role: 'Lãnh đạo phê duyệt', required: true }
+        ]
+      };
+    }
+  }
+
+  closeWorkflowEditor(): void {
+    this.showWorkflowForm = false;
+  }
+
+  addWorkflowStep(): void {
+    this.workflowForm.steps.push({
+      step: this.workflowForm.steps.length + 1,
+      name: '',
+      role: 'Cán bộ nghiệp vụ',
+      required: true
+    });
+  }
+
+  removeWorkflowStep(index: number): void {
+    this.workflowForm.steps.splice(index, 1);
+    this.workflowForm.steps.forEach((s: any, idx: number) => {
+      s.step = idx + 1;
+    });
+  }
+
+  saveWorkflowForm(): void {
+    if (!this.workflowForm.name || !this.workflowForm.unitName) {
+      this.snackBar.open('Vui lòng nhập đầy đủ Tên quy trình và Đơn vị nghiệp vụ áp dụng!', 'Đóng', { duration: 3000 });
+      return;
+    }
+
+    const request$ = this.workflowForm.id
+      ? this.api.put<any>(`/configs/workflows/${this.workflowForm.id}`, this.workflowForm)
+      : this.api.post<any>('/configs/workflows', this.workflowForm);
+
+    request$.subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.snackBar.open('Đã lưu cấu hình quy trình kiểm tra của đơn vị nghiệp vụ!', 'Đóng', { duration: 2500 });
+          this.showWorkflowForm = false;
+          this.loadPermissionsAndWorkflows();
+        }
+      },
+      error: (err) => {
+        this.snackBar.open(err.error?.message || 'Lỗi khi lưu quy trình', 'Đóng', { duration: 3000 });
+      }
+    });
   }
 
   switchTab(tabKey: 'users' | 'roles' | 'categories' | 'config' | 'logs' | 'alerts'): void {

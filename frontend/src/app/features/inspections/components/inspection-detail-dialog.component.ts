@@ -153,12 +153,34 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
 
   // Ward center reference points (Hanoi demo wards)
   readonly WARD_CENTERS: WardCoordinate[] = [
-    { name: 'Phường Khương Mai', lat: 20.9984, lng: 105.8291 },
-    { name: 'Phường Hàng Bài', lat: 21.0227, lng: 105.8524 },
-    { name: 'Phường Mỹ Đình 1', lat: 21.0189, lng: 105.7725 },
-    { name: 'Phường Quảng An', lat: 21.0664, lng: 105.8272 },
-    { name: 'Phường Đồng Tâm', lat: 20.9995, lng: 105.8427 }
+    { name: 'Phường Hoàn Kiếm', lat: 21.0318, lng: 105.8528 },
+    { name: 'Phường Ba Đình', lat: 21.0340, lng: 105.8280 },
+    { name: 'Phường Đống Đa', lat: 21.0180, lng: 105.8260 },
+    { name: 'Phường Hai Bà Trưng', lat: 21.0090, lng: 105.8500 },
+    { name: 'Phường Cầu Giấy', lat: 21.0330, lng: 105.7880 }
   ];
+
+  // Extended Customer Feedback Fields (#1, #3, #4, #6, #7)
+  selectedLocationId: number | null = null;
+  selectedTeamId: number | null = null;
+  selectedInspectionType: 'planned' | 'adhoc' | 'professional_request' = 'planned';
+  scheduledDate = '';
+  inspectionContent = '';
+  objectLocations: any[] = [];
+  availableTeams: any[] = [];
+  workflowName = 'Quy trình kiểm tra tiêu chuẩn';
+  workflowSteps: any[] = [];
+
+  // 6. Báo cáo & Giải trình chưa thực hiện kiểm tra
+  uninspectedReason = '';
+  explanationContent = '';
+  explanationStatus: 'none' | 'pending_review' | 'accepted' | 'rescheduled' = 'pending_review';
+  isSavingExplanation = false;
+
+  // 7. Nghiệm thu kết quả kiểm tra (Thẩm quyền Lãnh đạo)
+  acceptanceStatus: 'pending' | 'accepted' | 'rejected' = 'accepted';
+  acceptanceNote = '';
+  isSavingAcceptance = false;
 
   // UI state
   isSubmitting = false;
@@ -189,26 +211,39 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
     // Reset default domain items
     this.resetDefaultDomainGroups();
 
-    // Fetch full inspection with checklistItems from API if needed or use passed checklistItems
-    if (this.inspection.checklistItems && this.inspection.checklistItems.length > 0) {
-      this.populateChecklistItems(this.inspection.checklistItems);
-    } else {
-      // Query full inspection details
-      this.api.get<any>(`/inspections/${this.inspection.id}`).subscribe({
-        next: (res) => {
-          if (res?.success && res.data?.checklistItems?.length > 0) {
-            this.populateChecklistItems(res.data.checklistItems);
+    // Fetch full inspection with checklistItems from API
+    this.api.get<any>(`/inspections/${this.inspection.id}`).subscribe({
+      next: (res) => {
+        if (res?.success && res.data) {
+          const full = res.data;
+          this.objectLocations = full.objectLocations || [];
+          this.availableTeams = full.availableTeams || [];
+          this.workflowName = full.workflowName || 'Quy trình kiểm tra tiêu chuẩn';
+          this.workflowSteps = full.workflowSteps || [];
+          this.selectedLocationId = full.locationId || (this.objectLocations[0]?.id ?? null);
+          this.selectedTeamId = full.teamId || (this.availableTeams[0]?.id ?? null);
+          this.selectedInspectionType = full.inspectionType || (full.isAdhoc ? 'adhoc' : 'planned');
+          this.scheduledDate = full.scheduledDate || (full.dueDate ? full.dueDate.substring(0, 10) : '2026-05-15');
+          this.inspectionContent = full.inspectionContent || 'Kiểm tra việc chấp hành quy định pháp luật tại cơ sở';
+          this.uninspectedReason = full.uninspectedReason || '';
+          this.explanationContent = full.explanationContent || '';
+          this.explanationStatus = full.explanationStatus && full.explanationStatus !== 'none' ? full.explanationStatus : 'pending_review';
+          this.acceptanceStatus = full.acceptanceStatus && full.acceptanceStatus !== 'pending' ? full.acceptanceStatus : 'accepted';
+          this.acceptanceNote = full.acceptanceNote || '';
+
+          if (full.checklistItems?.length > 0) {
+            this.populateChecklistItems(full.checklistItems);
           } else if (this.inspection?.checklist) {
             this.parseLegacyChecklist(this.inspection.checklist);
           }
-        },
-        error: () => {
-          if (this.inspection?.checklist) {
-            this.parseLegacyChecklist(this.inspection.checklist);
-          }
         }
-      });
-    }
+      },
+      error: () => {
+        if (this.inspection?.checklist) {
+          this.parseLegacyChecklist(this.inspection.checklist);
+        }
+      }
+    });
 
     // Parse violationCodes
     if (this.inspection.violationCodes) {
@@ -640,6 +675,12 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
       lat: this.lat,
       lng: this.lng,
       severity: this.severity,
+      locationId: this.selectedLocationId,
+      teamId: this.selectedTeamId,
+      inspectionType: this.selectedInspectionType,
+      scheduledDate: this.scheduledDate,
+      inspectionContent: this.inspectionContent,
+      workflowSteps: this.workflowSteps,
       status: 'in_progress'
     };
 
@@ -705,6 +746,12 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
       lat: this.lat,
       lng: this.lng,
       severity: this.severity,
+      locationId: this.selectedLocationId,
+      teamId: this.selectedTeamId,
+      inspectionType: this.selectedInspectionType,
+      scheduledDate: this.scheduledDate,
+      inspectionContent: this.inspectionContent,
+      workflowSteps: this.workflowSteps,
       status: 'in_progress'
     };
 
@@ -745,5 +792,66 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
 
   onClose(): void {
     this.close.emit();
+  }
+
+  submitExplanation(): void {
+    if (!this.inspection || !this.uninspectedReason.trim() || !this.explanationContent.trim()) {
+      this.errorMessage = 'Vui lòng nhập đầy đủ Nguyên nhân chưa kiểm tra và Nội dung giải trình.';
+      return;
+    }
+    this.isSavingExplanation = true;
+    this.errorMessage = '';
+    this.api.post<any>(`/inspections/${this.inspection.id}/explanation`, {
+      uninspectedReason: this.uninspectedReason.trim(),
+      explanationContent: this.explanationContent.trim(),
+      explanationStatus: this.explanationStatus
+    }).subscribe({
+      next: (res) => {
+        this.isSavingExplanation = false;
+        if (res.success) {
+          this.successMessage = 'Đã lưu báo cáo & nội dung giải trình cơ sở chưa thực hiện kiểm tra thành công!';
+          if (this.inspection) {
+            this.inspection.uninspectedReason = this.uninspectedReason;
+            this.inspection.explanationContent = this.explanationContent;
+            this.inspection.explanationStatus = this.explanationStatus;
+            this.saved.emit(this.inspection);
+          }
+          setTimeout(() => this.successMessage = '', 3500);
+        }
+      },
+      error: (err) => {
+        this.isSavingExplanation = false;
+        this.errorMessage = err.error?.message || 'Lỗi khi lưu nội dung giải trình.';
+      }
+    });
+  }
+
+  submitAcceptanceResult(): void {
+    if (!this.inspection) return;
+    this.isSavingAcceptance = true;
+    this.errorMessage = '';
+    this.api.post<any>(`/inspections/${this.inspection.id}/accept-result`, {
+      acceptanceStatus: this.acceptanceStatus,
+      acceptanceNote: this.acceptanceNote.trim()
+    }).subscribe({
+      next: (res) => {
+        this.isSavingAcceptance = false;
+        if (res.success) {
+          this.successMessage = this.acceptanceStatus === 'accepted'
+            ? 'Đã nghiệm thu kết quả kiểm tra đạt yêu cầu!'
+            : 'Đã ghi nhận yêu cầu bổ sung hồ sơ nghiệm thu.';
+          if (this.inspection) {
+            this.inspection.acceptanceStatus = this.acceptanceStatus;
+            this.inspection.acceptanceNote = this.acceptanceNote;
+            this.saved.emit(this.inspection);
+          }
+          setTimeout(() => this.successMessage = '', 3500);
+        }
+      },
+      error: (err) => {
+        this.isSavingAcceptance = false;
+        this.errorMessage = err.error?.message || 'Lỗi khi nghiệm thu kết quả kiểm tra.';
+      }
+    });
   }
 }

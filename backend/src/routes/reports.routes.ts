@@ -10,5 +10,7 @@ router.get('/recommendations', ReportsController.getRecommendations);
 router.get('/recommendations/export', ReportsController.exportRecommendationsExcel);
 router.get('/quarterly', ReportsController.getQuarterlySummary);
 router.get('/quarterly/export', ReportsController.exportQuarterlySummaryExcel);
+router.get('/uninspected', ReportsController.getUninspectedReport);
+router.get('/uninspected/export', ReportsController.exportUninspectedExcel);
 
 export default router;

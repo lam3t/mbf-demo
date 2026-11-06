@@ -44,6 +44,7 @@ router.get('/:id/quota-check', PlansController.checkQuota);
 router.post('/upload-scan', scanUpload.single('file'), auditLogger('UPLOAD_PLAN_SCAN', 'PLANS'), PlansController.uploadScanDocument);
 
 router.post('/', auditLogger('CREATE_PLAN', 'PLANS'), PlansController.create);
+router.put('/:id/adjust', auditLogger('ADJUST_PLAN', 'PLANS'), PlansController.adjustPlan);
 router.post('/:id/items', auditLogger('ADD_PLAN_ITEMS', 'PLANS'), PlansController.addItems);
 router.put('/:id/items', auditLogger('UPDATE_PLAN_ITEMS', 'PLANS'), PlansController.updateItems);
 router.post('/:id/submit', auditLogger('SUBMIT_PLAN', 'PLANS'), PlansController.submit);

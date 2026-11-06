@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, Input, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -16,10 +16,13 @@ import { Inspection, ViolationCatalog, RecommendationTagCatalog } from '../../co
 
 import * as L from 'leaflet';
 
-// Attach L globally for Leaflet plugins
-if (typeof window !== 'undefined') {
-  (window as any).L = L;
-}
+// Preserve global window.L loaded by angular.json scripts (which includes heatLayer & markerClusterGroup)
+const getLeaflet = (): any => {
+  if (typeof window !== 'undefined' && (window as any).L) {
+    return (window as any).L;
+  }
+  return L;
+};
 
 export interface ViolationGeoPoint {
   inspectionId: number;
@@ -33,6 +36,11 @@ export interface ViolationGeoPoint {
   objectName: string;
   objectType: string;
   objectAddress: string;
+  locationName?: string;
+  locationAddress?: string;
+  inspectionType?: string;
+  teamName?: string;
+  hasForeignElement?: number;
   planQuarter?: string;
 }
 
@@ -57,9 +65,12 @@ export interface ViolationGeoPoint {
   styleUrls: ['./violations-map.component.scss']
 })
 export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy {
+  @Input() isEmbedded = false;
+
   private map: L.Map | null = null;
   private heatLayer: any = null;
   private markerClusterGroup: any = null;
+  private resizeObserver: ResizeObserver | null = null;
 
   // Filter state
   selectedTimeRange = 'all';
@@ -107,7 +118,8 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
 
   constructor(
     private api: ApiService,
-    private router: Router
+    private router: Router,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
@@ -127,8 +139,13 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   ngOnDestroy(): void {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
     if (this.map) {
       this.map.remove();
+      this.map = null;
     }
   }
 
@@ -149,21 +166,23 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
     const mapElement = document.getElementById('violationsLeafletMap');
     if (!mapElement) return;
 
+    const LeafletLib = getLeaflet();
+
     // Center Hanoi coordinates: 21.0285, 105.8542
-    this.map = L.map('violationsLeafletMap', {
+    this.map = LeafletLib.map(mapElement, {
       center: [21.0285, 105.8542],
       zoom: 13,
       zoomControl: true
     });
 
     // Online OpenStreetMap tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    LeafletLib.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19
     }).addTo(this.map);
 
     // Initialize MarkerClusterGroup or fallback to LayerGroup
-    const mcFn = (L as any).markerClusterGroup || (window as any)?.L?.markerClusterGroup;
+    const mcFn = LeafletLib.markerClusterGroup || (L as any).markerClusterGroup;
     if (typeof mcFn === 'function') {
       this.markerClusterGroup = mcFn({
         chunkedLoading: true,
@@ -177,29 +196,47 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
           if (count > 5) sizeClass = 'medium';
           if (count > 10) sizeClass = 'large';
 
-          return L.divIcon({
+          return LeafletLib.divIcon({
             html: `<div class="custom-cluster-marker ${sizeClass}"><span>${count}</span></div>`,
             className: 'cluster-icon-wrap',
-            iconSize: L.point(40, 40)
+            iconSize: LeafletLib.point(40, 40)
           });
         }
       });
     } else {
-      console.warn('Leaflet markerClusterGroup not available, using standard layerGroup fallback');
-      this.markerClusterGroup = L.layerGroup();
+      this.markerClusterGroup = LeafletLib.layerGroup();
     }
 
-    if (this.showMarkers) {
+    if (this.showMarkers && this.map) {
       this.map.addLayer(this.markerClusterGroup);
     }
 
-    // Expose global callbacks for popup action buttons
+    // Ensure proper size calculation when container renders or resizes
+    setTimeout(() => {
+      this.map?.invalidateSize();
+    }, 200);
+    setTimeout(() => {
+      this.map?.invalidateSize();
+    }, 600);
+
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.map?.invalidateSize();
+      });
+      this.resizeObserver.observe(mapElement);
+    }
+
+    // Expose global callbacks for popup action buttons inside NgZone
     (window as any).openInspectionDetail = (id: number) => {
-      this.openInspectionModal(id);
+      this.ngZone.run(() => {
+        this.openInspectionModal(id);
+      });
     };
 
     (window as any).goToWardDashboard = (wardName: string) => {
-      this.goToWardDashboard(wardName);
+      this.ngZone.run(() => {
+        this.goToWardDashboard(wardName);
+      });
     };
   }
 
@@ -258,6 +295,9 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
   private renderMapLayers(): void {
     if (!this.map) return;
 
+    const LeafletLib = getLeaflet();
+    this.map.invalidateSize();
+
     // 1. Render Heatmap Layer
     if (this.heatLayer) {
       try {
@@ -268,31 +308,39 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
 
     const heatPoints = this.points
       .filter(p => p.lat && p.lng)
-      .map(p => [p.lat, p.lng, (p.severity || 1) * 0.35]);
+      .map(p => [Number(p.lat), Number(p.lng), (p.severity || 1) * 0.35]);
 
     if (heatPoints.length > 0) {
-      const heatFn = (L as any).heatLayer || (window as any)?.L?.heatLayer;
-      if (typeof heatFn === 'function') {
-        this.heatLayer = heatFn(heatPoints, {
-          radius: 32,
-          blur: 20,
-          maxZoom: 16,
-          max: 1.5,
-          gradient: {
-            0.2: '#3b82f6',
-            0.4: '#10b981',
-            0.6: '#eab308',
-            0.8: '#f97316',
-            1.0: '#dc2626'
-          }
-        });
-      } else {
+      const mapEl = document.getElementById('violationsLeafletMap');
+      const hasValidSize = mapEl && mapEl.clientWidth > 0 && mapEl.clientHeight > 0;
+      const heatFn = LeafletLib.heatLayer || (L as any).heatLayer;
+
+      if (typeof heatFn === 'function' && hasValidSize) {
+        try {
+          this.heatLayer = heatFn(heatPoints, {
+            radius: 32,
+            blur: 20,
+            maxZoom: 16,
+            max: 1.5,
+            gradient: {
+              0.2: '#3b82f6',
+              0.4: '#10b981',
+              0.6: '#eab308',
+              0.8: '#f97316',
+              1.0: '#dc2626'
+            }
+          });
+        } catch (e) {
+          this.heatLayer = null;
+        }
+      }
+
+      if (!this.heatLayer) {
         // SVG/Circle Heatmap fallback layer
-        console.warn('Leaflet heatLayer plugin not available, using dynamic heat glow circles fallback');
-        const circleGroup = L.layerGroup();
+        const circleGroup = LeafletLib.layerGroup();
         heatPoints.forEach(([lat, lng, intensity]) => {
           const color = intensity > 1.2 ? '#dc2626' : (intensity > 0.8 ? '#f97316' : (intensity > 0.5 ? '#eab308' : '#3b82f6'));
-          L.circle([lat as number, lng as number], {
+          LeafletLib.circle([lat as number, lng as number], {
             radius: 280 * (intensity as number),
             color: color,
             fillColor: color,
@@ -304,7 +352,9 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
       }
 
       if (this.showHeatmap && this.heatLayer) {
-        this.map.addLayer(this.heatLayer);
+        try {
+          this.map.addLayer(this.heatLayer);
+        } catch (e) {}
       }
     }
 
@@ -323,7 +373,7 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
             </div>
           `;
 
-          const customIcon = L.divIcon({
+          const customIcon = LeafletLib.divIcon({
             className: 'violation-pin-wrap',
             html: iconHtml,
             iconSize: [28, 28],
@@ -331,11 +381,14 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
             popupAnchor: [0, -28]
           });
 
-          const marker = L.marker([pt.lat, pt.lng], { icon: customIcon });
+          const marker = LeafletLib.marker([Number(pt.lat), Number(pt.lng)], { icon: customIcon });
 
           const violationTagsHtml = this.parseViolations(pt.violationCodes)
             .map(code => `<span class="popup-violation-chip">${code}</span>`)
             .join(' ');
+
+          const foreignBadge = pt.hasForeignElement ? `<span style="background:#fef3c7;color:#b45309;font-size:10px;padding:1px 5px;border-radius:4px;font-weight:700;">🌐 Yếu tố NN</span>` : '';
+          const locSubtitle = pt.locationName ? `<div style="font-size:11px;color:#1e40af;font-weight:600;margin-bottom:3px;">🏢 ${pt.locationName}</div>` : '';
 
           const popupContent = `
             <div class="leaflet-popup-card">
@@ -345,8 +398,9 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
                 </span>
                 <span class="popup-severity-badge severity-${pt.severity}">Mức ${pt.severity}/5</span>
               </div>
-              <h4 class="popup-name">${pt.objectName}</h4>
-              <p class="popup-address"><i class="popup-icon">📍</i> ${pt.objectAddress}</p>
+              <h4 class="popup-name">${pt.objectName} ${foreignBadge}</h4>
+              ${locSubtitle}
+              <p class="popup-address"><i class="popup-icon">📍</i> ${pt.locationAddress || pt.objectAddress}</p>
               
               <div class="popup-violations-box">
                 <span class="popup-label">Lỗi vi phạm:</span>

@@ -195,7 +195,7 @@ export class PlansController {
    */
   static create(req: AuthenticatedRequest, res: Response): void {
     try {
-      const { quarter, year, ward, objectIds = [] } = req.body;
+      const { quarter, year, ward, inspectionType = 'planned', scheduledStartDate, scheduledEndDate, inspectionLocation, inspectionContent, objectIds = [] } = req.body;
       const userId = req.user?.id || null;
 
       if (!quarter || !ward) {
@@ -205,24 +205,16 @@ export class PlansController {
 
       const planYear = year ? parseInt(year, 10) : (quarter.includes('/') ? parseInt(quarter.split('/')[1], 10) : new Date().getFullYear());
 
-      // Check existing plan for same ward and quarter
-      const existing = db.prepare('SELECT id, status FROM plans WHERE quarter = ? AND ward = ?').get(quarter, ward) as Plan | undefined;
-      if (existing) {
-        res.status(400).json({ success: false, message: `Kế hoạch ${quarter} của ${ward} đã tồn tại (Trạng thái: ${existing.status}).` });
-        return;
-      }
-
-      // Validate Single Check for each objectId
+      // Collect duplicate warnings (Warn-only, DO NOT hard-block per Requirement #2 & #3)
+      const warnings: any[] = [];
       for (const objId of objectIds) {
         const singleCheck = checkObjectSingleCheckRule(objId, planYear);
-        if (singleCheck.isBlocked && singleCheck.blockReason) {
-          res.status(409).json({
-            success: false,
-            message: singleCheck.blockReason,
+        if (singleCheck.hasWarning) {
+          warnings.push({
+            objectId: objId,
             conflictType: singleCheck.conflictType,
-            objectId: objId
+            warningReason: singleCheck.warningReason
           });
-          return;
         }
       }
 
@@ -232,17 +224,28 @@ export class PlansController {
 
       const createPlanTx = db.transaction(() => {
         const stmt = db.prepare(`
-          INSERT INTO plans (quarter, year, ward, status, dueDate, submittedBy, createdAt)
-          VALUES (?, ?, ?, 'draft', ?, ?, datetime('now'))
+          INSERT INTO plans (quarter, year, ward, inspectionType, scheduledStartDate, scheduledEndDate, inspectionLocation, inspectionContent, status, dueDate, submittedBy, createdAt)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, datetime('now'))
         `);
-        const result = stmt.run(quarter, planYear, ward, dueDate, userId);
+        const result = stmt.run(
+          quarter,
+          planYear,
+          ward,
+          inspectionType || 'planned',
+          scheduledStartDate || '2026-04-01',
+          scheduledEndDate || '2026-06-30',
+          inspectionLocation || ward,
+          inspectionContent || 'Kiểm tra việc chấp hành quy định pháp luật về ĐKKD, PCCC, ATTP, ANTT và nghĩa vụ thuế.',
+          dueDate,
+          userId
+        );
         const planId = result.lastInsertRowid;
 
-        const itemStmt = db.prepare('INSERT INTO plan_items (planId, objectId, createdAt) VALUES (?, ?, datetime(\'now\'))');
+        const itemStmt = db.prepare('INSERT INTO plan_items (planId, objectId, scheduledDate, inspectionContent, createdAt) VALUES (?, ?, ?, ?, datetime(\'now\'))');
         const updateObjStmt = db.prepare('UPDATE business_objects SET planId = ? WHERE id = ?');
 
         for (const objId of objectIds) {
-          itemStmt.run(planId, objId);
+          itemStmt.run(planId, objId, scheduledStartDate || null, inspectionContent || null);
           updateObjStmt.run(planId, objId);
         }
 
@@ -250,48 +253,51 @@ export class PlansController {
       });
 
       const newPlanId = createPlanTx();
-      res.status(201).json({ success: true, message: 'Tạo kế hoạch nháp thành công.', id: newPlanId });
+      res.status(201).json({
+        success: true,
+        message: warnings.length > 0
+          ? `Đã tạo kế hoạch thành công (Lưu ý: Có ${warnings.length} cơ sở có cảnh báo trùng lặp).`
+          : 'Tạo kế hoạch nháp thành công.',
+        id: newPlanId,
+        warnings
+      });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
     }
   }
 
   /**
-   * 4. PUT /api/plans/:id/items - Replace/Update plan items in draft status with Single Check validation
+   * 4. PUT /api/plans/:id/items - Replace/Update plan items (Allowed in draft, pending, and approved status for flexible adjustment during implementation)
    */
   static updateItems(req: Request, res: Response): void {
     try {
       const { id } = req.params;
-      const { objectIds = [] } = req.body;
+      const { objectIds = [], adjustmentNote } = req.body;
 
-      const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(id) as Plan | undefined;
+      const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(id) as any;
       if (!plan) {
         res.status(404).json({ success: false, message: 'Không tìm thấy kế hoạch.' });
         return;
       }
 
-      if (plan.status !== 'draft') {
-        res.status(400).json({ success: false, message: 'Chỉ có thể chỉnh sửa đối tượng khi kế hoạch ở trạng thái Bản nháp.' });
-        return;
-      }
-
       const planYear = plan.year || (plan.quarter.includes('/') ? parseInt(plan.quarter.split('/')[1], 10) : new Date().getFullYear());
 
-      // Validate Single Check for each object being added
+      const warnings: any[] = [];
       for (const objId of objectIds) {
         const singleCheck = checkObjectSingleCheckRule(objId, planYear, plan.id);
-        if (singleCheck.isBlocked && singleCheck.blockReason) {
-          res.status(409).json({
-            success: false,
-            message: singleCheck.blockReason,
+        if (singleCheck.hasWarning) {
+          warnings.push({
+            objectId: objId,
             conflictType: singleCheck.conflictType,
-            objectId: objId
+            warningReason: singleCheck.warningReason
           });
-          return;
         }
       }
 
       const updateTx = db.transaction(() => {
+        if (adjustmentNote) {
+          db.prepare(`UPDATE plans SET adjustmentNote = ?, adjustedAt = datetime('now') WHERE id = ?`).run(adjustmentNote, id);
+        }
         // Reset old plan items
         db.prepare('UPDATE business_objects SET planId = NULL WHERE planId = ?').run(id);
         db.prepare('DELETE FROM plan_items WHERE planId = ?').run(id);
@@ -303,17 +309,28 @@ export class PlansController {
           insertItem.run(id, objId);
           updateObj.run(id, objId);
         }
+
+        // If plan is already approved, ensure field inspections exist for newly added objects
+        if (plan.status === 'approved') {
+          PlansController.ensureInspectionsForPlan(Number(id), plan, objectIds);
+        }
       });
 
       updateTx();
-      res.json({ success: true, message: 'Cập nhật danh sách đối tượng thành công.' });
+      res.json({
+        success: true,
+        message: warnings.length > 0
+          ? `Đã cập nhật danh sách đối tượng thành công (Có ${warnings.length} cảnh báo trùng lặp, hệ thống vẫn cho phép thực hiện).`
+          : 'Cập nhật danh sách đối tượng thành công.',
+        warnings
+      });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
     }
   }
 
   /**
-   * 4b. POST /api/plans/:id/items - Add object(s) to plan items in draft status with Single Check validation
+   * 4b. POST /api/plans/:id/items - Add object(s) to plan items (Allowed in draft, pending, and approved status)
    */
   static addItems(req: Request, res: Response): void {
     try {
@@ -332,30 +349,23 @@ export class PlansController {
         return;
       }
 
-      const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(id) as Plan | undefined;
+      const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(id) as any;
       if (!plan) {
         res.status(404).json({ success: false, message: 'Không tìm thấy kế hoạch.' });
         return;
       }
 
-      if (plan.status !== 'draft') {
-        res.status(400).json({ success: false, message: 'Chỉ có thể thêm đối tượng khi kế hoạch ở trạng thái Bản nháp.' });
-        return;
-      }
-
       const planYear = plan.year || (plan.quarter.includes('/') ? parseInt(plan.quarter.split('/')[1], 10) : new Date().getFullYear());
 
-      // Validate Single Check for each object being added
+      const warnings: any[] = [];
       for (const objId of incomingIds) {
         const singleCheck = checkObjectSingleCheckRule(objId, planYear, plan.id);
-        if (singleCheck.isBlocked && singleCheck.blockReason) {
-          res.status(409).json({
-            success: false,
-            message: singleCheck.blockReason,
+        if (singleCheck.hasWarning) {
+          warnings.push({
+            objectId: objId,
             conflictType: singleCheck.conflictType,
-            objectId: objId
+            warningReason: singleCheck.warningReason
           });
-          return;
         }
       }
 
@@ -373,13 +383,195 @@ export class PlansController {
             addedCount++;
           }
         }
+
+        if (plan.status === 'approved') {
+          PlansController.ensureInspectionsForPlan(Number(id), plan, incomingIds);
+        }
         return addedCount;
       });
 
       const added = addTx();
-      res.status(200).json({ success: true, message: `Đã thêm ${added} đối tượng vào giỏ kế hoạch.`, addedCount: added });
+      res.status(200).json({
+        success: true,
+        message: warnings.length > 0
+          ? `Đã thêm ${added} đối tượng vào kế hoạch (Lưu ý: Có ${warnings.length} cảnh báo trùng lặp).`
+          : `Đã thêm ${added} đối tượng vào giỏ kế hoạch.`,
+        addedCount: added,
+        warnings
+      });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  /**
+   * 4c. PUT /api/plans/:id/adjust - Adjust plan schedule, location, content, inspectionType, and items during implementation
+   */
+  static adjustPlan(req: AuthenticatedRequest, res: Response): void {
+    try {
+      const { id } = req.params;
+      const {
+        quarter,
+        ward,
+        inspectionType,
+        scheduledStartDate,
+        scheduledEndDate,
+        inspectionLocation,
+        inspectionContent,
+        adjustmentNote,
+        objectIds
+      } = req.body;
+      const userId = req.user?.id || null;
+
+      const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(id) as any;
+      if (!plan) {
+        res.status(404).json({ success: false, message: 'Không tìm thấy kế hoạch.' });
+        return;
+      }
+
+      db.transaction(() => {
+        db.prepare(`
+          UPDATE plans
+          SET quarter = COALESCE(?, quarter),
+              ward = COALESCE(?, ward),
+              inspectionType = COALESCE(?, inspectionType),
+              scheduledStartDate = COALESCE(?, scheduledStartDate),
+              scheduledEndDate = COALESCE(?, scheduledEndDate),
+              inspectionLocation = COALESCE(?, inspectionLocation),
+              inspectionContent = COALESCE(?, inspectionContent),
+              adjustmentNote = COALESCE(?, adjustmentNote),
+              adjustedAt = datetime('now'),
+              adjustedBy = ?
+          WHERE id = ?
+        `).run(
+          quarter || null,
+          ward || null,
+          inspectionType || null,
+          scheduledStartDate || null,
+          scheduledEndDate || null,
+          inspectionLocation || null,
+          inspectionContent || null,
+          adjustmentNote || 'Điều chỉnh thời gian, địa điểm và nội dung kiểm tra trong quá trình triển khai',
+          userId,
+          id
+        );
+
+        // Propagate adjusted schedule & content to inspections belonging to this plan
+        if (scheduledStartDate || inspectionContent || inspectionType) {
+          db.prepare(`
+            UPDATE inspections
+            SET scheduledDate = COALESCE(?, scheduledDate),
+                inspectionContent = COALESCE(?, inspectionContent),
+                inspectionType = COALESCE(?, inspectionType)
+            WHERE planId = ?
+          `).run(
+            scheduledStartDate || null,
+            inspectionContent || null,
+            inspectionType || null,
+            id
+          );
+        }
+
+        // If objectIds array was also passed to adjust objects in the plan
+        if (Array.isArray(objectIds)) {
+          db.prepare('UPDATE business_objects SET planId = NULL WHERE planId = ?').run(id);
+          db.prepare('DELETE FROM plan_items WHERE planId = ?').run(id);
+
+          const insertItem = db.prepare('INSERT INTO plan_items (planId, objectId, scheduledDate, inspectionContent, createdAt) VALUES (?, ?, ?, ?, datetime(\'now\'))');
+          const updateObj = db.prepare('UPDATE business_objects SET planId = ? WHERE id = ?');
+
+          for (const objId of objectIds) {
+            insertItem.run(id, objId, scheduledStartDate || plan.scheduledStartDate || null, inspectionContent || plan.inspectionContent || null);
+            updateObj.run(id, objId);
+          }
+
+          const updatedPlan = db.prepare('SELECT * FROM plans WHERE id = ?').get(id) as any;
+          if (updatedPlan && updatedPlan.status === 'approved') {
+            PlansController.ensureInspectionsForPlan(Number(id), updatedPlan, objectIds);
+          }
+        }
+      })();
+
+      res.json({
+        success: true,
+        message: 'Đã điều chỉnh kế hoạch, thời gian, địa điểm và nội dung kiểm tra thành công!'
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  /**
+   * Helper to ensure field inspections exist with valid GPS coordinates, location info & checklist items
+   */
+  static ensureInspectionsForPlan(planId: number, plan: any, objectIds: number[]): void {
+    const deadlineRow = db.prepare(`SELECT value FROM system_configs WHERE key = 'inspectionDeadlineDays'`).get() as { value: string } | undefined;
+    const deadlineDays = deadlineRow ? parseInt(deadlineRow.value, 10) || 30 : 30;
+    const dueTimestamp = new Date();
+    dueTimestamp.setDate(dueTimestamp.getDate() + deadlineDays);
+    const inspDueDate = plan.scheduledEndDate || dueTimestamp.toISOString().replace('T', ' ').substring(0, 19);
+
+    const wardCoords: Record<string, [number, number]> = {
+      'Phường Hoàn Kiếm': [21.0285, 105.8520],
+      'Phường Ba Đình': [21.0340, 105.8200],
+      'Phường Đống Đa': [21.0150, 105.8280],
+      'Phường Hai Bà Trưng': [21.0090, 105.8530],
+      'Phường Cầu Giấy': [21.0330, 105.7900]
+    };
+
+    const insertInspection = db.prepare(`
+      INSERT INTO inspections (
+        objectId, locationId, locationName, locationAddress, planId, inspectionType,
+        scheduledDate, inspectionContent, status, ward, lat, lng, severity, dueDate, isLocked, createdAt
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'not_started', ?, ?, ?, 1, ?, 0, datetime('now'))
+    `);
+    const insertChecklistItem = db.prepare(`
+      INSERT INTO inspection_checklist_items (inspectionId, domainId, criteriaCode, criteriaName, result, notes)
+      VALUES (?, ?, ?, ?, 'pass', '')
+    `);
+
+    const defaultCriteria = [
+      { domainId: 1, criteriaCode: 'pccc_1', criteriaName: 'Trang bị bình chữa cháy còn hạn & tiêu lệnh PCCC' },
+      { domainId: 1, criteriaCode: 'pccc_2', criteriaName: 'Lối thoát nạn & hành lang thoát hiểm thông thoáng' },
+      { domainId: 2, criteriaCode: 'attp_1', criteriaName: 'Giấy chứng nhận cơ sở đủ điều kiện ATTP / Cam kết ATTP' },
+      { domainId: 2, criteriaCode: 'attp_2', criteriaName: 'Nguồn gốc nguyên liệu & điều kiện vệ sinh bảo quản' },
+      { domainId: 3, criteriaCode: 'env_1', criteriaName: 'Thu gom, phân loại & xử lý rác thải / nước thải đúng quy định' },
+      { domainId: 3, criteriaCode: 'env_2', criteriaName: 'Không gây ô nhiễm tiếng ồn, khói bụi vượt quy chuẩn' },
+      { domainId: 4, criteriaCode: 'ttdt_1', criteriaName: 'Không lấn chiếm lòng lề đường, vỉa hè, hành lang an toàn' },
+      { domainId: 4, criteriaCode: 'ttdt_2', criteriaName: 'Biển hiệu, bảng quảng cáo đúng quy chuẩn cấp phép' },
+      { domainId: 5, criteriaCode: 'tax_1', criteriaName: 'Đăng ký kinh doanh & niêm yết giá công khai' },
+      { domainId: 5, criteriaCode: 'tax_2', criteriaName: 'Kê khai & thực hiện đầy đủ nghĩa vụ thuế / hóa đơn' }
+    ];
+
+    for (const objId of objectIds) {
+      const existingInspection = db.prepare('SELECT id FROM inspections WHERE objectId = ? AND planId = ?').get(objId, planId) as { id: number } | undefined;
+      if (!existingInspection) {
+        const primaryLoc = db.prepare('SELECT * FROM business_locations WHERE objectId = ? ORDER BY id ASC LIMIT 1').get(objId) as any;
+        const objInfo = db.prepare('SELECT * FROM business_objects WHERE id = ?').get(objId) as any;
+        const baseCoord = wardCoords[plan.ward] || [21.0285, 105.8520];
+        const lat = primaryLoc?.lat || (baseCoord[0] + ((objId % 7) - 3) * 0.0014);
+        const lng = primaryLoc?.lng || (baseCoord[1] + ((objId % 5) - 2) * 0.0014);
+
+        const inspRes = insertInspection.run(
+          objId,
+          primaryLoc?.id || null,
+          primaryLoc?.name || (objInfo ? `Trụ sở - ${objInfo.name}` : null),
+          primaryLoc?.address || objInfo?.address || null,
+          planId,
+          plan.inspectionType || 'planned',
+          plan.scheduledStartDate || '2026-05-15',
+          plan.inspectionContent || 'Kiểm tra theo kế hoạch định kỳ các điều kiện kinh doanh, PCCC, ATTP, ANTT.',
+          plan.ward,
+          lat,
+          lng,
+          inspDueDate
+        );
+        const newInspId = inspRes.lastInsertRowid;
+        for (const c of defaultCriteria) {
+          insertChecklistItem.run(newInspId, c.domainId, c.criteriaCode, c.criteriaName);
+        }
+      }
     }
   }
 
@@ -570,48 +762,9 @@ export class PlansController {
           WHERE id = ?
         `).run(userId, id);
 
-        // Calculate inspection dueDate = approvedAt + N days (from system_configs, default 30)
-        const deadlineRow = db.prepare(`SELECT value FROM system_configs WHERE key = 'inspectionDeadlineDays'`).get() as { value: string } | undefined;
-        const deadlineDays = deadlineRow ? parseInt(deadlineRow.value, 10) || 30 : 30;
-        const dueTimestamp = new Date();
-        dueTimestamp.setDate(dueTimestamp.getDate() + deadlineDays);
-        const inspDueDate = dueTimestamp.toISOString().replace('T', ' ').substring(0, 19);
-
         // Auto-generate inspections for each object in this plan
         const items = db.prepare('SELECT objectId FROM plan_items WHERE planId = ?').all(id) as Array<{ objectId: number }>;
-        const insertInspection = db.prepare(`
-          INSERT INTO inspections (objectId, planId, status, ward, severity, dueDate, isLocked, createdAt)
-          VALUES (?, ?, 'not_started', ?, 1, ?, 0, datetime('now'))
-        `);
-        const insertChecklistItem = db.prepare(`
-          INSERT INTO inspection_checklist_items (inspectionId, domainId, criteriaCode, criteriaName, result, notes)
-          VALUES (?, ?, ?, ?, 'pass', '')
-        `);
-
-        const defaultCriteria = [
-          { domainId: 1, criteriaCode: 'pccc_1', criteriaName: 'Trang bị bình chữa cháy còn hạn & tiêu lệnh PCCC' },
-          { domainId: 1, criteriaCode: 'pccc_2', criteriaName: 'Lối thoát nạn & hành lang thoát hiểm thông thoáng' },
-          { domainId: 2, criteriaCode: 'attp_1', criteriaName: 'Giấy chứng nhận cơ sở đủ điều kiện ATTP / Cam kết ATTP' },
-          { domainId: 2, criteriaCode: 'attp_2', criteriaName: 'Nguồn gốc nguyên liệu & điều kiện vệ sinh bảo quản' },
-          { domainId: 3, criteriaCode: 'env_1', criteriaName: 'Thu gom, phân loại & xử lý rác thải / nước thải đúng quy định' },
-          { domainId: 3, criteriaCode: 'env_2', criteriaName: 'Không gây ô nhiễm tiếng ồn, khói bụi vượt quy chuẩn' },
-          { domainId: 4, criteriaCode: 'ttdt_1', criteriaName: 'Không lấn chiếm lòng lề đường, vỉa hè, hành lang an toàn' },
-          { domainId: 4, criteriaCode: 'ttdt_2', criteriaName: 'Biển hiệu, bảng quảng cáo đúng quy chuẩn cấp phép' },
-          { domainId: 5, criteriaCode: 'tax_1', criteriaName: 'Đăng ký kinh doanh & niêm yết giá công khai' },
-          { domainId: 5, criteriaCode: 'tax_2', criteriaName: 'Kê khai & thực hiện đầy đủ nghĩa vụ thuế / hóa đơn' }
-        ];
-
-        for (const item of items) {
-          // Check if inspection already exists
-          const existingInspection = db.prepare('SELECT id FROM inspections WHERE objectId = ? AND planId = ?').get(item.objectId, id) as { id: number } | undefined;
-          if (!existingInspection) {
-            const inspRes = insertInspection.run(item.objectId, id, plan.ward, inspDueDate);
-            const newInspId = inspRes.lastInsertRowid;
-            for (const c of defaultCriteria) {
-              insertChecklistItem.run(newInspId, c.domainId, c.criteriaCode, c.criteriaName);
-            }
-          }
-        }
+        PlansController.ensureInspectionsForPlan(Number(id), plan, items.map(i => i.objectId));
       });
 
       approveTx();

@@ -97,6 +97,125 @@
         </div>
       </div>
 
+      <!-- SECTION 0B: Thông tin Cơ sở/Địa điểm, Loại hình KT, Đoàn kiểm tra & Quy trình nghiệp vụ (#1, #3, #4, #7) -->
+      <div class="section-card" style="margin-bottom: 14px; background: #f8fafc; border: 1px solid #cbd5e1;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e2e8f0;">
+          <strong style="font-size:13.5px;color:#1e3a8a;display:flex;align-items:center;gap:6px;">
+            <mat-icon style="font-size:18px;width:18px;height:18px;">account_tree</mat-icon>
+            <span>Thông tin Cơ sở / Địa điểm, Loại hình Kiểm tra, Đoàn Kiểm tra & Quy trình Nghiệp vụ</span>
+          </strong>
+          <span *ngIf="inspection.hasForeignElement" style="background:#fef3c7;color:#b45309;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:12px;border:1px solid #fde68a;">
+            🌐 Doanh nghiệp có yếu tố nước ngoài
+          </span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-bottom:10px;">
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;color:#475569;margin-bottom:3px;">🏢 Cơ sở / Chi nhánh / Địa điểm kinh doanh được kiểm tra:</label>
+            <select [(ngModel)]="selectedLocationId" [disabled]="isLocked" style="width:100%;height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;background:#fff;">
+              <option *ngFor="let loc of objectLocations" [ngValue]="loc.id">
+                {{ loc.name }} — {{ loc.address }} ({{ loc.ward }})
+              </option>
+              <option *ngIf="objectLocations.length === 0" [ngValue]="null">Trụ sở chính — {{ inspection.objectAddress }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;color:#475569;margin-bottom:3px;">🤝 Đoàn kiểm tra / Đoàn liên ngành thực hiện:</label>
+            <select [(ngModel)]="selectedTeamId" [disabled]="isLocked" style="width:100%;height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;background:#fff;">
+              <option *ngFor="let t of availableTeams" [ngValue]="t.id">
+                {{ t.name }} ({{ t.teamType === 'inter_agency' ? 'Đoàn Liên ngành' : 'Đoàn Đơn vị' }} - Chủ trì: {{ t.leadUnit }})
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;color:#475569;margin-bottom:3px;">📋 Phân loại loại hình kiểm tra:</label>
+            <select [(ngModel)]="selectedInspectionType" [disabled]="isLocked" style="width:100%;height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;background:#fff;">
+              <option value="planned">📅 Kiểm tra theo kế hoạch / định kỳ</option>
+              <option value="adhoc">⚡ Kiểm tra đột xuất</option>
+              <option value="professional_request">📋 Kiểm tra theo yêu cầu nghiệp vụ</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;color:#475569;margin-bottom:3px;">🗓️ Lịch / Thời gian kiểm tra thực tế:</label>
+            <input type="date" [(ngModel)]="scheduledDate" [disabled]="isLocked" style="width:100%;height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;background:#fff;box-sizing:border-box;" />
+          </div>
+        </div>
+
+        <!-- Unit-Specific Workflow Steps Progress -->
+        <div *ngIf="workflowSteps.length > 0" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;">
+          <div style="font-size:11.5px;font-weight:700;color:#1e3a8a;margin-bottom:6px;">
+            Quy trình kiểm tra đặc thù áp dụng: {{ workflowName }}
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <span
+              *ngFor="let step of workflowSteps"
+              style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:4px;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;"
+            >
+              <strong>B{{ step.stepOrder }}:</strong> {{ step.stepName }} <em style="color:#64748b;">({{ step.unitRole }})</em>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 6: Báo cáo & Giải trình đối với cơ sở chưa được kiểm tra theo kế hoạch (#6) -->
+      <div *ngIf="inspection.status !== 'completed'" class="section-card" style="margin-bottom: 14px; background: #fffbeb; border: 1.5px solid #fcd34d;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <strong style="font-size:13.5px;color:#92400e;display:flex;align-items:center;gap:6px;">
+            <mat-icon style="font-size:18px;width:18px;height:18px;color:#d97706;">assignment_late</mat-icon>
+            <span>Báo cáo & Giải trình trường hợp chưa thực hiện kiểm tra theo kế hoạch</span>
+          </strong>
+          <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fef3c7;color:#b45309;">
+            {{ inspection.explanationContent ? 'Đã nhập giải trình' : 'Chưa giải trình' }}
+          </span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 220px;gap:10px;margin-bottom:8px;">
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;color:#78350f;margin-bottom:3px;">Nguyên nhân chưa thực hiện kiểm tra *</label>
+            <input type="text" [(ngModel)]="uninspectedReason" placeholder="VD: Cơ sở tạm đóng cửa sửa chữa / Đại diện pháp luật đi công tác nước ngoài..." style="width:100%;height:34px;padding:0 10px;border:1px solid #fcd34d;border-radius:6px;font-size:12.5px;background:#fff;box-sizing:border-box;" />
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;color:#78350f;margin-bottom:3px;">Tình trạng xử lý giải trình</label>
+            <select [(ngModel)]="explanationStatus" style="width:100%;height:34px;padding:0 8px;border:1px solid #fcd34d;border-radius:6px;font-size:12.5px;background:#fff;">
+              <option value="pending_review">Chờ Lãnh đạo xem xét</option>
+              <option value="rescheduled">Đã chuyển lịch kiểm tra bù</option>
+              <option value="accepted">Đã chấp thuận giải trình</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="text" [(ngModel)]="explanationContent" placeholder="Nhập nội dung giải trình chi tiết và đề xuất hướng xử lý tiếp theo..." style="flex:1;height:34px;padding:0 10px;border:1px solid #fcd34d;border-radius:6px;font-size:12.5px;background:#fff;box-sizing:border-box;" />
+          <button type="button" (click)="submitExplanation()" [disabled]="isSavingExplanation" style="height:34px;padding:0 14px;background:#d97706;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
+            {{ isSavingExplanation ? 'Đang lưu...' : 'Lưu báo cáo giải trình' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- SECTION 7: Thẩm quyền Nghiệm thu Kết quả Kiểm tra (#7) -->
+      <div *ngIf="inspection.status === 'completed'" class="section-card" style="margin-bottom: 14px; background: #f0fdf4; border: 1.5px solid #86efac;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <strong style="font-size:13.5px;color:#166534;display:flex;align-items:center;gap:6px;">
+            <mat-icon style="font-size:18px;width:18px;height:18px;color:#16a34a;">fact_check</mat-icon>
+            <span>Thẩm quyền Nghiệm thu Kết quả Kiểm tra (Lãnh đạo đơn vị phê duyệt)</span>
+          </strong>
+          <span style="font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:10px;background:#dcfce7;color:#15803d;">
+            {{ inspection.acceptanceStatus === 'accepted' ? '✅ Đã nghiệm thu đạt (' + (inspection.acceptedByName || 'Lãnh đạo') + ')' : '⏳ Chờ nghiệm thu kết quả' }}
+          </span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <select [(ngModel)]="acceptanceStatus" style="width:210px;height:34px;padding:0 8px;border:1px solid #86efac;border-radius:6px;font-size:12.5px;background:#fff;">
+            <option value="accepted">✅ Nghiệm thu đạt yêu cầu</option>
+            <option value="rejected">⚠️ Yêu cầu bổ sung hồ sơ</option>
+          </select>
+          <input type="text" [(ngModel)]="acceptanceNote" placeholder="Nhận xét nghiệm thu của Lãnh đạo đơn vị..." style="flex:1;height:34px;padding:0 10px;border:1px solid #86efac;border-radius:6px;font-size:12.5px;background:#fff;box-sizing:border-box;" />
+          <button type="button" (click)="submitAcceptanceResult()" [disabled]="isSavingAcceptance" style="height:34px;padding:0 14px;background:#15803d;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
+            {{ isSavingAcceptance ? 'Đang lưu...' : 'Xác nhận Nghiệm thu' }}
+          </button>
+        </div>
+      </div>
+
       <!-- SECTION 1: Checklist tiêu chuẩn phân loại theo 5 Lĩnh vực -->
       <div class="section-card domain-checklist-section">
         <div class="section-header">

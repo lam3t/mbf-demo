@@ -11,7 +11,7 @@ export class ObjectsController {
    */
   static getAll(req: Request, res: Response): void {
     try {
-      const { type, status, ward, search, page = '1', limit = '50', checkYear } = req.query;
+      const { type, status, ward, search, hasForeignElement, page = '1', limit = '50', checkYear } = req.query;
       const pageNum = parseInt(page as string, 10);
       const limitNum = parseInt(limit as string, 10);
       const offset = (pageNum - 1) * limitNum;
@@ -29,23 +29,30 @@ export class ObjectsController {
         params.push(status);
       }
       if (ward) {
-        whereClause += ' AND b.ward = ?';
-        params.push(ward);
+        whereClause += ' AND (b.ward = ? OR EXISTS (SELECT 1 FROM business_locations bl WHERE bl.objectId = b.id AND bl.ward = ?))';
+        params.push(ward, ward);
+      }
+      if (hasForeignElement !== undefined && hasForeignElement !== '') {
+        whereClause += ' AND b.hasForeignElement = ?';
+        params.push(parseInt(hasForeignElement as string, 10) ? 1 : 0);
       }
       if (search) {
-        whereClause += ' AND (b.name LIKE ? OR b.taxCode LIKE ? OR b.idNumber LIKE ? OR b.address LIKE ? OR b.representative LIKE ?)';
+        whereClause += ' AND (b.name LIKE ? OR b.taxCode LIKE ? OR b.idNumber LIKE ? OR b.address LIKE ? OR b.representative LIKE ? OR EXISTS (SELECT 1 FROM business_locations bl2 WHERE bl2.objectId = b.id AND (bl2.name LIKE ? OR bl2.address LIKE ?)))';
         const term = `%${search}%`;
-        params.push(term, term, term, term, term);
+        params.push(term, term, term, term, term, term, term);
       }
 
       // Count total
       const countStmt = db.prepare(`SELECT COUNT(*) as total FROM business_objects b ${whereClause}`);
       const countRes = countStmt.get(...params) as { total: number };
 
-      // Query data with plan info and single check status
+      // Query data with plan info, location count, and single check status
       const query = `
         SELECT b.*, u.fullName as createdByName, 
                p.quarter as planQuarter, p.year as planYear, p.ward as planWard, p.status as planStatus,
+               (SELECT COUNT(*) FROM business_locations bl WHERE bl.objectId = b.id) as locationCount,
+               (SELECT COUNT(*) FROM inspections i_cnt WHERE i_cnt.objectId = b.id) as totalInspectionsCount,
+               (SELECT COUNT(*) FROM inspections v_cnt WHERE v_cnt.objectId = b.id AND v_cnt.violationCodes IS NOT NULL AND v_cnt.violationCodes != '[]' AND v_cnt.violationCodes != '') as totalViolationsCount,
                (
                  SELECT p2.quarter || ' (' || p2.ward || ')'
                  FROM plan_items pi2 
@@ -65,7 +72,14 @@ export class ObjectsController {
                  LEFT JOIN plans p3 ON i2.planId = p3.id
                  WHERE i2.objectId = b.id AND i2.status = 'completed' AND (p3.year = ? OR i2.completedAt LIKE ?)
                  ORDER BY i2.completedAt DESC LIMIT 1
-               ) as completedInspectionThisYear
+               ) as completedInspectionThisYear,
+               (
+                 SELECT i3.ward 
+                 FROM inspections i3 
+                 LEFT JOIN plans p4 ON i3.planId = p4.id
+                 WHERE i3.objectId = b.id AND i3.status = 'completed' AND (p4.year = ? OR i3.completedAt LIKE ?)
+                 ORDER BY i3.completedAt DESC LIMIT 1
+               ) as completedInspectionWard
         FROM business_objects b
         LEFT JOIN users u ON b.createdBy = u.id
         LEFT JOIN plans p ON b.planId = p.id
@@ -81,35 +95,48 @@ export class ObjectsController {
         `%${currentYear}%`,
         currentYear,
         `%${currentYear}%`,
+        currentYear,
+        `%${currentYear}%`,
         ...params,
         limitNum,
         offset
       ) as any[];
 
+      const locationsStmt = db.prepare(`SELECT * FROM business_locations WHERE objectId = ? ORDER BY CASE locationType WHEN 'headquarters' THEN 1 WHEN 'branch' THEN 2 WHEN 'facility' THEN 3 ELSE 4 END, id ASC`);
+
       const data = rawData.map(item => {
-        let isBlockedThisYear = false;
+        // Per Requirement #2 & #3: Warn on duplicates, do NOT automatically hard-block!
+        const isBlockedThisYear = false;
         let blockReason: string | null = null;
         let hasCrossWardWarning = false;
         let crossWardWarning: string | null = null;
 
         if (item.completedInspectionThisYear) {
-          isBlockedThisYear = true;
+          hasCrossWardWarning = true;
           const formattedDate = formatDateText(item.completedInspectionThisYear);
-          blockReason = `Đã hoàn thành kiểm tra ngày ${formattedDate} (${currentYear}) - Không được kiểm tra trùng lặp theo quy tắc Single Check 1 năm/1 lần.`;
+          const byWard = item.completedInspectionWard ? ` bởi ${item.completedInspectionWard}` : '';
+          crossWardWarning = `Cảnh báo trùng: Đã được kiểm tra ngày ${formattedDate}${byWard}. Vẫn cho phép lập kế hoạch hoặc kiểm tra lại theo yêu cầu nghiệp vụ / chức năng đơn vị.`;
+          blockReason = crossWardWarning;
         } else if (item.activePlanLock) {
           hasCrossWardWarning = true;
-          crossWardWarning = `Đồng thời có trong kế hoạch ${item.activePlanLock} - Sẽ cảnh báo kiểm tra liên ngành khi phê duyệt.`;
+          crossWardWarning = `Cảnh báo trùng kế hoạch: Đang có trong kế hoạch ${item.activePlanLock} — Cho phép lập kế hoạch phối hợp liên ngành hoặc kiểm tra theo yêu cầu nghiệp vụ.`;
         } else if (item.activeAdhocLock) {
           hasCrossWardWarning = true;
-          crossWardWarning = `Đồng thời có ${item.activeAdhocLock} - Cảnh báo phối hợp liên ngành.`;
+          crossWardWarning = `Cảnh báo trùng: Đang có ${item.activeAdhocLock} — Cho phép phối hợp kiểm tra.`;
         }
+
+        const locations = locationsStmt.all(item.id);
 
         return {
           ...item,
+          hasForeignElement: !!item.hasForeignElement,
+          locations,
+          locationCount: locations.length || item.locationCount || 1,
           isBlockedThisYear,
           blockReason,
           hasCrossWardWarning,
           crossWardWarning,
+          warningReason: crossWardWarning,
           isCrossWardCandidate: hasCrossWardWarning
         };
       });
@@ -206,28 +233,92 @@ export class ObjectsController {
         return;
       }
 
+      // Query all operating locations (headquarters, branches, facilities, business locations) for this enterprise/object
+      const locationsStmt = db.prepare(`
+        SELECT bl.*,
+               (SELECT COUNT(*) FROM inspections i_l WHERE i_l.objectId = bl.objectId AND (i_l.locationId = bl.id OR (i_l.locationId IS NULL AND bl.locationType IN ('headquarters', 'facility')))) as inspectionCount,
+               (SELECT COUNT(*) FROM inspections v_l WHERE v_l.objectId = bl.objectId AND (v_l.locationId = bl.id OR (v_l.locationId IS NULL AND bl.locationType IN ('headquarters', 'facility'))) AND v_l.violationCodes IS NOT NULL AND v_l.violationCodes != '[]' AND v_l.violationCodes != '') as violationCount
+        FROM business_locations bl
+        WHERE bl.objectId = ?
+        ORDER BY CASE bl.locationType WHEN 'headquarters' THEN 1 WHEN 'branch' THEN 2 WHEN 'facility' THEN 3 ELSE 4 END, bl.id ASC
+      `);
+      const locations = locationsStmt.all(id) as any[];
+
       // Query all inspection records for this object
       const inspectionsStmt = db.prepare(`
-        SELECT i.*, p.quarter as planQuarter, p.year as planYear, p.ward as planWard, p.approvedAt as planApprovedAt
+        SELECT i.*, 
+               COALESCE(i.locationName, bl.name, b.name) as resolvedLocationName,
+               COALESCE(i.locationAddress, bl.address, b.address) as resolvedLocationAddress,
+               bl.locationType as locationType,
+               p.quarter as planQuarter, p.year as planYear, p.ward as planWard, p.approvedAt as planApprovedAt
         FROM inspections i
+        LEFT JOIN business_objects b ON i.objectId = b.id
+        LEFT JOIN business_locations bl ON i.locationId = bl.id
         LEFT JOIN plans p ON i.planId = p.id
         WHERE i.objectId = ?
         ORDER BY i.id DESC
       `);
-      const inspections = inspectionsStmt.all(id);
+      const inspections = inspectionsStmt.all(id) as any[];
+
+      // Build Violation History linked to enterprise & each specific location
+      const violationCatalogRows = db.prepare('SELECT code, name FROM violation_catalog').all() as Array<{ code: string; name: string }>;
+      const vCatalogMap: Record<string, string> = {};
+      violationCatalogRows.forEach(v => { vCatalogMap[v.code] = v.name; });
+
+      const violationHistory = inspections
+        .filter(insp => {
+          if (!insp.violationCodes) return false;
+          try {
+            const parsed = JSON.parse(insp.violationCodes);
+            return Array.isArray(parsed) && parsed.length > 0;
+          } catch {
+            return insp.violationCodes.trim().length > 0 && insp.violationCodes !== '[]';
+          }
+        })
+        .map(insp => {
+          let codes: string[] = [];
+          try {
+            codes = JSON.parse(insp.violationCodes);
+          } catch {
+            codes = [insp.violationCodes];
+          }
+          return {
+            inspectionId: insp.id,
+            locationId: insp.locationId || (locations[0]?.id ?? null),
+            locationName: insp.resolvedLocationName || item.name,
+            locationAddress: insp.resolvedLocationAddress || item.address,
+            ward: insp.ward,
+            inspectionType: insp.inspectionType || (insp.isAdhoc ? 'adhoc' : 'planned'),
+            inspectingUnit: insp.inspectingUnit || insp.ward,
+            teamName: insp.teamName || 'Đoàn kiểm tra liên ngành / Phường',
+            quarter: insp.planQuarter || 'Đột xuất / Nghiệp vụ',
+            year: insp.planYear || currentYear,
+            severity: insp.severity || 1,
+            violationCodes: codes,
+            violationDetails: codes.map(c => ({ code: c, name: vCatalogMap[c] || c })),
+            recommendationNote: insp.recommendationNote,
+            completedAt: insp.completedAt || insp.createdAt,
+            acceptanceStatus: insp.acceptanceStatus || 'pending'
+          };
+        });
 
       // Query full plan history across all quarters and years (including draft, pending, approved, rejected)
       const plansHistoryStmt = db.prepare(`
         SELECT p.id as planId, p.quarter, p.year, p.ward, p.status as planStatus, 
+               p.inspectionType as planInspectionType, p.scheduledStartDate, p.scheduledEndDate, p.inspectionContent as planInspectionContent,
                p.rejectReason, p.submittedAt, p.approvedAt, p.createdAt as planCreatedAt,
                u1.fullName as submittedByName, u2.fullName as approvedByName,
                i.id as inspectionId, i.status as inspectionStatus, i.completedAt as inspectionCompletedAt,
+               i.locationId, COALESCE(i.locationName, bl.name) as locationName, COALESCE(i.locationAddress, bl.address) as locationAddress,
+               i.inspectionType, i.teamName, i.inspectingUnit, i.acceptanceStatus,
+               i.uninspectedReason, i.explanationContent, i.explanationStatus,
                i.severity, i.violationCodes, i.recommendationNote, i.isLocked as inspectionIsLocked
         FROM plan_items pi
         JOIN plans p ON pi.planId = p.id
         LEFT JOIN users u1 ON p.submittedBy = u1.id
         LEFT JOIN users u2 ON p.approvedBy = u2.id
         LEFT JOIN inspections i ON (i.planId = p.id AND i.objectId = pi.objectId)
+        LEFT JOIN business_locations bl ON i.locationId = bl.id
         WHERE pi.objectId = ?
         ORDER BY COALESCE(p.year, 2026) DESC, p.quarter DESC, p.id DESC
       `);
@@ -251,7 +342,10 @@ export class ObjectsController {
         success: true,
         data: {
           ...item,
+          hasForeignElement: !!item.hasForeignElement,
+          locations,
           inspections,
+          violationHistory,
           planHistory,
           adhocRequests,
           singleCheckSummary: singleCheck
@@ -263,13 +357,15 @@ export class ObjectsController {
   }
 
   /**
-   * 4. POST /api/objects - Create object with type-based validation & Single Check
+   * 4. POST /api/objects - Create object with type-based validation & Multi-locations
    */
   static create(req: AuthenticatedRequest, res: Response): void {
     try {
-      const { type, taxCode, idNumber, name, representative, address, ward, status = 'active' } = req.body;
+      const {
+        type, taxCode, idNumber, name, representative, field, address, ward,
+        status = 'active', hasForeignElement = false, foreignElementDetail = null, locations = []
+      } = req.body;
       const userId = req.user?.id || null;
-      const currentYear = new Date().getFullYear();
 
       // Validate required fields by type
       if (!type || !name || !address || !ward) {
@@ -294,36 +390,12 @@ export class ObjectsController {
         }
       }
 
-      // Check duplicate identifier & Single Check rule
-      const duplicateStmt = db.prepare(`
-        SELECT id, ward, lastCheckedYear FROM business_objects 
-        WHERE (taxCode = ? AND taxCode IS NOT NULL AND taxCode != '') 
-           OR (idNumber = ? AND idNumber IS NOT NULL AND idNumber != '')
-      `);
-      const duplicate = duplicateStmt.get(taxCode || null, idNumber || null) as { id: number; ward: string; lastCheckedYear?: number } | undefined;
-
-      if (duplicate) {
-        const singleCheck = checkObjectSingleCheckRule(duplicate.id, currentYear);
-        if (singleCheck.isBlocked && singleCheck.blockReason) {
-          res.status(409).json({
-            success: false,
-            message: singleCheck.blockReason,
-            conflictType: singleCheck.conflictType
-          });
-          return;
-        }
-
-        res.status(409).json({
-          success: false,
-          message: `Mã định danh đã tồn tại trong cơ sở dữ liệu (thuộc quản lý của ${duplicate.ward}).`
-        });
-        return;
-      }
-
       const stmt = db.prepare(`
-        INSERT INTO business_objects (type, taxCode, idNumber, name, representative, address, ward, status, createdBy, createdAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO business_objects (type, taxCode, idNumber, name, representative, field, address, ward, status, hasForeignElement, foreignElementDetail, createdBy, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `);
+
+      const isForeignInt = hasForeignElement ? 1 : 0;
 
       const result = stmt.run(
         type,
@@ -331,16 +403,59 @@ export class ObjectsController {
         idNumber || null,
         name,
         representative || null,
+        field || null,
         address,
         ward,
         status,
+        isForeignInt,
+        foreignElementDetail || null,
         userId
       );
 
+      const newObjectId = Number(result.lastInsertRowid);
+
+      // Save operating locations (or create primary headquarters/facility automatically)
+      const insertLoc = db.prepare(`
+        INSERT INTO business_locations (objectId, locationType, locationCode, name, address, ward, contactPerson, phone, hasForeignElement, foreignElementDetail, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      if (Array.isArray(locations) && locations.length > 0) {
+        locations.forEach((loc: any, idx: number) => {
+          insertLoc.run(
+            newObjectId,
+            loc.locationType || (idx === 0 && type === 'enterprise' ? 'headquarters' : 'branch'),
+            loc.locationCode || `CS-${newObjectId}-0${idx + 1}`,
+            loc.name || `${name} - Cơ sở ${idx + 1}`,
+            loc.address || address,
+            loc.ward || ward,
+            loc.contactPerson || representative || null,
+            loc.phone || null,
+            loc.hasForeignElement !== undefined ? (loc.hasForeignElement ? 1 : 0) : isForeignInt,
+            loc.foreignElementDetail || foreignElementDetail || null,
+            loc.status || 'active'
+          );
+        });
+      } else {
+        insertLoc.run(
+          newObjectId,
+          type === 'enterprise' ? 'headquarters' : 'facility',
+          `CS-${newObjectId}-01`,
+          type === 'enterprise' ? `Trụ sở chính - ${name}` : `Cơ sở chính - ${name}`,
+          address,
+          ward,
+          representative || null,
+          null,
+          isForeignInt,
+          foreignElementDetail || null,
+          status
+        );
+      }
+
       res.status(201).json({
         success: true,
-        message: 'Thêm mới đối tượng kinh doanh thành công.',
-        id: result.lastInsertRowid
+        message: 'Thêm mới đối tượng kinh doanh và địa điểm hoạt động thành công.',
+        id: newObjectId
       });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
@@ -348,21 +463,189 @@ export class ObjectsController {
   }
 
   /**
-   * 5. PUT /api/objects/:id - Update object
+   * 5. PUT /api/objects/:id - Update object & locations
    */
   static update(req: Request, res: Response): void {
     try {
       const { id } = req.params;
-      const { type, taxCode, idNumber, name, representative, address, ward, status } = req.body;
+      const {
+        type, taxCode, idNumber, name, representative, field, address, ward,
+        status, hasForeignElement, foreignElementDetail, locations
+      } = req.body;
+
+      const isForeignInt = hasForeignElement ? 1 : 0;
 
       const stmt = db.prepare(`
         UPDATE business_objects 
-        SET type = ?, taxCode = ?, idNumber = ?, name = ?, representative = ?, address = ?, ward = ?, status = ?
+        SET type = ?, taxCode = ?, idNumber = ?, name = ?, representative = ?, field = ?, address = ?, ward = ?, status = ?, hasForeignElement = ?, foreignElementDetail = ?
         WHERE id = ?
       `);
 
-      stmt.run(type, taxCode || null, idNumber || null, name, representative || null, address, ward, status, id);
-      res.json({ success: true, message: 'Cập nhật thông tin đối tượng thành công.' });
+      stmt.run(
+        type,
+        taxCode || null,
+        idNumber || null,
+        name,
+        representative || null,
+        field || null,
+        address,
+        ward,
+        status,
+        isForeignInt,
+        foreignElementDetail || null,
+        id
+      );
+
+      // If locations array is provided, sync locations
+      if (Array.isArray(locations)) {
+        const existingLocs = db.prepare('SELECT id FROM business_locations WHERE objectId = ?').all(id) as Array<{ id: number }>;
+        const incomingIds = new Set(locations.filter((l: any) => l.id).map((l: any) => Number(l.id)));
+
+        // Delete removed locations
+        existingLocs.forEach(ex => {
+          if (!incomingIds.has(ex.id)) {
+            db.prepare('DELETE FROM business_locations WHERE id = ? AND objectId = ?').run(ex.id, id);
+          }
+        });
+
+        const updateLoc = db.prepare(`
+          UPDATE business_locations
+          SET locationType = ?, name = ?, address = ?, ward = ?, contactPerson = ?, phone = ?, hasForeignElement = ?, foreignElementDetail = ?, status = ?, updatedAt = datetime('now')
+          WHERE id = ? AND objectId = ?
+        `);
+        const insertLoc = db.prepare(`
+          INSERT INTO business_locations (objectId, locationType, locationCode, name, address, ward, contactPerson, phone, hasForeignElement, foreignElementDetail, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        locations.forEach((loc: any, idx: number) => {
+          if (loc.id && incomingIds.has(Number(loc.id))) {
+            updateLoc.run(
+              loc.locationType || 'branch',
+              loc.name || name,
+              loc.address || address,
+              loc.ward || ward,
+              loc.contactPerson || representative || null,
+              loc.phone || null,
+              loc.hasForeignElement ? 1 : 0,
+              loc.foreignElementDetail || null,
+              loc.status || 'active',
+              loc.id,
+              id
+            );
+          } else {
+            insertLoc.run(
+              id,
+              loc.locationType || 'branch',
+              loc.locationCode || `CS-${id}-0${idx + 1}`,
+              loc.name || `${name} - Cơ sở ${idx + 1}`,
+              loc.address || address,
+              loc.ward || ward,
+              loc.contactPerson || representative || null,
+              loc.phone || null,
+              loc.hasForeignElement ? 1 : 0,
+              loc.foreignElementDetail || null,
+              loc.status || 'active'
+            );
+          }
+        });
+      }
+
+      res.json({ success: true, message: 'Cập nhật thông tin doanh nghiệp và các cơ sở/địa điểm kinh doanh thành công.' });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  /**
+   * 5b. Locations CRUD for an enterprise (/api/objects/:id/locations)
+   */
+  static getLocations(req: Request, res: Response): void {
+    try {
+      const { id } = req.params;
+      const locations = db.prepare(`
+        SELECT bl.*,
+               (SELECT COUNT(*) FROM inspections i_l WHERE i_l.objectId = bl.objectId AND i_l.locationId = bl.id) as inspectionCount,
+               (SELECT COUNT(*) FROM inspections v_l WHERE v_l.objectId = bl.objectId AND v_l.locationId = bl.id AND v_l.violationCodes IS NOT NULL AND v_l.violationCodes != '[]' AND v_l.violationCodes != '') as violationCount
+        FROM business_locations bl
+        WHERE bl.objectId = ?
+        ORDER BY CASE bl.locationType WHEN 'headquarters' THEN 1 WHEN 'branch' THEN 2 WHEN 'facility' THEN 3 ELSE 4 END, bl.id ASC
+      `).all(id);
+      res.json({ success: true, data: locations });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  static addLocation(req: Request, res: Response): void {
+    try {
+      const { id } = req.params;
+      const { locationType = 'branch', locationCode, name, address, ward, contactPerson, phone, hasForeignElement = false, foreignElementDetail, status = 'active' } = req.body;
+      if (!name || !address || !ward) {
+        res.status(400).json({ success: false, message: 'Vui lòng nhập đầy đủ Tên cơ sở/chi nhánh, Địa chỉ và Phường quản lý.' });
+        return;
+      }
+
+      const result = db.prepare(`
+        INSERT INTO business_locations (objectId, locationType, locationCode, name, address, ward, contactPerson, phone, hasForeignElement, foreignElementDetail, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        id,
+        locationType,
+        locationCode || `CS-${id}-${Date.now().toString().slice(-3)}`,
+        name,
+        address,
+        ward,
+        contactPerson || null,
+        phone || null,
+        hasForeignElement ? 1 : 0,
+        foreignElementDetail || null,
+        status
+      );
+
+      res.status(201).json({
+        success: true,
+        message: 'Đã thêm mới cơ sở / địa điểm kinh doanh thành công.',
+        id: Number(result.lastInsertRowid)
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  static updateLocation(req: Request, res: Response): void {
+    try {
+      const { id, locId } = req.params;
+      const { locationType = 'branch', name, address, ward, contactPerson, phone, hasForeignElement = false, foreignElementDetail, status = 'active' } = req.body;
+      db.prepare(`
+        UPDATE business_locations
+        SET locationType = ?, name = ?, address = ?, ward = ?, contactPerson = ?, phone = ?, hasForeignElement = ?, foreignElementDetail = ?, status = ?, updatedAt = datetime('now')
+        WHERE id = ? AND objectId = ?
+      `).run(
+        locationType,
+        name,
+        address,
+        ward,
+        contactPerson || null,
+        phone || null,
+        hasForeignElement ? 1 : 0,
+        foreignElementDetail || null,
+        status,
+        locId,
+        id
+      );
+
+      res.json({ success: true, message: 'Đã cập nhật thông tin cơ sở / địa điểm kinh doanh.' });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  static deleteLocation(req: Request, res: Response): void {
+    try {
+      const { id, locId } = req.params;
+      db.prepare('DELETE FROM business_locations WHERE id = ? AND objectId = ?').run(locId, id);
+      res.json({ success: true, message: 'Đã xóa địa điểm kinh doanh.' });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
     }

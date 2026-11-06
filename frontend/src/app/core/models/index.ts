@@ -20,6 +20,29 @@ export interface AuthResponse {
 
 export type BusinessObjectType = 'enterprise' | 'household' | 'individual';
 export type BusinessObjectStatus = 'active' | 'suspended';
+export type LocationType = 'headquarters' | 'branch' | 'facility' | 'business_location';
+export type InspectionType = 'planned' | 'adhoc' | 'professional_request';
+
+export interface BusinessLocation {
+  id?: number;
+  objectId?: number;
+  locationType: LocationType;
+  locationCode?: string;
+  name: string;
+  address: string;
+  ward: string;
+  contactPerson?: string;
+  phone?: string;
+  hasForeignElement?: number | boolean;
+  foreignElementDetail?: string;
+  status?: 'active' | 'suspended';
+  lat?: number;
+  lng?: number;
+  inspectionCount?: number;
+  violationCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export interface BusinessObject {
   id: number;
@@ -30,7 +53,14 @@ export interface BusinessObject {
   representative?: string;
   address: string;
   ward: string;
+  field?: string;
   status: BusinessObjectStatus;
+  hasForeignElement?: number | boolean;
+  foreignElementDetail?: string;
+  locations?: BusinessLocation[];
+  locationCount?: number;
+  totalInspectionsCount?: number;
+  totalViolationsCount?: number;
   lastCheckedYear?: number;
   planId?: number;
   planQuarter?: string;
@@ -95,6 +125,14 @@ export interface Plan {
   year?: number;
   ward: string;
   status: PlanStatus;
+  inspectionType?: InspectionType;
+  scheduledStartDate?: string;
+  scheduledEndDate?: string;
+  inspectionLocation?: string;
+  inspectionContent?: string;
+  adjustmentNote?: string;
+  adjustedAt?: string;
+  adjustedBy?: number;
   rejectReason?: string;
   signedDocumentUrl?: string;
   signedDocumentUploadedAt?: string;
@@ -109,12 +147,15 @@ export interface Plan {
   totalObjects?: number;
   createdAt: string;
   items?: BusinessObject[];
+  teams?: InspectionTeam[];
   crossWardConflicts?: any[];
   digitalSignature?: DigitalSignature;
   digitalSignatures?: DigitalSignature[];
 }
 
 export type InspectionStatus = 'not_started' | 'in_progress' | 'completed';
+export type ExplanationStatus = 'none' | 'pending_review' | 'accepted' | 'rescheduled';
+export type AcceptanceStatus = 'pending' | 'accepted' | 'rejected';
 
 export interface Inspection {
   id: number;
@@ -125,6 +166,36 @@ export interface Inspection {
   taxCode?: string;
   idNumber?: string;
   objectAddress?: string;
+  objectField?: string;
+  hasForeignElement?: number | boolean;
+  foreignElementDetail?: string;
+  locationId?: number | null;
+  locationName?: string;
+  locationAddress?: string;
+  locationType?: LocationType;
+  objectLocations?: BusinessLocation[];
+  inspectionType?: InspectionType;
+  teamId?: number | null;
+  teamName?: string;
+  inspectingUnit?: string;
+  availableTeams?: InspectionTeam[];
+  scheduledDate?: string;
+  inspectionContent?: string;
+  workflowCode?: string;
+  workflowName?: string;
+  workflowSteps?: Array<{ stepOrder: number; stepName: string; unitRole: string; isDone?: boolean }>;
+  uninspectedReason?: string;
+  explanationContent?: string;
+  explanationStatus?: ExplanationStatus;
+  explainedBy?: number;
+  explainedByName?: string;
+  explainedAt?: string;
+  explanationReviewNote?: string;
+  acceptanceStatus?: AcceptanceStatus;
+  acceptedBy?: number;
+  acceptedByName?: string;
+  acceptedAt?: string;
+  acceptanceNote?: string;
   planId?: number;
   planQuarter?: string;
   planApprovedAt?: string;
@@ -159,6 +230,12 @@ export interface AdhocInspectionRequest {
   objectAddress?: string;
   representative?: string;
   objectWard?: string;
+  hasForeignElement?: number | boolean;
+  locationId?: number | null;
+  locationName?: string;
+  inspectionType?: InspectionType;
+  inspectionContent?: string;
+  scheduledDate?: string;
   wardRequestedBy: string;
   reason: string;
   status: AdhocRequestStatus;
@@ -177,10 +254,68 @@ export interface AdhocInspectionRequest {
 
 export interface CreateAdhocRequestDto {
   objectId: number;
+  locationId?: number | null;
+  locationName?: string;
+  inspectionType?: InspectionType;
+  inspectionContent?: string;
+  scheduledDate?: string;
   reason: string;
   relatedQuarter?: string;
   relatedYear?: number;
   ward?: string;
+}
+
+export interface TeamMember {
+  fullName: string;
+  roleInTeam: string;
+  unit: string;
+  position?: string;
+}
+
+export interface InspectionTeam {
+  id?: number;
+  code?: string;
+  name: string;
+  decisionNumber?: string;
+  decisionDate?: string;
+  teamType: 'unit' | 'inter_agency';
+  leadUnit: string;
+  participatingUnits?: string[];
+  ward?: string;
+  planId?: number | null;
+  inspectionType?: InspectionType;
+  leaderName?: string;
+  members?: TeamMember[];
+  scheduleStart?: string;
+  scheduleEnd?: string;
+  workflowCode?: string;
+  workflowName?: string;
+  status?: 'active' | 'adjusted' | 'completed';
+  adjustmentHistory?: Array<{
+    adjustedAt: string;
+    adjustedBy: string;
+    reason: string;
+    scheduleStart?: string;
+    scheduleEnd?: string;
+    memberCount?: number;
+  }>;
+  inspectionCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UnitWorkflow {
+  id?: number;
+  code: string;
+  name: string;
+  unitName: string;
+  inspectionType?: string;
+  steps: Array<{ stepOrder: number; stepName: string; unitRole: string }>;
+  planApprovalRole?: string;
+  teamEstablishRole?: string;
+  resultAcceptanceRole?: string;
+  isActive?: boolean;
+  updatedAt?: string;
 }
 
 export type AlertType = 'overdue_inspection' | 'overdue_plan' | 'quota_below' | 'quota_above' | 'notice_letter_pending';

@@ -4,6 +4,10 @@
   display: flex;
   flex-direction: column;
   height: calc(100vh - 100px);
+
+  &.embedded-mode {
+    height: 620px;
+  }
 }
 
 .header-actions {

@@ -1,24 +1,29 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ApiService } from '../../../core/services/api.service';
 import { Plan, DigitalCertificateInfo } from '../../../core/models';
 import { DocumentPreviewDialogComponent } from './document-preview-dialog.component';
+import { SelectObjectsDialogComponent } from './select-objects-dialog.component';
 
 @Component({
   selector: 'app-plan-detail-dialog',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatDialogModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatSnackBarModule
   ],
   template: `
     <div class="dialog-container">
@@ -151,6 +156,74 @@ import { DocumentPreviewDialogComponent } from './document-preview-dialog.compon
           </div>
 
           <div class="objects-section">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <h3 style="margin:0;">Điều chỉnh Kế hoạch, Thời gian, Địa điểm & Nội dung trong quá trình triển khai:</h3>
+              <button
+                type="button"
+                style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;background:#eff6ff;border:1px solid #93c5fd;color:#1d4ed8;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;"
+                (click)="isAdjusting = !isAdjusting"
+              >
+                <mat-icon style="font-size:16px;width:16px;height:16px;">edit_calendar</mat-icon>
+                <span>{{ isAdjusting ? 'Đóng khung điều chỉnh' : 'Điều chỉnh lịch / nội dung / cơ sở' }}</span>
+              </button>
+            </div>
+
+            <div *ngIf="!isAdjusting" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12.5px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div><strong>Loại hình kiểm tra:</strong> {{ getInspectionTypeLabel(plan.inspectionType) }}</div>
+              <div><strong>Thời gian triển khai:</strong> {{ plan.scheduledStartDate || '01/04/2026' }} → {{ plan.scheduledEndDate || '30/06/2026' }}</div>
+              <div><strong>Địa bàn / Địa điểm:</strong> {{ plan.inspectionLocation || plan.ward }}</div>
+              <div><strong>Nội dung kiểm tra:</strong> {{ plan.inspectionContent || 'Kiểm tra liên ngành PCCC, ATTP, ANTT, Môi trường, Thuế' }}</div>
+              <div *ngIf="plan.adjustmentNote" style="grid-column:1/-1;color:#b45309;background:#fffbeb;padding:6px 10px;border-radius:6px;border:1px solid #fde68a;">
+                <strong>Ghi chú điều chỉnh gần nhất ({{ plan.adjustedAt || 'Mới cập nhật' }}):</strong> {{ plan.adjustmentNote }}
+              </div>
+            </div>
+
+            <div *ngIf="isAdjusting" style="background:#eff6ff;border:1.5px solid #93c5fd;border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px;">
+                <div>
+                  <label style="display:block;font-size:11.5px;font-weight:600;color:#1e3a8a;margin-bottom:3px;">Loại hình kiểm tra</label>
+                  <select [(ngModel)]="adjustForm.inspectionType" style="width:100%;height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;background:#fff;">
+                    <option value="planned">Theo kế hoạch / Định kỳ</option>
+                    <option value="adhoc">Kiểm tra đột xuất</option>
+                    <option value="professional_request">Theo yêu cầu nghiệp vụ</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display:block;font-size:11.5px;font-weight:600;color:#1e3a8a;margin-bottom:3px;">Từ ngày</label>
+                  <input type="date" [(ngModel)]="adjustForm.scheduledStartDate" style="width:100%;height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;background:#fff;box-sizing:border-box;" />
+                </div>
+                <div>
+                  <label style="display:block;font-size:11.5px;font-weight:600;color:#1e3a8a;margin-bottom:3px;">Đến ngày</label>
+                  <input type="date" [(ngModel)]="adjustForm.scheduledEndDate" style="width:100%;height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;background:#fff;box-sizing:border-box;" />
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+                <div>
+                  <label style="display:block;font-size:11.5px;font-weight:600;color:#1e3a8a;margin-bottom:3px;">Địa điểm / Khu vực kiểm tra</label>
+                  <input type="text" [(ngModel)]="adjustForm.inspectionLocation" placeholder="VD: Các tuyến phố thương mại trọng điểm thuộc phường..." style="width:100%;height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;background:#fff;box-sizing:border-box;" />
+                </div>
+                <div>
+                  <label style="display:block;font-size:11.5px;font-weight:600;color:#1e3a8a;margin-bottom:3px;">Nội dung kiểm tra điều chỉnh</label>
+                  <input type="text" [(ngModel)]="adjustForm.inspectionContent" placeholder="VD: Bổ sung kiểm tra an toàn PCCC và lao động nước ngoài..." style="width:100%;height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;background:#fff;box-sizing:border-box;" />
+                </div>
+              </div>
+              <div style="margin-bottom:10px;">
+                <label style="display:block;font-size:11.5px;font-weight:600;color:#1e3a8a;margin-bottom:3px;">Lý do điều chỉnh kế hoạch trong quá trình triển khai</label>
+                <input type="text" [(ngModel)]="adjustForm.adjustmentNote" placeholder="Nhập lý do điều chỉnh lịch, địa điểm hoặc nội dung..." style="width:100%;height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;background:#fff;box-sizing:border-box;" />
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <button type="button" (click)="openAddMoreObjects()" style="padding:6px 12px;background:#fff;border:1px solid #2563eb;color:#2563eb;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
+                  + Bổ sung thêm cơ sở vào kế hoạch này
+                </button>
+                <div style="display:flex;gap:8px;">
+                  <button type="button" (click)="isAdjusting = false" style="padding:6px 12px;background:#fff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;cursor:pointer;">Hủy</button>
+                  <button type="button" (click)="savePlanAdjustment()" [disabled]="isSavingAdjustment" style="padding:6px 14px;background:#1e3a8a;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
+                    {{ isSavingAdjustment ? 'Đang lưu...' : 'Lưu điều chỉnh kế hoạch' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <h3>Danh sách cơ sở kiểm tra ({{ plan.items?.length || 0 }} đối tượng):</h3>
             <table class="items-table">
               <thead>
@@ -576,24 +649,97 @@ import { DocumentPreviewDialogComponent } from './document-preview-dialog.compon
 export class PlanDetailDialogComponent implements OnInit {
   isLoading = true;
   plan: Plan | null = null;
+  isAdjusting = false;
+  isSavingAdjustment = false;
+  adjustForm = {
+    inspectionType: 'planned',
+    scheduledStartDate: '2026-04-01',
+    scheduledEndDate: '2026-06-30',
+    inspectionLocation: '',
+    inspectionContent: '',
+    adjustmentNote: ''
+  };
 
   constructor(
     public dialogRef: MatDialogRef<PlanDetailDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { planId: number },
     private api: ApiService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
+    this.loadPlanDetail();
+  }
+
+  loadPlanDetail(): void {
+    this.isLoading = true;
     this.api.get<any>(`/plans/${this.data.planId}`).subscribe({
       next: (res) => {
         this.isLoading = false;
         if (res.success) {
           this.plan = res.data;
+          this.adjustForm = {
+            inspectionType: this.plan?.inspectionType || 'planned',
+            scheduledStartDate: this.plan?.scheduledStartDate || '2026-04-01',
+            scheduledEndDate: this.plan?.scheduledEndDate || '2026-06-30',
+            inspectionLocation: this.plan?.inspectionLocation || this.plan?.ward || '',
+            inspectionContent: this.plan?.inspectionContent || 'Kiểm tra liên ngành PCCC, ATTP, ANTT, Môi trường, Thuế',
+            adjustmentNote: this.plan?.adjustmentNote || ''
+          };
         }
       },
       error: () => {
         this.isLoading = false;
+      }
+    });
+  }
+
+  getInspectionTypeLabel(type?: string): string {
+    switch (type) {
+      case 'adhoc': return 'Kiểm tra đột xuất';
+      case 'professional_request': return 'Kiểm tra theo yêu cầu nghiệp vụ';
+      case 'planned': default: return 'Kiểm tra theo kế hoạch / định kỳ';
+    }
+  }
+
+  savePlanAdjustment(): void {
+    if (!this.plan) return;
+    this.isSavingAdjustment = true;
+    this.api.put<any>(`/plans/${this.plan.id}/adjust`, this.adjustForm).subscribe({
+      next: (res) => {
+        this.isSavingAdjustment = false;
+        if (res.success) {
+          this.isAdjusting = false;
+          this.snackBar.open('Đã cập nhật điều chỉnh kế hoạch kiểm tra thành công!', 'Đóng', { duration: 3000 });
+          this.loadPlanDetail();
+        }
+      },
+      error: (err) => {
+        this.isSavingAdjustment = false;
+        this.snackBar.open(err.error?.message || 'Lỗi khi điều chỉnh kế hoạch', 'Đóng', { duration: 3500 });
+      }
+    });
+  }
+
+  openAddMoreObjects(): void {
+    if (!this.plan) return;
+    const existingIds = (this.plan.items || []).map(i => i.id);
+    const ref = this.dialog.open(SelectObjectsDialogComponent, {
+      width: '640px',
+      data: { ward: this.plan.ward, existingObjectIds: existingIds }
+    });
+    ref.afterClosed().subscribe((selectedIds: number[]) => {
+      if (selectedIds && selectedIds.length > 0 && this.plan) {
+        const allIds = [...existingIds, ...selectedIds];
+        this.api.put<any>(`/plans/${this.plan.id}/items`, { objectIds: allIds }).subscribe({
+          next: (res) => {
+            if (res.success) {
+              this.snackBar.open(`Đã bổ sung ${selectedIds.length} cơ sở vào kế hoạch!`, 'Đóng', { duration: 3000 });
+              this.loadPlanDetail();
+            }
+          }
+        });
       }
     });
   }

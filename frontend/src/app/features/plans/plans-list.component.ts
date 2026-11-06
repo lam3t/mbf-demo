@@ -31,7 +31,7 @@ import { CreateAdhocDialogComponent } from './components/create-adhoc-dialog.com
 import { PlanApprovalConflictDialogComponent, ConflictResolutionResult } from './components/plan-approval-conflict-dialog.component';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models';
+import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkflow } from '../../core/models';
 
 @Component({
   selector: 'app-plans-list',
@@ -73,8 +73,18 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
           (click)="switchMainTab('adhoc')"
         >
           <mat-icon>notification_important</mat-icon>
-          <span>Đề xuất phát sinh ngoài kế hoạch</span>
+          <span>Đề xuất Đột xuất & Theo Yêu cầu Nghiệp vụ</span>
           <span class="badge-pending-count" *ngIf="pendingAdhocCount > 0">{{ pendingAdhocCount }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="main-tab-btn"
+          [class.active]="activeMainTab === 'teams'"
+          (click)="switchMainTab('teams')"
+        >
+          <mat-icon>groups</mat-icon>
+          <span>Quản lý Đoàn Kiểm tra & Liên ngành ({{ teamsList.length }})</span>
         </button>
       </div>
 
@@ -521,11 +531,10 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
               <tr>
                 <th style="width: 40px;" class="text-center">#</th>
                 <th style="width: 140px;">Đơn vị đề xuất</th>
-                <th style="width: 100px;">Loại hình</th>
-                <th style="width: 120px;">Mã định danh</th>
-                <th>Tên cơ sở kinh doanh</th>
-                <th>Địa chỉ kinh doanh</th>
-                <th style="min-width: 240px;">Lý do đề xuất kiểm tra đột xuất</th>
+                <th style="width: 145px;">Phân loại KT</th>
+                <th style="width: 110px;">Mã định danh</th>
+                <th>Tên Doanh nghiệp & Cơ sở / Địa điểm</th>
+                <th style="min-width: 240px;">Căn cứ / Lý do & Nội dung nghiệp vụ</th>
                 <th style="width: 90px;" class="text-center">Quý/Năm</th>
                 <th style="width: 140px;">Người đề xuất</th>
                 <th style="width: 120px;" class="text-center">Trạng thái</th>
@@ -534,13 +543,13 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
             </thead>
             <tbody>
               <tr *ngIf="isLoadingAdhoc">
-                <td [attr.colspan]="(isMBF || isAdmin) ? 11 : 10" class="empty-cart-row">
+                <td [attr.colspan]="(isMBF || isAdmin) ? 10 : 9" class="empty-cart-row">
                   <mat-icon>sync</mat-icon>
                   <p>Đang tải danh sách đề xuất phát sinh...</p>
                 </td>
               </tr>
               <tr *ngIf="!isLoadingAdhoc && filteredAdhocRequests.length === 0">
-                <td [attr.colspan]="(isMBF || isAdmin) ? 11 : 10" class="empty-cart-row">
+                <td [attr.colspan]="(isMBF || isAdmin) ? 10 : 9" class="empty-cart-row">
                   <mat-icon>inbox</mat-icon>
                   <p>Không có đề xuất kiểm tra phát sinh nào trong danh mục này.</p>
                 </td>
@@ -549,14 +558,25 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
                 <td class="text-center">{{ i + 1 }}</td>
                 <td><strong>{{ req.wardRequestedBy }}</strong></td>
                 <td>
-                  <span class="badge-status" [ngClass]="req.objectType === 'enterprise' ? 'badge-approved' : 'badge-in_progress'">
-                    {{ req.objectType === 'enterprise' ? 'Doanh nghiệp' : (req.objectType === 'household' ? 'Hộ KD' : 'Cá nhân') }}
+                  <span
+                    class="badge-status"
+                    [ngClass]="req.inspectionType === 'professional_request' ? 'badge-in_progress' : 'badge-pending'"
+                  >
+                    {{ req.inspectionType === 'professional_request' ? '📋 Yêu cầu nghiệp vụ' : '⚡ Kiểm tra đột xuất' }}
                   </span>
                 </td>
                 <td><code>{{ req.taxCode || req.idNumber }}</code></td>
-                <td><strong>{{ req.objectName }}</strong></td>
-                <td>{{ req.objectAddress }}</td>
                 <td>
+                  <strong>{{ req.objectName }}</strong>
+                  <div *ngIf="req.locationName" style="font-size:11.5px;color:#1e40af;font-weight:600;margin-top:2px;">
+                    🏢 {{ req.locationName }}
+                  </div>
+                  <div style="font-size:11.5px;color:#64748b;">{{ req.objectAddress }}</div>
+                </td>
+                <td>
+                  <div *ngIf="req.inspectionContent" style="font-size:11.5px;font-weight:600;color:#1e3a8a;margin-bottom:3px;">
+                    Chuyên đề: {{ req.inspectionContent }} {{ req.scheduledDate ? '(Dự kiến: ' + req.scheduledDate + ')' : '' }}
+                  </div>
                   <div class="adhoc-reason-box">
                     <mat-icon class="reason-icon">report_problem</mat-icon>
                     <span class="reason-text">{{ req.reason }}</span>
@@ -608,6 +628,198 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- ============================================================= -->
+      <!-- TAB 3: QUẢN LÝ ĐOÀN KIỂM TRA & LIÊN NGÀNH (REQUIREMENT #4)    -->
+      <!-- ============================================================= -->
+      <div class="view-container" *ngIf="activeMainTab === 'teams'">
+        <app-page-header
+          title="Quản lý Đoàn Kiểm tra & Đoàn Liên ngành"
+          subtitle="Thành lập đoàn kiểm tra đơn vị hoặc liên ngành nhiều đơn vị; bổ sung, thay đổi thành viên, lịch kiểm tra và áp dụng quy trình đặc thù từng đơn vị"
+        ></app-page-header>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;padding:12px 16px;border-radius:8px;border:1px solid #e2e8f0;">
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span style="font-size:13px;font-weight:600;color:#334155;">Phân loại đoàn:</span>
+            <select [(ngModel)]="teamTypeFilter" (change)="loadTeams()" style="height:36px;padding:0 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;">
+              <option value="">Tất cả các đoàn ({{ teamsList.length }})</option>
+              <option value="inter_agency">🤝 Đoàn kiểm tra liên ngành (Nhiều đơn vị)</option>
+              <option value="unit">🏢 Đoàn kiểm tra chuyên ngành / đơn vị</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            (click)="openCreateTeamModal()"
+            style="display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 16px;background:#1e3a8a;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;"
+          >
+            <mat-icon style="font-size:18px;width:18px;height:18px;">group_add</mat-icon>
+            <span>+ Thành lập Đoàn kiểm tra / Đoàn liên ngành mới</span>
+          </button>
+        </div>
+
+        <!-- Inline Create / Edit / Adjust Team Panel -->
+        <div *ngIf="isTeamModalOpen" style="background:#ffffff;border:2px solid #3b82f6;border-radius:10px;padding:18px 20px;box-shadow:0 8px 20px rgba(0,0,0,0.08);">
+          <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:10px;margin-bottom:14px;">
+            <h3 style="margin:0;font-size:15px;color:#1e3a8a;">
+              {{ editingTeamId ? 'Điều chỉnh Thành phần Đoàn, Thời gian & Lịch Kiểm tra' : 'Thành lập Đoàn Kiểm tra Mới (Đơn vị / Liên ngành)' }}
+            </h3>
+            <button type="button" (click)="isTeamModalOpen = false" style="background:none;border:none;font-size:16px;cursor:pointer;color:#64748b;">✕</button>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:#334155;margin-bottom:4px;">Tên đoàn kiểm tra *</label>
+              <input type="text" [(ngModel)]="teamForm.name" placeholder="VD: Đoàn kiểm tra liên ngành PCCC - ATTP - ANTT Số 03" style="width:100%;height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;box-sizing:border-box;" />
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:#334155;margin-bottom:4px;">Loại hình đoàn kiểm tra *</label>
+              <select [(ngModel)]="teamForm.teamType" style="width:100%;height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;">
+                <option value="inter_agency">🤝 Đoàn kiểm tra liên ngành (Nhiều đơn vị phối hợp)</option>
+                <option value="unit">🏢 Đoàn kiểm tra đơn vị / chuyên ngành</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:#334155;margin-bottom:4px;">Số Quyết định thành lập đoàn</label>
+              <input type="text" [(ngModel)]="teamForm.decisionNumber" placeholder="VD: 168/QĐ-UBND-LN" style="width:100%;height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;box-sizing:border-box;" />
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:#334155;margin-bottom:4px;">Đơn vị chủ trì *</label>
+              <input type="text" [(ngModel)]="teamForm.leadUnit" placeholder="VD: Phòng PA04 / UBND Phường Hoàn Kiếm" style="width:100%;height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;box-sizing:border-box;" />
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:#334155;margin-bottom:4px;">Các đơn vị tham gia phối hợp (cách nhau dấu phẩy)</label>
+              <input type="text" [(ngModel)]="teamForm.participatingUnitsText" placeholder="VD: Công an Phường, Đội PCCC KV1, Quản lý thị trường, Y tế..." style="width:100%;height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;box-sizing:border-box;" />
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:#334155;margin-bottom:4px;">Quy trình kiểm tra đặc thù của đơn vị</label>
+              <select [(ngModel)]="teamForm.workflowCode" style="width:100%;height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;">
+                <option *ngFor="let wf of unitWorkflows" [value]="wf.code">{{ wf.name }} ({{ wf.unitName }})</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:#334155;margin-bottom:4px;">Loại hình kiểm tra áp dụng</label>
+              <select [(ngModel)]="teamForm.inspectionType" style="width:100%;height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;">
+                <option value="planned">Theo kế hoạch / định kỳ</option>
+                <option value="adhoc">Kiểm tra đột xuất</option>
+                <option value="professional_request">Theo yêu cầu nghiệp vụ</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:#334155;margin-bottom:4px;">Địa bàn phụ trách</label>
+              <select [(ngModel)]="teamForm.ward" style="width:100%;height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;">
+                <option *ngFor="let w of availableWards" [value]="w">{{ w }}</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:#334155;margin-bottom:4px;">Lịch kiểm tra từ ngày</label>
+              <input type="date" [(ngModel)]="teamForm.scheduleStart" style="width:100%;height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;box-sizing:border-box;" />
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:#334155;margin-bottom:4px;">Lịch kiểm tra đến ngày</label>
+              <input type="date" [(ngModel)]="teamForm.scheduleEnd" style="width:100%;height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;box-sizing:border-box;" />
+            </div>
+          </div>
+
+          <!-- Team Members List -->
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <strong style="font-size:13px;color:#1e3a8a;">Thành phần Đoàn kiểm tra ({{ teamForm.members.length }} thành viên - Cho phép bổ sung/thay đổi linh hoạt)</strong>
+              <button type="button" (click)="addTeamMemberRow()" style="padding:4px 10px;background:#eff6ff;border:1px solid #93c5fd;color:#1d4ed8;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
+                + Bổ sung thành viên vào đoàn
+              </button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div *ngFor="let m of teamForm.members; let idx = index" style="display:grid;grid-template-columns:1fr 150px 1fr 160px auto;gap:8px;align-items:center;">
+                <input type="text" [(ngModel)]="m.fullName" placeholder="Họ tên cán bộ *" style="height:32px;padding:0 8px;border:1px solid #cbd5e1;border-radius:5px;font-size:12.5px;" />
+                <select [(ngModel)]="m.roleInTeam" style="height:32px;padding:0 6px;border:1px solid #cbd5e1;border-radius:5px;font-size:12px;background:#fff;">
+                  <option value="Trưởng đoàn">Trưởng đoàn</option>
+                  <option value="Phó trưởng đoàn">Phó trưởng đoàn</option>
+                  <option value="Thành viên">Thành viên</option>
+                  <option value="Thư ký đoàn">Thư ký đoàn</option>
+                </select>
+                <input type="text" [(ngModel)]="m.unit" placeholder="Đơn vị cử cán bộ (VD: Phòng PA04, Đội PCCC...)" style="height:32px;padding:0 8px;border:1px solid #cbd5e1;border-radius:5px;font-size:12.5px;" />
+                <input type="text" [(ngModel)]="m.position" placeholder="Chức vụ chuyên môn" style="height:32px;padding:0 8px;border:1px solid #cbd5e1;border-radius:5px;font-size:12.5px;" />
+                <button type="button" *ngIf="teamForm.members.length > 1" (click)="removeTeamMemberRow(idx)" style="height:30px;width:30px;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:5px;cursor:pointer;">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="editingTeamId" style="margin-bottom:12px;">
+            <label style="display:block;font-size:12px;font-weight:600;color:#b45309;margin-bottom:4px;">Ghi chú điều chỉnh thời gian / lịch kiểm tra / thành phần đoàn trong quá trình thực hiện</label>
+            <input type="text" [(ngModel)]="teamForm.adjustmentReason" placeholder="VD: Bổ sung 01 cán bộ Đội Thuế và gia hạn lịch kiểm tra thêm 5 ngày..." style="width:100%;height:36px;padding:0 10px;border:1px solid #fcd34d;border-radius:6px;font-size:13px;background:#fffbeb;box-sizing:border-box;" />
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;gap:10px;">
+            <button type="button" (click)="isTeamModalOpen = false" style="height:36px;padding:0 16px;background:#fff;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;cursor:pointer;">Hủy bỏ</button>
+            <button type="button" (click)="saveTeamForm()" style="height:36px;padding:0 18px;background:#1e3a8a;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">
+              {{ editingTeamId ? 'Lưu điều chỉnh Đoàn kiểm tra' : 'Xác nhận thành lập Đoàn kiểm tra' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Teams Cards Grid -->
+        <div style="display:grid;grid-template-columns:1fr;gap:12px;">
+          <div *ngFor="let team of teamsList" style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #f1f5f9;padding-bottom:10px;margin-bottom:12px;">
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                  <span style="font-family:monospace;font-size:11.5px;font-weight:700;background:#eff6ff;color:#1e3a8a;padding:2px 8px;border-radius:4px;border:1px solid #bfdbfe;">{{ team.code }}</span>
+                  <strong style="font-size:15px;color:#0f172a;">{{ team.name }}</strong>
+                  <span *ngIf="team.teamType === 'inter_agency'" style="background:#fef3c7;color:#b45309;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;border:1px solid #fde68a;">🤝 Đoàn Liên ngành ({{ team.participatingUnits?.length || 1 }} đơn vị)</span>
+                  <span *ngIf="team.teamType !== 'inter_agency'" style="background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;">🏢 Đoàn Đơn vị</span>
+                  <span *ngIf="team.status === 'adjusted'" style="background:#ede9fe;color:#6d28d9;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;">Đã điều chỉnh lịch/nhân sự</span>
+                </div>
+                <div style="font-size:12px;color:#475569;">
+                  Quyết định số: <strong>{{ team.decisionNumber || '—' }}</strong> • Đơn vị chủ trì: <strong>{{ team.leadUnit }}</strong> • Lịch kiểm tra: <strong>{{ team.scheduleStart }} → {{ team.scheduleEnd }}</strong>
+                </div>
+              </div>
+              <button
+                type="button"
+                (click)="openEditTeamModal(team)"
+                style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;"
+              >
+                <mat-icon style="font-size:16px;width:16px;height:16px;">edit_note</mat-icon>
+                <span>Điều chỉnh thành phần / lịch đoàn</span>
+              </button>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:12.5px;">
+              <div>
+                <div style="font-weight:600;color:#334155;margin-bottom:6px;">Các đơn vị tham gia & Quy trình áp dụng:</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+                  <span *ngFor="let u of team.participatingUnits" style="background:#f1f5f9;border:1px solid #cbd5e1;color:#1e293b;padding:2px 8px;border-radius:4px;font-size:11.5px;font-weight:600;">
+                    🏛️ {{ u }}
+                  </span>
+                </div>
+                <div style="background:#f8fafc;border:1px solid #e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;">
+                  <strong>Quy trình nghiệp vụ:</strong> {{ team.workflowName || team.workflowCode }} • <strong>Số hồ sơ phân công:</strong> {{ team.inspectionCount || 0 }} cơ sở
+                </div>
+              </div>
+
+              <div>
+                <div style="font-weight:600;color:#334155;margin-bottom:6px;">Danh sách thành viên đoàn ({{ team.members?.length || 0 }} cán bộ):</div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <div *ngFor="let mem of team.members" style="display:flex;justify-content:space-between;background:#f8fafc;padding:4px 8px;border-radius:4px;border:1px solid #f1f5f9;font-size:12px;">
+                    <span><strong>{{ mem.fullName }}</strong> ({{ mem.roleInTeam }})</span>
+                    <span style="color:#64748b;">{{ mem.unit }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="team.adjustmentHistory && team.adjustmentHistory.length > 0" style="margin-top:10px;padding-top:8px;border-top:1px dashed #cbd5e1;font-size:11.5px;color:#b45309;">
+              <strong>Lịch sử điều chỉnh đoàn:</strong>
+              <span *ngFor="let h of team.adjustmentHistory"> [{{ h.adjustedAt }} - {{ h.adjustedBy }}: {{ h.reason }}] </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1383,8 +1595,45 @@ import { Plan, BusinessObject, AdhocInspectionRequest } from '../../core/models'
   `]
 })
 export class PlansListComponent implements OnInit {
-  activeMainTab: 'official' | 'adhoc' = 'official';
+  activeMainTab: 'official' | 'adhoc' | 'teams' = 'official';
   activeView: 'cart' | 'list' | 'matrix' = 'list';
+
+  // Inspection Teams & Workflows State (Requirement #4)
+  teamsList: InspectionTeam[] = [];
+  unitWorkflows: UnitWorkflow[] = [];
+  teamTypeFilter = '';
+  isTeamModalOpen = false;
+  editingTeamId: number | null = null;
+  teamForm: {
+    name: string;
+    decisionNumber: string;
+    teamType: 'unit' | 'inter_agency';
+    leadUnit: string;
+    participatingUnitsText: string;
+    ward: string;
+    inspectionType: 'planned' | 'adhoc' | 'professional_request';
+    scheduleStart: string;
+    scheduleEnd: string;
+    workflowCode: string;
+    adjustmentReason: string;
+    members: Array<{ fullName: string; roleInTeam: string; unit: string; position: string }>;
+  } = {
+    name: '',
+    decisionNumber: '',
+    teamType: 'inter_agency',
+    leadUnit: 'UBND Phường Hoàn Kiếm',
+    participatingUnitsText: 'Công an Phường Hoàn Kiếm, Đội PCCC & CNCH KV1, Đội Quản lý thị trường số 2, Trạm Y tế Phường',
+    ward: 'Phường Hoàn Kiếm',
+    inspectionType: 'planned',
+    scheduleStart: '2026-04-10',
+    scheduleEnd: '2026-06-25',
+    workflowCode: 'WF_INTER_AGENCY',
+    adjustmentReason: '',
+    members: [
+      { fullName: 'Đ/c Trần Quốc Tuấn', roleInTeam: 'Trưởng đoàn', unit: 'UBND Phường Hoàn Kiếm', position: 'Phó Chủ tịch UBND' },
+      { fullName: 'Đ/c Lê Văn Hùng', roleInTeam: 'Phó trưởng đoàn', unit: 'Công an Phường Hoàn Kiếm', position: 'Phó Trưởng CAP' }
+    ]
+  };
 
   // Current User
   currentUser: any = null;
@@ -1591,6 +1840,8 @@ export class PlansListComponent implements OnInit {
     this.loadCartPlan();
     this.loadPendingGrid();
     this.loadAdhocRequests();
+    this.loadTeams();
+    this.loadWorkflows();
   }
 
   setupHeaderActions(): void {
@@ -1627,14 +1878,152 @@ export class PlansListComponent implements OnInit {
     return this.currentUser?.role === 'admin';
   }
 
-  switchMainTab(tab: 'official' | 'adhoc'): void {
+  switchMainTab(tab: 'official' | 'adhoc' | 'teams'): void {
     this.activeMainTab = tab;
     if (tab === 'adhoc') {
       this.loadAdhocRequests();
+    } else if (tab === 'teams') {
+      this.loadTeams();
+      this.loadWorkflows();
     } else {
       if (this.activeView === 'cart') this.loadCartPlan();
       else if (this.activeView === 'list') this.loadPlans();
       else if (this.activeView === 'matrix') this.loadPendingGrid();
+    }
+  }
+
+  loadTeams(): void {
+    const params: any = {};
+    if (this.teamTypeFilter) params.teamType = this.teamTypeFilter;
+    this.api.get<any>('/teams', params).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.teamsList = res.data || [];
+        }
+      }
+    });
+  }
+
+  loadWorkflows(): void {
+    this.api.get<any>('/configs/workflows').subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.unitWorkflows = res.data || [];
+        }
+      }
+    });
+  }
+
+  openCreateTeamModal(): void {
+    this.editingTeamId = null;
+    this.teamForm = {
+      name: '',
+      decisionNumber: `${Math.floor(100 + Math.random() * 800)}/QĐ-UBND-LN`,
+      teamType: 'inter_agency',
+      leadUnit: `UBND ${this.userWard}`,
+      participatingUnitsText: `Công an ${this.userWard}, Đội PCCC & CNCH, Đội Quản lý thị trường, Trạm Y tế`,
+      ward: this.userWard,
+      inspectionType: 'planned',
+      scheduleStart: '2026-04-15',
+      scheduleEnd: '2026-06-30',
+      workflowCode: 'WF_INTER_AGENCY',
+      adjustmentReason: '',
+      members: [
+        { fullName: 'Đ/c Nguyễn Minh Đức', roleInTeam: 'Trưởng đoàn', unit: `UBND ${this.userWard}`, position: 'Phó Chủ tịch UBND' },
+        { fullName: 'Đ/c Phạm Quang Huy', roleInTeam: 'Phó trưởng đoàn', unit: `Công an ${this.userWard}`, position: 'Phó Trưởng Công an Phường' },
+        { fullName: 'Đ/c Hoàng Thanh Tùng', roleInTeam: 'Thành viên', unit: 'Đội Cảnh sát PCCC & CNCH', position: 'Cán bộ kiểm tra' }
+      ]
+    };
+    this.isTeamModalOpen = true;
+  }
+
+  openEditTeamModal(team: InspectionTeam): void {
+    this.editingTeamId = team.id || null;
+    this.teamForm = {
+      name: team.name,
+      decisionNumber: team.decisionNumber || '',
+      teamType: team.teamType || 'inter_agency',
+      leadUnit: team.leadUnit || '',
+      participatingUnitsText: (team.participatingUnits || []).join(', '),
+      ward: team.ward || this.userWard,
+      inspectionType: team.inspectionType || 'planned',
+      scheduleStart: team.scheduleStart || '2026-04-15',
+      scheduleEnd: team.scheduleEnd || '2026-06-30',
+      workflowCode: team.workflowCode || 'WF_INTER_AGENCY',
+      adjustmentReason: '',
+      members: (team.members || []).map(m => ({
+        fullName: m.fullName,
+        roleInTeam: m.roleInTeam,
+        unit: m.unit,
+        position: m.position || ''
+      }))
+    };
+    this.isTeamModalOpen = true;
+  }
+
+  addTeamMemberRow(): void {
+    this.teamForm.members.push({
+      fullName: '',
+      roleInTeam: 'Thành viên',
+      unit: '',
+      position: 'Cán bộ chuyên môn'
+    });
+  }
+
+  removeTeamMemberRow(index: number): void {
+    if (this.teamForm.members.length <= 1) return;
+    this.teamForm.members.splice(index, 1);
+  }
+
+  saveTeamForm(): void {
+    if (!this.teamForm.name || !this.teamForm.leadUnit) {
+      this.snackBar.open('Vui lòng nhập Tên đoàn kiểm tra và Đơn vị chủ trì.', 'Đóng', { duration: 3000 });
+      return;
+    }
+
+    const participatingUnits = this.teamForm.participatingUnitsText
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const leader = this.teamForm.members.find(m => m.roleInTeam === 'Trưởng đoàn') || this.teamForm.members[0];
+
+    const payload = {
+      name: this.teamForm.name,
+      decisionNumber: this.teamForm.decisionNumber,
+      teamType: this.teamForm.teamType,
+      leadUnit: this.teamForm.leadUnit,
+      participatingUnits,
+      ward: this.teamForm.ward,
+      inspectionType: this.teamForm.inspectionType,
+      leaderName: leader?.fullName || '',
+      members: this.teamForm.members.filter(m => m.fullName.trim()),
+      scheduleStart: this.teamForm.scheduleStart,
+      scheduleEnd: this.teamForm.scheduleEnd,
+      workflowCode: this.teamForm.workflowCode,
+      adjustmentReason: this.teamForm.adjustmentReason
+    };
+
+    if (this.editingTeamId) {
+      this.api.put<any>(`/teams/${this.editingTeamId}`, payload).subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.isTeamModalOpen = false;
+            this.snackBar.open('Đã cập nhật điều chỉnh thành phần & lịch Đoàn kiểm tra thành công!', 'Đóng', { duration: 3000 });
+            this.loadTeams();
+          }
+        }
+      });
+    } else {
+      this.api.post<any>('/teams', payload).subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.isTeamModalOpen = false;
+            this.snackBar.open('Đã thành lập Đoàn kiểm tra mới thành công!', 'Đóng', { duration: 3000 });
+            this.loadTeams();
+          }
+        }
+      });
     }
   }
 

@@ -20,6 +20,10 @@ router.post('/import', upload.single('file'), auditLogger('IMPORT_OBJECTS', 'BUS
 router.get('/', ObjectsController.getAll);
 router.get('/check/:idOrTaxCode', ObjectsController.checkDuplicate);
 router.get('/:id', ObjectsController.getById);
+router.get('/:id/locations', ObjectsController.getLocations);
+router.post('/:id/locations', auditLogger('ADD_LOCATION', 'BUSINESS_LOCATIONS'), ObjectsController.addLocation);
+router.put('/:id/locations/:locId', auditLogger('UPDATE_LOCATION', 'BUSINESS_LOCATIONS'), ObjectsController.updateLocation);
+router.delete('/:id/locations/:locId', auditLogger('DELETE_LOCATION', 'BUSINESS_LOCATIONS'), ObjectsController.deleteLocation);
 router.post('/', auditLogger('CREATE_OBJECT', 'BUSINESS_OBJECTS'), ObjectsController.create);
 router.put('/:id', auditLogger('UPDATE_OBJECT', 'BUSINESS_OBJECTS'), ObjectsController.update);
 

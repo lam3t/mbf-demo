@@ -40,5 +40,7 @@ router.get('/:id', InspectionsController.getById);
 router.put('/:id', auditLogger('UPDATE_INSPECTION', 'INSPECTIONS'), InspectionsController.update);
 router.post('/:id/evidence', upload.single('file'), auditLogger('UPLOAD_EVIDENCE', 'INSPECTIONS'), InspectionsController.uploadEvidence);
 router.post('/:id/complete', auditLogger('COMPLETE_INSPECTION', 'INSPECTIONS'), InspectionsController.complete);
+router.post('/:id/explanation', auditLogger('SUBMIT_EXPLANATION', 'INSPECTIONS'), InspectionsController.submitExplanation);
+router.post('/:id/accept-result', auditLogger('ACCEPT_INSPECTION_RESULT', 'INSPECTIONS'), InspectionsController.acceptResult);
 
 export default router;

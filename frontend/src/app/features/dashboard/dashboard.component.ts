@@ -12,6 +12,7 @@ import { Chart, registerables } from 'chart.js';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { ViolationsMapComponent } from '../map/violations-map.component';
 import { DomainStats, RankingItem, InspectionDomain, Ward, WardInspectionAlertItem, WardInspectionAlertsResponse, BusinessNotice } from '../../core/models';
 
 Chart.register(...registerables);
@@ -29,7 +30,8 @@ Chart.register(...registerables);
     MatProgressBarModule,
     MatSelectModule,
     MatTooltipModule,
-    PageHeaderComponent
+    PageHeaderComponent,
+    ViolationsMapComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']

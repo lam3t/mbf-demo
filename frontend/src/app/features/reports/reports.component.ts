@@ -35,7 +35,7 @@ import { RecommendationTagCatalog } from '../../core/models';
   styleUrls: ['./reports.component.scss']
 })
 export class ReportsComponent implements OnInit {
-  activeTab = 0; // 0: Recommendations, 1: Quarterly Summary
+  activeTab = 0; // 0: Recommendations, 1: Quarterly Summary, 2: Uninspected & Explanations
 
   // Tab 1 Data & Filters
   recommendations: any[] = [];
@@ -48,6 +48,41 @@ export class ReportsComponent implements OnInit {
   quarterlySummaries: any[] = [];
   selectedQuarter = 'Q2/2026';
   isExportingQuarterly = false;
+
+  // Tab 3 Data & Filters (Requirement 6: Quản lý báo cáo, giải trình cơ sở chưa kiểm tra)
+  uninspectedSummary = {
+    totalPlanned: 0,
+    completedCount: 0,
+    uninspectedCount: 0,
+    explainedCount: 0,
+    unexplainedCount: 0,
+    completionRate: 0
+  };
+  uninspectedItems: any[] = [];
+  selectedUninspectedQuarter = '';
+  selectedUninspectedWard = '';
+  selectedExplanationStatus = '';
+  selectedUninspectedType = '';
+  isExportingUninspected = false;
+
+  // Inline / Modal Form for submitting or reviewing Explanation
+  editingExplanationItem: any = null;
+  explanationForm = {
+    uninspectedReason: '',
+    explanationContent: '',
+    explanationStatus: 'pending_review',
+    explanationReviewNote: ''
+  };
+  isSubmittingExplanation = false;
+
+  readonly UNINSPECTED_REASONS = [
+    'Cơ sở tạm ngừng hoạt động / đóng cửa tại thời điểm kiểm tra',
+    'Chưa liên hệ được đại diện pháp luật / chủ cơ sở vắng mặt',
+    'Đang chờ phối hợp Đoàn kiểm tra liên ngành',
+    'Điều chỉnh lịch kiểm tra do nhiệm vụ đột xuất ưu tiên',
+    'Cơ sở đã chuyển địa điểm kinh doanh sang địa bàn khác',
+    'Nguyên nhân khách quan khác'
+  ];
 
   // Catalogs
   tagCatalog: RecommendationTagCatalog[] = [];
@@ -64,6 +99,16 @@ export class ReportsComponent implements OnInit {
   // Table Columns
   recColumns = ['id', 'objectName', 'ward', 'tags', 'recommendationNote', 'completedAt'];
   quarterlyColumns = ['quarter', 'ward', 'total', 'completed', 'inProgress', 'notStarted', 'violations', 'rate'];
+  uninspectedColumns = [
+    'id',
+    'objectName',
+    'ward',
+    'inspectionType',
+    'uninspectedReason',
+    'explanationContent',
+    'explanationStatus',
+    'actions'
+  ];
 
   constructor(
     private api: ApiService,
@@ -74,6 +119,7 @@ export class ReportsComponent implements OnInit {
     this.loadTagCatalog();
     this.loadRecommendations();
     this.loadQuarterlySummary();
+    this.loadUninspectedReport();
   }
 
   loadTagCatalog(): void {
@@ -112,12 +158,86 @@ export class ReportsComponent implements OnInit {
     });
   }
 
+  loadUninspectedReport(): void {
+    const params: any = {};
+    if (this.selectedUninspectedQuarter) params.quarter = this.selectedUninspectedQuarter;
+    if (this.selectedUninspectedWard) params.ward = this.selectedUninspectedWard;
+    if (this.selectedExplanationStatus) params.explanationStatus = this.selectedExplanationStatus;
+    if (this.selectedUninspectedType) params.inspectionType = this.selectedUninspectedType;
+
+    this.api.get<any>('/reports/uninspected', params).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.uninspectedSummary = res.data.summary || this.uninspectedSummary;
+          this.uninspectedItems = res.data.items || [];
+        }
+      }
+    });
+  }
+
   onRecFilterChange(): void {
     this.loadRecommendations();
   }
 
   onQuarterlyFilterChange(): void {
     this.loadQuarterlySummary();
+  }
+
+  onUninspectedFilterChange(): void {
+    this.loadUninspectedReport();
+  }
+
+  openExplanationModal(item: any): void {
+    this.editingExplanationItem = item;
+    this.explanationForm = {
+      uninspectedReason: item.uninspectedReason || this.UNINSPECTED_REASONS[0],
+      explanationContent: item.explanationContent || '',
+      explanationStatus: item.explanationStatus && item.explanationStatus !== 'none' ? item.explanationStatus : 'pending_review',
+      explanationReviewNote: item.explanationReviewNote || ''
+    };
+  }
+
+  closeExplanationModal(): void {
+    this.editingExplanationItem = null;
+  }
+
+  saveExplanation(): void {
+    if (!this.editingExplanationItem) return;
+    if (!this.explanationForm.uninspectedReason || !this.explanationForm.explanationContent.trim()) {
+      this.snackBar.open('Vui lòng chọn nguyên nhân và nhập nội dung giải trình chi tiết!', 'Đóng', { duration: 3000 });
+      return;
+    }
+
+    this.isSubmittingExplanation = true;
+    this.api.post<any>(`/inspections/${this.editingExplanationItem.id}/explanation`, this.explanationForm).subscribe({
+      next: (res) => {
+        this.isSubmittingExplanation = false;
+        if (res.success) {
+          this.snackBar.open('Đã lưu báo cáo giải trình trường hợp chưa kiểm tra!', 'Đóng', { duration: 2500 });
+          this.editingExplanationItem = null;
+          this.loadUninspectedReport();
+        }
+      },
+      error: (err) => {
+        this.isSubmittingExplanation = false;
+        this.snackBar.open(err.error?.message || 'Lỗi khi lưu giải trình', 'Đóng', { duration: 3000 });
+      }
+    });
+  }
+
+  getInspectionTypeLabel(type: string): string {
+    if (type === 'adhoc') return 'Đột xuất';
+    if (type === 'professional_request') return 'Yêu cầu nghiệp vụ';
+    return 'Theo kế hoạch/định kỳ';
+  }
+
+  getExplanationStatusLabel(status: string): string {
+    switch (status) {
+      case 'pending_review': return 'Chờ lãnh đạo duyệt';
+      case 'accepted': return 'Đã chấp thuận giải trình';
+      case 'rescheduled': return 'Đã chuyển lịch kiểm tra bù';
+      default: return 'Chưa có giải trình';
+    }
   }
 
   exportRecommendationsExcel(): void {
@@ -163,6 +283,31 @@ export class ReportsComponent implements OnInit {
       error: (err) => {
         this.isExportingQuarterly = false;
         console.error('Export quarterly summary error:', err);
+        this.snackBar.open('Lỗi khi xuất file Excel. Vui lòng thử lại!', 'Đóng', { duration: 3000 });
+      }
+    });
+  }
+
+  exportUninspectedExcel(): void {
+    this.isExportingUninspected = true;
+    const params: any = {};
+    if (this.selectedUninspectedQuarter) params.quarter = this.selectedUninspectedQuarter;
+    if (this.selectedUninspectedWard) params.ward = this.selectedUninspectedWard;
+    if (this.selectedExplanationStatus) params.explanationStatus = this.selectedExplanationStatus;
+
+    this.snackBar.open('Đang tạo và tải file Báo cáo Giải trình Chưa kiểm tra...', '', { duration: 2000 });
+
+    this.api.getBlob('/reports/uninspected/export', params).subscribe({
+      next: (blob) => {
+        this.isExportingUninspected = false;
+        const qStr = (this.selectedUninspectedQuarter || 'Tat_ca').replace(/[/\\?%*:|"<>]/g, '_');
+        const filename = `Bao_cao_Giai_trinh_Chua_Kiem_tra_${qStr}_${Date.now()}.xlsx`;
+        this.saveBlob(blob, filename);
+        this.snackBar.open('Xuất Báo cáo Giải trình Excel thành công!', 'Đóng', { duration: 3000 });
+      },
+      error: (err) => {
+        this.isExportingUninspected = false;
+        console.error('Export uninspected error:', err);
         this.snackBar.open('Lỗi khi xuất file Excel. Vui lòng thử lại!', 'Đóng', { duration: 3000 });
       }
     });

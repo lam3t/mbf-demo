@@ -1,6 +1,7 @@
-<div class="violations-map-container">
+<div class="violations-map-container" [class.embedded-mode]="isEmbedded">
   <!-- Page Header -->
   <app-page-header
+    *ngIf="!isEmbedded"
     title="Bản đồ Giám sát & Mật độ Vi phạm Thực địa"
     subtitle="Bản đồ nhiệt (Heatmap) và gom cụm điểm nóng (Marker Cluster) các hành vi vi phạm trên địa bàn Hà Nội">
     <div actions class="header-actions">

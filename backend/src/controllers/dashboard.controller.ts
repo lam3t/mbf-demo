@@ -339,11 +339,12 @@ export class DashboardController {
 
       const query = `
         SELECT i.id as inspectionId, i.lat, i.lng, i.ward, i.severity, i.violationCodes, i.completedAt, i.status,
-               b.name as objectName, b.type as objectType, b.address as objectAddress,
-               p.quarter as planQuarter
+               i.inspectionType, i.locationName, i.locationAddress, i.teamName,
+               b.name as objectName, b.type as objectType, b.address as objectAddress, b.hasForeignElement,
+               COALESCE(p.quarter, 'Q2/2026') as planQuarter
         FROM inspections i
         JOIN business_objects b ON i.objectId = b.id
-        JOIN plans p ON i.planId = p.id
+        LEFT JOIN plans p ON i.planId = p.id
         ${whereClause}
         ORDER BY i.severity DESC, i.id DESC
       `;

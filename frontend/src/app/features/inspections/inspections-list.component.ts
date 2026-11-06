@@ -61,6 +61,7 @@ export class InspectionsListComponent implements OnInit {
   selectedStatus = '';
   selectedWard = '';
   selectedQuarter = '';
+  selectedInspectionType = '';
   searchTerm = '';
 
   // Stats
@@ -130,6 +131,7 @@ export class InspectionsListComponent implements OnInit {
     if (this.selectedStatus) params.status = this.selectedStatus;
     if (this.selectedWard) params.ward = this.selectedWard;
     if (this.selectedQuarter) params.quarter = this.selectedQuarter;
+    if (this.selectedInspectionType) params.inspectionType = this.selectedInspectionType;
     if (this.searchTerm) params.search = this.searchTerm;
 
     this.api.get<any>('/inspections', params).subscribe({
@@ -202,8 +204,15 @@ export class InspectionsListComponent implements OnInit {
     this.selectedStatus = '';
     this.selectedWard = '';
     this.selectedQuarter = '';
+    this.selectedInspectionType = '';
     this.searchTerm = '';
     this.loadInspections();
+  }
+
+  getInspectionTypeLabel(type?: string, isAdhoc?: any): string {
+    if (type === 'professional_request') return 'Theo yêu cầu nghiệp vụ';
+    if (type === 'adhoc' || isAdhoc) return 'Kiểm tra đột xuất';
+    return 'Theo kế hoạch/định kỳ';
   }
 
   onRecFilterChange(): void {

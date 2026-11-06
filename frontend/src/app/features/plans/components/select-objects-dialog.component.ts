@@ -58,12 +58,10 @@ import { BusinessObject } from '../../../core/models';
             class="object-row"
             *ngFor="let obj of filteredList"
             [class.selected]="isSelected(obj.id)"
-            [class.blocked-row]="obj.isBlockedThisYear"
-            (click)="!obj.isBlockedThisYear && toggleSelect(obj)"
+            (click)="toggleSelect(obj)"
           >
             <mat-checkbox
               [checked]="isSelected(obj.id)"
-              [disabled]="!!obj.isBlockedThisYear"
               (change)="toggleSelect(obj)"
               (click)="$event.stopPropagation()"
               color="primary"
@@ -72,26 +70,22 @@ import { BusinessObject } from '../../../core/models';
               <div class="obj-title">
                 <strong>{{ obj.name }}</strong>
                 <span class="type-badge">{{ obj.type === 'enterprise' ? 'Doanh nghiệp' : (obj.type === 'household' ? 'Hộ KD' : 'Cá nhân') }}</span>
-                <span *ngIf="obj.isBlockedThisYear" class="blocked-badge" [title]="obj.blockReason || ''">
-                  <mat-icon>block</mat-icon>
-                  {{ obj.blockReason ? 'Single Check (Đã khóa)' : 'Đã có kế hoạch' }}
+                <span *ngIf="obj.hasForeignElement" class="warning-badge" style="background:#e0f2fe;color:#0369a1;border-color:#7dd3fc;">
+                  🌐 Yếu tố NN
                 </span>
-                <span *ngIf="!obj.isBlockedThisYear && obj.hasCrossWardWarning" class="warning-badge" [title]="obj.crossWardWarning || obj.warningReason || ''">
-                  <mat-icon>group_work</mat-icon>
-                  Kiểm tra liên ngành
+                <span *ngIf="obj.hasCrossWardWarning || obj.warningReason" class="warning-badge" [title]="obj.crossWardWarning || obj.warningReason || ''">
+                  <mat-icon>warning_amber</mat-icon>
+                  Cảnh báo trùng (Không chặn)
                 </span>
               </div>
               <div class="obj-meta">
                 <span>Mã: {{ obj.taxCode || obj.idNumber }}</span>
                 <span>•</span>
-                <span>Địa chỉ: {{ obj.address }}</span>
+                <span>Địa chỉ: {{ obj.address }} ({{ obj.locationCount || 1 }} cơ sở/địa điểm)</span>
               </div>
-              <div *ngIf="obj.isBlockedThisYear && obj.blockReason" class="blocked-reason-text">
-                {{ obj.blockReason }}
-              </div>
-              <div *ngIf="!obj.isBlockedThisYear && obj.hasCrossWardWarning && (obj.crossWardWarning || obj.warningReason)" class="warning-reason-text">
+              <div *ngIf="(obj.hasCrossWardWarning || obj.warningReason) && (obj.crossWardWarning || obj.warningReason)" class="warning-reason-text">
                 <mat-icon>info</mat-icon>
-                <span>{{ obj.crossWardWarning || obj.warningReason }}</span>
+                <span>{{ obj.crossWardWarning || obj.warningReason }} — Vẫn cho phép chọn lập kế hoạch nếu có yêu cầu nghiệp vụ.</span>
               </div>
             </div>
           </div>
@@ -434,9 +428,6 @@ export class SelectObjectsDialogComponent implements OnInit {
 
   toggleSelect(item: BusinessObject | number): void {
     const id = typeof item === 'number' ? item : item.id;
-    const isBlocked = typeof item === 'object' ? !!item.isBlockedThisYear : false;
-    if (isBlocked) return;
-
     if (this.isSelected(id)) {
       this.selectedIds = this.selectedIds.filter(i => i !== id);
     } else {

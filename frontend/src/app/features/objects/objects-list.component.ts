@@ -77,6 +77,15 @@ import { BusinessObject } from '../../core/models';
             [includeAllOption]="true"
           ></app-ward-select>
         </div>
+
+        <div class="filter-item">
+          <label>Yếu tố nước ngoài:</label>
+          <select class="cids-select" [(ngModel)]="selectedForeignFilter" (change)="applyFilters()">
+            <option value="">Tất cả đối tượng</option>
+            <option value="1">🌐 Có yếu tố nước ngoài (FDI / Lao động NN)</option>
+            <option value="0">Trong nước (Không có yếu tố NN)</option>
+          </select>
+        </div>
       </div>
 
       <!-- 3. Status Tabs Ribbon -->
@@ -155,6 +164,7 @@ export class ObjectsListComponent implements OnInit {
   activeStatusKey = 'all';
   selectedType = '';
   selectedWard = '';
+  selectedForeignFilter = '';
   showAdvancedFilter = false;
 
   wardOptions = [
@@ -173,6 +183,7 @@ export class ObjectsListComponent implements OnInit {
   statusTabs: StatusTabItem[] = [
     { key: 'all', label: 'Tất cả', count: 0, color: 'gray' },
     { key: 'active', label: 'Đang hoạt động', count: 0, color: 'green' },
+    { key: 'foreign', label: '🌐 Có yếu tố nước ngoài', count: 0, color: 'amber' },
     { key: 'suspended', label: 'Tạm ngừng', count: 0, color: 'red' }
   ];
 
@@ -182,7 +193,7 @@ export class ObjectsListComponent implements OnInit {
       label: 'Loại hình',
       sortable: true,
       type: 'badge',
-      width: '14%',
+      width: '12%',
       badgeMapping: {
         enterprise: { label: 'Doanh nghiệp', cssClass: 'badge-in_progress' },
         household: { label: 'Hộ kinh doanh', cssClass: 'badge-approved' },
@@ -193,27 +204,43 @@ export class ObjectsListComponent implements OnInit {
       key: 'identifier',
       label: 'Mã định danh (MST/CCCD)',
       sortable: true,
-      width: '16%',
+      width: '14%',
       formatter: (val, row) => row.taxCode || row.idNumber || '-'
     },
     {
       key: 'name',
-      label: 'Tên cơ sở / Tổ chức kinh doanh',
+      label: 'Tên doanh nghiệp / Cơ sở & Yếu tố NN',
       sortable: true,
-      width: '38%'
+      width: '32%',
+      formatter: (val, row) => {
+        const foreignTag = row.hasForeignElement ? ' [🌐 Yếu tố NN]' : '';
+        return `${row.name}${foreignTag}`;
+      }
+    },
+    {
+      key: 'locationCount',
+      label: 'Trụ sở / Chi nhánh / Cơ sở',
+      sortable: true,
+      width: '16%',
+      formatter: (val, row) => {
+        const count = row.locationCount || (row.locations ? row.locations.length : 1);
+        const inspCount = row.totalInspectionsCount || 0;
+        const violCount = row.totalViolationsCount || 0;
+        return `${count} địa điểm (${inspCount} lần KT${violCount > 0 ? ', ' + violCount + ' VP' : ''})`;
+      }
     },
     {
       key: 'ward',
       label: 'Phường quản lý',
       sortable: true,
-      width: '18%'
+      width: '14%'
     },
     {
       key: 'status',
       label: 'Trạng thái',
       sortable: true,
       type: 'badge',
-      width: '14%',
+      width: '12%',
       badgeMapping: {
         active: { label: 'Hoạt động', cssClass: 'badge-new' },
         suspended: { label: 'Tạm ngừng', cssClass: 'badge-closed' }
@@ -256,11 +283,13 @@ export class ObjectsListComponent implements OnInit {
 
   updateTabCounts(): void {
     const activeCount = this.objects.filter(o => o.status === 'active').length;
+    const foreignCount = this.objects.filter(o => Boolean(o.hasForeignElement)).length;
     const suspendedCount = this.objects.filter(o => o.status === 'suspended').length;
 
     this.statusTabs.forEach(tab => {
       if (tab.key === 'all') tab.count = this.objects.length;
       else if (tab.key === 'active') tab.count = activeCount;
+      else if (tab.key === 'foreign') tab.count = foreignCount;
       else if (tab.key === 'suspended') tab.count = suspendedCount;
     });
   }
@@ -270,7 +299,11 @@ export class ObjectsListComponent implements OnInit {
 
     // Status filter
     if (this.activeStatusKey && this.activeStatusKey !== 'all') {
-      result = result.filter(o => o.status === this.activeStatusKey);
+      if (this.activeStatusKey === 'foreign') {
+        result = result.filter(o => Boolean(o.hasForeignElement));
+      } else {
+        result = result.filter(o => o.status === this.activeStatusKey);
+      }
     }
 
     // Type filter
@@ -281,6 +314,13 @@ export class ObjectsListComponent implements OnInit {
     // Ward filter
     if (this.selectedWard) {
       result = result.filter(o => o.ward === this.selectedWard);
+    }
+
+    // Foreign element filter
+    if (this.selectedForeignFilter === '1') {
+      result = result.filter(o => Boolean(o.hasForeignElement));
+    } else if (this.selectedForeignFilter === '0') {
+      result = result.filter(o => !o.hasForeignElement);
     }
 
     // Search query
@@ -359,24 +399,18 @@ export class ObjectsListComponent implements OnInit {
   }
 
   addToPlan(row: BusinessObject): void {
-    if (row.isBlockedThisYear) {
-      this.snackBar.open(row.blockReason || 'Cơ sở đã hoàn thành kiểm tra trong năm, không thể thêm vào kế hoạch mới.', 'Đóng', { duration: 4000 });
-      return;
-    }
-
     const ward = row.ward;
     this.api.get<any>('/plans', { quarter: 'Q2/2026', ward }).subscribe({
       next: (res) => {
         if (res.success && res.data.length > 0) {
           const plan = res.data[0];
-          if (plan.status !== 'draft') {
-            this.snackBar.open(`Kế hoạch ${plan.quarter} của ${ward} đang ở trạng thái "${plan.status}", không thể chỉnh sửa.`, 'Đóng', { duration: 3500 });
-            return;
-          }
           this.api.post<any>(`/plans/${plan.id}/items`, { objectId: row.id }).subscribe({
             next: (addRes) => {
               if (addRes.success) {
-                this.snackBar.open(`Đã thêm cơ sở "${row.name}" vào giỏ kế hoạch của ${ward}!`, 'Đóng', { duration: 3000 });
+                const warnMsg = (row.hasCrossWardWarning || row.warningReason)
+                  ? ` (Lưu ý cảnh báo trùng: ${row.warningReason})`
+                  : '';
+                this.snackBar.open(`Đã bổ sung cơ sở "${row.name}" vào kế hoạch ${plan.quarter} của ${ward}!${warnMsg}`, 'Đóng', { duration: 4000 });
                 this.loadObjects();
               }
             },

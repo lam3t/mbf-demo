@@ -29,8 +29,8 @@ import { BusinessObject } from '../../../core/models';
             <mat-icon>notification_important</mat-icon>
           </div>
           <div>
-            <h2>Đề xuất kiểm tra phát sinh (Ngoài kế hoạch)</h2>
-            <p class="subtitle">Gửi đề xuất kiểm tra đột xuất đối tượng lên PA04 xét duyệt riêng</p>
+            <h2>Đề xuất Kiểm tra Đột xuất / Theo Yêu cầu Nghiệp vụ</h2>
+            <p class="subtitle">Cho phép kiểm tra lại cơ sở đã được đơn vị khác kiểm tra nếu phát sinh yêu cầu nghiệp vụ hoặc kiểm tra đột xuất</p>
           </div>
         </div>
         <button mat-icon-button (click)="dialogRef.close()" class="close-btn">
@@ -39,10 +39,41 @@ import { BusinessObject } from '../../../core/models';
       </div>
 
       <div class="dialog-content">
+        <!-- Section 0: Inspection Type Classification -->
+        <div class="form-section">
+          <label class="section-label">
+            1. Phân loại loại hình kiểm tra phát sinh <span class="required-star">*</span>
+          </label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <label
+              style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:8px;cursor:pointer;"
+              [style.border-color]="inspectionType === 'adhoc' ? '#7c3aed' : '#cbd5e1'"
+              [style.background]="inspectionType === 'adhoc' ? '#f5f3ff' : '#fff'"
+            >
+              <input type="radio" name="inspType" value="adhoc" [(ngModel)]="inspectionType" />
+              <div>
+                <strong style="display:block;font-size:13px;color:#1e293b;">⚡ Kiểm tra đột xuất</strong>
+                <span style="font-size:11.5px;color:#64748b;">Khi có dấu hiệu vi phạm, phản ánh nóng, sự cố ATTP/PCCC</span>
+              </div>
+            </label>
+            <label
+              style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:8px;cursor:pointer;"
+              [style.border-color]="inspectionType === 'professional_request' ? '#1d4ed8' : '#cbd5e1'"
+              [style.background]="inspectionType === 'professional_request' ? '#eff6ff' : '#fff'"
+            >
+              <input type="radio" name="inspType" value="professional_request" [(ngModel)]="inspectionType" />
+              <div>
+                <strong style="display:block;font-size:13px;color:#1e293b;">📋 Kiểm tra theo yêu cầu nghiệp vụ</strong>
+                <span style="font-size:11.5px;color:#64748b;">Theo chuyên đề ngành dọc (PA04, PC06, PC07...) hoặc yêu cầu nghiệp vụ riêng</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
         <!-- Section 1: Select Business Object -->
         <div class="form-section">
           <label class="section-label">
-            1. Chọn Cơ sở / Đối tượng kinh doanh đề xuất kiểm tra <span class="required-star">*</span>
+            2. Chọn Doanh nghiệp / Cơ sở kinh doanh <span class="required-star">*</span>
           </label>
 
           <!-- Search Input -->
@@ -76,7 +107,6 @@ import { BusinessObject } from '../../../core/models';
             <div
               *ngFor="let obj of searchResults"
               class="result-item"
-              [class.blocked-item]="obj.isBlockedThisYear"
               (click)="selectObject(obj)"
             >
               <div class="item-left">
@@ -84,29 +114,22 @@ import { BusinessObject } from '../../../core/models';
                   <strong>{{ obj.name }}</strong>
                   <span class="type-pill">{{ obj.type === 'enterprise' ? 'Doanh nghiệp' : (obj.type === 'household' ? 'Hộ KD' : 'Cá nhân') }}</span>
                   <span class="ward-pill">{{ obj.ward }}</span>
+                  <span *ngIf="obj.hasForeignElement" class="ward-pill" style="background:#fef3c7;color:#b45309;">🌐 Yếu tố NN</span>
                 </div>
                 <div class="item-meta">
                   <span>Mã: <strong>{{ obj.taxCode || obj.idNumber }}</strong></span>
                   <span>•</span>
-                  <span>Địa chỉ: {{ obj.address }}</span>
+                  <span>Địa chỉ: {{ obj.address }} ({{ obj.locationCount || 1 }} địa điểm)</span>
                 </div>
-                <div *ngIf="obj.isBlockedThisYear" class="block-warning-banner">
-                  <mat-icon>gpp_bad</mat-icon>
-                  <span>{{ obj.blockReason || 'Đã có kế hoạch/kiểm tra trong năm (Single Check)' }}</span>
-                </div>
-                <div *ngIf="!obj.isBlockedThisYear && obj.hasCrossWardWarning" class="cross-ward-warning-banner">
+                <div *ngIf="obj.hasCrossWardWarning || obj.warningReason" class="cross-ward-warning-banner">
                   <mat-icon>info</mat-icon>
-                  <span>{{ obj.warningReason }}</span>
+                  <span>{{ obj.warningReason }} — Cho phép kiểm tra lại theo yêu cầu nghiệp vụ / đột xuất</span>
                 </div>
               </div>
               <div class="item-right">
-                <span *ngIf="!obj.isBlockedThisYear" class="btn-select-pill">
+                <span class="btn-select-pill">
                   <mat-icon>check_circle</mat-icon>
                   <span>Chọn</span>
-                </span>
-                <span *ngIf="obj.isBlockedThisYear" class="badge-locked">
-                  <mat-icon>lock</mat-icon>
-                  <span>Bị khóa</span>
                 </span>
               </div>
             </div>
@@ -146,26 +169,47 @@ import { BusinessObject } from '../../../core/models';
                 <span class="meta-val">{{ selectedObject.representative }}</span>
               </div>
               <div class="meta-row">
-                <span class="meta-label">Địa chỉ kinh doanh:</span>
+                <span class="meta-label">Địa chỉ trụ sở:</span>
                 <span class="meta-val">{{ selectedObject.address }}</span>
+              </div>
+              <div class="meta-row" *ngIf="selectedObject.locations && selectedObject.locations.length > 0" style="margin-top:6px;align-items:center;">
+                <span class="meta-label">Chọn cơ sở / địa điểm KT:</span>
+                <select [(ngModel)]="selectedLocationId" style="flex:1;height:32px;padding:0 8px;border:1px solid #c084fc;border-radius:6px;font-size:12.5px;background:#fff;">
+                  <option [ngValue]="null">-- Kiểm tra tại Trụ sở chính / Toàn doanh nghiệp --</option>
+                  <option *ngFor="let loc of selectedObject.locations" [ngValue]="loc.id">
+                    {{ loc.name }} ({{ loc.address }} - {{ loc.ward }})
+                  </option>
+                </select>
               </div>
             </div>
 
-            <div *ngIf="selectedObject.hasCrossWardWarning" class="single-check-warning-badge">
-              <mat-icon>group_work</mat-icon>
-              <span>{{ selectedObject.warningReason || 'Đối tượng có trong kế hoạch của phường khác - Phối hợp đoàn kiểm tra liên ngành khi phê duyệt.' }}</span>
+            <div *ngIf="selectedObject.hasCrossWardWarning || selectedObject.warningReason" class="single-check-warning-badge">
+              <mat-icon>warning_amber</mat-icon>
+              <span>{{ selectedObject.warningReason }} — Cho phép kiểm tra lại do phát sinh yêu cầu nghiệp vụ / đột xuất.</span>
             </div>
-            <div *ngIf="!selectedObject.hasCrossWardWarning" class="single-check-pass-badge">
+            <div *ngIf="!selectedObject.hasCrossWardWarning && !selectedObject.warningReason" class="single-check-pass-badge">
               <mat-icon>check_circle</mat-icon>
-              <span>Đối tượng hợp lệ theo Quy tắc Single Check (Chưa có kế hoạch/kiểm tra trong năm {{ currentYear }})</span>
+              <span>Đối tượng đủ điều kiện lập đề xuất kiểm tra năm {{ currentYear }}</span>
             </div>
           </div>
         </div>
 
-        <!-- Section 2: Reason for Ad-hoc Inspection -->
+        <!-- Section 2: Scheduled Date & Inspection Content -->
+        <div class="form-section" style="display:grid;grid-template-columns:180px 1fr;gap:12px;">
+          <div>
+            <label class="section-label" style="display:block;margin-bottom:4px;">Thời gian dự kiến KT:</label>
+            <input type="date" [(ngModel)]="scheduledDate" style="width:100%;height:38px;padding:0 10px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;" />
+          </div>
+          <div>
+            <label class="section-label" style="display:block;margin-bottom:4px;">Nội dung chuyên đề / nghiệp vụ kiểm tra:</label>
+            <input type="text" [(ngModel)]="inspectionContent" placeholder="VD: Kiểm tra an ninh mạng, cư trú người nước ngoài, PCCC, ATTP..." style="width:100%;height:38px;padding:0 10px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;" />
+          </div>
+        </div>
+
+        <!-- Section 3: Reason for Ad-hoc Inspection -->
         <div class="form-section">
           <label class="section-label">
-            2. Lý do đề xuất kiểm tra đột xuất / phát sinh <span class="required-star">*</span>
+            3. Căn cứ / Lý do đề xuất kiểm tra <span class="required-star">*</span>
           </label>
           <textarea
             class="reason-textarea"
@@ -666,6 +710,10 @@ export class CreateAdhocDialogComponent implements OnInit {
   searchQuery = '';
   searchResults: BusinessObject[] = [];
   selectedObject: BusinessObject | null = null;
+  selectedLocationId: number | null = null;
+  inspectionType: 'adhoc' | 'professional_request' = 'adhoc';
+  scheduledDate = new Date().toISOString().substring(0, 10);
+  inspectionContent = '';
   reason = '';
   isLoading = false;
   isSubmitting = false;
@@ -726,31 +774,35 @@ export class CreateAdhocDialogComponent implements OnInit {
   }
 
   selectObject(obj: BusinessObject): void {
-    if (obj.isBlockedThisYear) {
-      this.snackBar.open(obj.blockReason || 'Cơ sở này đã bị khóa theo quy tắc Single Check 1 năm / 1 lần.', 'Đã hiểu', { duration: 4000 });
-      return;
-    }
     this.selectedObject = obj;
+    this.selectedLocationId = obj.locations && obj.locations.length > 0 ? (obj.locations[0].id || null) : null;
     this.searchResults = [];
   }
 
   unselectObject(): void {
     this.selectedObject = null;
+    this.selectedLocationId = null;
     this.fetchObjects();
   }
 
   isFormValid(): boolean {
-    return !!this.selectedObject && !this.selectedObject.isBlockedThisYear && !!this.reason.trim();
+    return !!this.selectedObject && !!this.reason.trim();
   }
 
   submitProposal(): void {
     if (!this.isFormValid() || !this.selectedObject) return;
 
     this.isSubmitting = true;
+    const selectedLoc = this.selectedObject.locations?.find(l => l.id === this.selectedLocationId);
     const payload = {
       objectId: this.selectedObject.id,
+      locationId: this.selectedLocationId,
+      locationName: selectedLoc?.name || undefined,
+      inspectionType: this.inspectionType,
+      scheduledDate: this.scheduledDate,
+      inspectionContent: this.inspectionContent.trim() || undefined,
       reason: this.reason.trim(),
-      ward: this.selectedObject.ward
+      ward: selectedLoc?.ward || this.selectedObject.ward
     };
 
     this.api.post<any>('/adhoc-requests', payload).subscribe({

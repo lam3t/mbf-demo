@@ -77,14 +77,19 @@ export function checkObjectSingleCheckRule(
     const formattedDate = formatDateText(completed.completedAt);
     const wardText = completed.ward ? ` bởi ${completed.ward}` : '';
     const dateText = formattedDate ? ` vào ngày ${formattedDate}` : '';
+    const warningMsg = `Cảnh báo trùng: Doanh nghiệp/cơ sở đã được kiểm tra${dateText}${wardText}. Hệ thống KHÔNG tự động chặn — vẫn cho phép lập kế hoạch hoặc kiểm tra lại nếu phát sinh yêu cầu nghiệp vụ hoặc thuộc chức năng, nhiệm vụ của đơn vị.`;
     return {
-      isBlocked: true,
+      isBlocked: false,
+      blockReason: null,
+      hasWarning: true,
+      isCrossWardCandidate: true,
       conflictType: 'COMPLETED_INSPECTION',
-      blockReason: `Doanh nghiệp/đối tượng này đã hoàn thành kiểm tra${dateText}${wardText} - Không được phép kiểm tra trùng lặp theo nguyên tắc 1 năm/1 lần.`,
+      warningReason: warningMsg,
       completedAt: completed.completedAt,
       planQuarter: completed.quarter,
       planYear: completed.year || targetYear,
-      planWard: completed.ward
+      planWard: completed.ward,
+      otherWard: completed.ward
     };
   }
 

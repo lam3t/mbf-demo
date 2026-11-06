@@ -681,16 +681,7 @@
         </div>
       </div>
 
-      <div class="map-placeholder-card">
-        <div class="map-preview-box">
-          <mat-icon class="preview-map-icon">map</mat-icon>
-          <h3>Bản đồ Nhiệt & Vị trí Thực địa</h3>
-          <p>Truy cập phân hệ Bản đồ chuyên sâu để lọc theo bán kính, mức độ vi phạm và trích xuất tọa độ GPS.</p>
-          <a routerLink="/map" mat-flat-button color="primary" class="btn-open-map">
-            <mat-icon>navigation</mat-icon> Xem Bản đồ Vi phạm Ngay
-          </a>
-        </div>
-      </div>
+      <app-violations-map [isEmbedded]="true"></app-violations-map>
     </div>
   </div>
 

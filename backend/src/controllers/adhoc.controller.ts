@@ -9,7 +9,7 @@ export class AdhocController {
    */
   static getAll(req: AuthenticatedRequest, res: Response): void {
     try {
-      const { status, ward, quarter, year, search, page = '1', limit = '50' } = req.query;
+      const { status, ward, quarter, year, inspectionType, search, page = '1', limit = '50' } = req.query;
       const pageNum = parseInt(page as string, 10) || 1;
       const limitNum = parseInt(limit as string, 10) || 50;
       const offset = (pageNum - 1) * limitNum;
@@ -30,6 +30,11 @@ export class AdhocController {
         params.push(status);
       }
 
+      if (inspectionType && inspectionType !== 'all') {
+        whereClause += ' AND a.inspectionType = ?';
+        params.push(inspectionType);
+      }
+
       if (quarter) {
         whereClause += ' AND a.relatedQuarter = ?';
         params.push(quarter);
@@ -41,9 +46,9 @@ export class AdhocController {
       }
 
       if (search) {
-        whereClause += ' AND (b.name LIKE ? OR b.taxCode LIKE ? OR b.idNumber LIKE ? OR a.reason LIKE ?)';
+        whereClause += ' AND (b.name LIKE ? OR b.taxCode LIKE ? OR b.idNumber LIKE ? OR a.reason LIKE ? OR a.locationName LIKE ?)';
         const term = `%${search}%`;
-        params.push(term, term, term, term);
+        params.push(term, term, term, term, term);
       }
 
       const countStmt = db.prepare(`
@@ -123,7 +128,18 @@ export class AdhocController {
    */
   static create(req: AuthenticatedRequest, res: Response): void {
     try {
-      const { objectId, reason, relatedQuarter, relatedYear, ward } = req.body;
+      const {
+        objectId,
+        locationId,
+        locationName,
+        inspectionType = 'adhoc',
+        reason,
+        inspectionContent,
+        scheduledDate,
+        relatedQuarter,
+        relatedYear,
+        ward
+      } = req.body;
       const userId = req.user?.id || 1;
       const userRole = req.user?.role;
       const userWard = req.user?.unit;
@@ -134,12 +150,12 @@ export class AdhocController {
       }
 
       if (!reason || !reason.trim()) {
-        res.status(400).json({ success: false, message: 'Vui lòng nhập lý do đề xuất kiểm tra đột xuất/phát sinh.' });
+        res.status(400).json({ success: false, message: 'Vui lòng nhập lý do đề xuất kiểm tra đột xuất / theo yêu cầu nghiệp vụ.' });
         return;
       }
 
       // Find business object
-      const obj = db.prepare('SELECT id, name, ward FROM business_objects WHERE id = ?').get(objectId) as { id: number; name: string; ward: string } | undefined;
+      const obj = db.prepare('SELECT id, name, ward, address FROM business_objects WHERE id = ?').get(objectId) as { id: number; name: string; ward: string; address: string } | undefined;
       if (!obj) {
         res.status(404).json({ success: false, message: 'Không tìm thấy thông tin cơ sở/đối tượng kinh doanh.' });
         return;
@@ -150,29 +166,33 @@ export class AdhocController {
       const currentQuarterMonth = Math.ceil((new Date().getMonth() + 1) / 3);
       const targetQuarter = relatedQuarter || `Q${currentQuarterMonth}`;
 
-      // CR-01 / CR-11 / CR-10: Single Check validation across all quarters, other wards, and active ad-hoc requests
+      // Requirement #2 & #3: Check duplicate history -> Warn only, DO NOT block!
+      // Allows re-inspecting an enterprise/facility already inspected by another unit previously if a professional requirement or ad-hoc need arises.
       const singleCheck = checkObjectSingleCheckRule(objectId, targetYear);
-      if (singleCheck.isBlocked && singleCheck.blockReason) {
-        res.status(409).json({
-          success: false,
-          message: singleCheck.blockReason,
-          conflictType: singleCheck.conflictType,
-          objectId
-        });
-        return;
+
+      let resolvedLocationName = locationName || null;
+      if (locationId && !resolvedLocationName) {
+        const locRow = db.prepare('SELECT name FROM business_locations WHERE id = ?').get(locationId) as { name: string } | undefined;
+        if (locRow) resolvedLocationName = locRow.name;
       }
 
       const stmt = db.prepare(`
         INSERT INTO adhoc_inspection_requests (
-          objectId, wardRequestedBy, reason, status, requestedBy, requestedAt, relatedQuarter, relatedYear, createdAt
+          objectId, locationId, locationName, wardRequestedBy, inspectionType, reason, inspectionContent, scheduledDate,
+          status, requestedBy, requestedAt, relatedQuarter, relatedYear, createdAt
         )
-        VALUES (?, ?, ?, 'pending', ?, datetime('now'), ?, ?, datetime('now'))
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, datetime('now'), ?, ?, datetime('now'))
       `);
 
       const result = stmt.run(
         objectId,
+        locationId || null,
+        resolvedLocationName,
         effectiveWard,
+        inspectionType === 'professional_request' ? 'professional_request' : 'adhoc',
         reason.trim(),
+        inspectionContent || reason.trim(),
+        scheduledDate || new Date().toISOString().substring(0, 10),
         userId,
         targetQuarter,
         targetYear
@@ -182,8 +202,11 @@ export class AdhocController {
 
       res.status(201).json({
         success: true,
-        message: 'Đã gửi đề xuất kiểm tra phát sinh lên PA04 xét duyệt thành công.',
-        id: createdId
+        message: singleCheck.hasWarning
+          ? `Đã gửi đề xuất ${inspectionType === 'professional_request' ? 'kiểm tra theo yêu cầu nghiệp vụ' : 'kiểm tra đột xuất'} lên PA04 thành công (Ghi nhận kiểm tra lại theo chức năng/nhiệm vụ đơn vị).`
+          : 'Đã gửi đề xuất kiểm tra phát sinh / nghiệp vụ lên PA04 xét duyệt thành công.',
+        id: createdId,
+        warningReason: singleCheck.warningReason || null
       });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
@@ -191,7 +214,7 @@ export class AdhocController {
   }
 
   /**
-   * 4. POST /api/adhoc-requests/:id/approve - PA04 Approves proposal & auto-creates inspection with isAdhoc=1
+   * 4. POST /api/adhoc-requests/:id/approve - PA04 Approves proposal & auto-creates inspection
    */
   static approve(req: AuthenticatedRequest, res: Response): void {
     try {
@@ -216,6 +239,14 @@ export class AdhocController {
       dueTimestamp.setDate(dueTimestamp.getDate() + deadlineDays);
       const inspDueDate = dueTimestamp.toISOString().replace('T', ' ').substring(0, 19);
 
+      const wardCoords: Record<string, [number, number]> = {
+        'Phường Hoàn Kiếm': [21.0285, 105.8520],
+        'Phường Ba Đình': [21.0340, 105.8200],
+        'Phường Đống Đa': [21.0150, 105.8280],
+        'Phường Hai Bà Trưng': [21.0090, 105.8530],
+        'Phường Cầu Giấy': [21.0330, 105.7900]
+      };
+
       const defaultCriteria = [
         { domainId: 1, criteriaCode: 'pccc_1', criteriaName: 'Trang bị bình chữa cháy còn hạn & tiêu lệnh PCCC' },
         { domainId: 1, criteriaCode: 'pccc_2', criteriaName: 'Lối thoát nạn & hành lang thoát hiểm thông thoáng' },
@@ -230,12 +261,40 @@ export class AdhocController {
       ];
 
       const approveTx = db.transaction(() => {
+        const objInfo = db.prepare('SELECT * FROM business_objects WHERE id = ?').get(adhocReq.objectId) as any;
+        const locInfo = adhocReq.locationId
+          ? (db.prepare('SELECT * FROM business_locations WHERE id = ?').get(adhocReq.locationId) as any)
+          : (db.prepare('SELECT * FROM business_locations WHERE objectId = ? ORDER BY id ASC LIMIT 1').get(adhocReq.objectId) as any);
+
+        const baseCoord = wardCoords[adhocReq.wardRequestedBy] || [21.0285, 105.8520];
+        const lat = locInfo?.lat || (baseCoord[0] + ((adhocReq.objectId % 7) - 3) * 0.0014);
+        const lng = locInfo?.lng || (baseCoord[1] + ((adhocReq.objectId % 5) - 2) * 0.0014);
+        const inspType = adhocReq.inspectionType || 'adhoc';
+
         // 1. Create inspection record with isAdhoc = 1, planId = NULL
         const inspStmt = db.prepare(`
-          INSERT INTO inspections (objectId, planId, status, ward, severity, dueDate, isOverdue, isLocked, isAdhoc, createdAt)
-          VALUES (?, NULL, 'not_started', ?, 1, ?, 0, 0, 1, datetime('now'))
+          INSERT INTO inspections (
+            objectId, locationId, locationName, locationAddress, planId, inspectionType,
+            inspectingUnit, scheduledDate, inspectionContent, workflowCode,
+            status, ward, lat, lng, severity, dueDate, isOverdue, isLocked, isAdhoc, createdAt
+          )
+          VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, 'not_started', ?, ?, ?, 1, ?, 0, 0, 1, datetime('now'))
         `);
-        const inspResult = inspStmt.run(adhocReq.objectId, adhocReq.wardRequestedBy, inspDueDate);
+        const inspResult = inspStmt.run(
+          adhocReq.objectId,
+          locInfo?.id || null,
+          adhocReq.locationName || locInfo?.name || (objInfo ? `Cơ sở - ${objInfo.name}` : null),
+          locInfo?.address || objInfo?.address || null,
+          inspType,
+          adhocReq.wardRequestedBy,
+          adhocReq.scheduledDate || new Date().toISOString().substring(0, 10),
+          adhocReq.inspectionContent || adhocReq.reason,
+          inspType === 'professional_request' ? 'WF_PA04_FOREIGN' : 'WF_ADHOC_FAST',
+          adhocReq.wardRequestedBy,
+          lat,
+          lng,
+          inspDueDate
+        );
         const newInspectionId = inspResult.lastInsertRowid;
 
         // 2. Populate standard checklist items
@@ -261,7 +320,7 @@ export class AdhocController {
 
       res.json({
         success: true,
-        message: 'Phê duyệt đề xuất kiểm tra phát sinh thành công. Đã tự động tạo hồ sơ kiểm tra thực địa.',
+        message: 'Phê duyệt đề xuất thành công. Đã tự động tạo hồ sơ kiểm tra thực địa.',
         inspectionId
       });
     } catch (err: any) {

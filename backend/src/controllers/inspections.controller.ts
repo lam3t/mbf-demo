@@ -5,7 +5,7 @@ import { Inspection } from '../types';
 export class InspectionsController {
   static getAll(req: Request, res: Response): void {
     try {
-      const { status, ward, quarter, search, objectId, page = '1', limit = '50' } = req.query;
+      const { status, ward, quarter, inspectionType, teamId, locationId, explanationStatus, acceptanceStatus, search, objectId, page = '1', limit = '50' } = req.query;
       const pageNum = parseInt(page as string, 10);
       const limitNum = parseInt(limit as string, 10);
       const offset = (pageNum - 1) * limitNum;
@@ -16,6 +16,26 @@ export class InspectionsController {
       if (objectId) {
         whereClause += ' AND i.objectId = ?';
         params.push(objectId);
+      }
+      if (locationId) {
+        whereClause += ' AND i.locationId = ?';
+        params.push(locationId);
+      }
+      if (teamId) {
+        whereClause += ' AND i.teamId = ?';
+        params.push(teamId);
+      }
+      if (inspectionType) {
+        whereClause += ' AND i.inspectionType = ?';
+        params.push(inspectionType);
+      }
+      if (explanationStatus) {
+        whereClause += ' AND i.explanationStatus = ?';
+        params.push(explanationStatus);
+      }
+      if (acceptanceStatus) {
+        whereClause += ' AND i.acceptanceStatus = ?';
+        params.push(acceptanceStatus);
       }
       if (status === 'overdue') {
         whereClause += " AND i.status != 'completed' AND (i.isOverdue = 1 OR (i.dueDate IS NOT NULL AND (i.dueDate < datetime('now', 'localtime') OR i.dueDate < datetime('now'))))";
@@ -32,9 +52,9 @@ export class InspectionsController {
         params.push(quarter);
       }
       if (search) {
-        whereClause += ' AND (b.name LIKE ? OR b.taxCode LIKE ? OR b.idNumber LIKE ?)';
+        whereClause += ' AND (b.name LIKE ? OR b.taxCode LIKE ? OR b.idNumber LIKE ? OR i.locationName LIKE ? OR i.teamName LIKE ?)';
         const term = `%${search}%`;
-        params.push(term, term, term);
+        params.push(term, term, term, term, term);
       }
 
       const countStmt = db.prepare(`
@@ -49,13 +69,17 @@ export class InspectionsController {
       const query = `
         SELECT i.*, 
                b.name as objectName, b.type as objectType, b.taxCode, b.idNumber, b.address as objectAddress,
-               p.quarter as planQuarter, p.approvedAt as planApprovedAt,
+               b.hasForeignElement, b.foreignElementDetail,
+               COALESCE(i.locationName, bl.name, b.name) as resolvedLocationName,
+               COALESCE(i.locationAddress, bl.address, b.address) as resolvedLocationAddress,
+               COALESCE(p.quarter, 'Đột xuất / Nghiệp vụ') as planQuarter, p.approvedAt as planApprovedAt,
                CASE 
                  WHEN i.status != 'completed' AND (i.isOverdue = 1 OR (i.dueDate IS NOT NULL AND (i.dueDate < datetime('now', 'localtime') OR i.dueDate < datetime('now')))) THEN 1 
                  ELSE 0 
                END as isOverdue
         FROM inspections i
         JOIN business_objects b ON i.objectId = b.id
+        LEFT JOIN business_locations bl ON i.locationId = bl.id
         LEFT JOIN plans p ON i.planId = p.id
         ${whereClause}
         ORDER BY i.id DESC
@@ -85,24 +109,47 @@ export class InspectionsController {
       const query = `
         SELECT i.*, 
                b.name as objectName, b.type as objectType, b.taxCode, b.idNumber, 
-               b.representative, b.address as objectAddress,
-               p.quarter as planQuarter, p.approvedAt as planApprovedAt,
+               b.representative, b.address as objectAddress, b.hasForeignElement, b.foreignElementDetail,
+               COALESCE(i.locationName, bl.name, b.name) as resolvedLocationName,
+               COALESCE(i.locationAddress, bl.address, b.address) as resolvedLocationAddress,
+               COALESCE(p.quarter, 'Đột xuất / Nghiệp vụ') as planQuarter, p.approvedAt as planApprovedAt,
+               w.name as workflowName, w.stepsJson as workflowStepsJson,
                CASE 
                  WHEN i.status != 'completed' AND (i.isOverdue = 1 OR (i.dueDate IS NOT NULL AND (i.dueDate < datetime('now', 'localtime') OR i.dueDate < datetime('now')))) THEN 1 
                  ELSE 0 
                END as isOverdue
         FROM inspections i
         JOIN business_objects b ON i.objectId = b.id
+        LEFT JOIN business_locations bl ON i.locationId = bl.id
         LEFT JOIN plans p ON i.planId = p.id
+        LEFT JOIN unit_workflows w ON i.workflowCode = w.code
         WHERE i.id = ?
       `;
 
       const inspection = db.prepare(query).get(id) as any;
 
-
       if (!inspection) {
         res.status(404).json({ success: false, message: 'Không tìm thấy hồ sơ kiểm tra.' });
         return;
+      }
+
+      // Query all locations of this business object so officer can switch/select specific facility
+      const objectLocations = db.prepare(`
+        SELECT * FROM business_locations WHERE objectId = ? ORDER BY id ASC
+      `).all(inspection.objectId);
+      inspection.objectLocations = objectLocations;
+
+      // Query available inspection teams
+      const availableTeams = db.prepare(`
+        SELECT id, code, name, teamType, leadUnit, leaderName, workflowCode FROM inspection_teams ORDER BY id ASC
+      `).all();
+      inspection.availableTeams = availableTeams;
+
+      // Parse workflow steps
+      try {
+        inspection.workflowSteps = inspection.workflowStepsJson ? JSON.parse(inspection.workflowStepsJson) : [];
+      } catch {
+        inspection.workflowSteps = [];
       }
 
       // Query checklist items classified by domain
@@ -160,7 +207,13 @@ export class InspectionsController {
   static update(req: Request, res: Response): void {
     try {
       const { id } = req.params;
-      const { checklist, checklistItems, violationCodes, recommendationNote, recommendationTags, lat, lng, severity, status } = req.body;
+      const {
+        checklist, checklistItems, violationCodes, recommendationNote, recommendationTags,
+        lat, lng, severity, status,
+        locationId, locationName, locationAddress,
+        teamId, teamName, inspectingUnit,
+        inspectionType, scheduledDate, inspectionContent, workflowCode
+      } = req.body;
 
       const current = db.prepare('SELECT isLocked, status FROM inspections WHERE id = ?').get(id) as Inspection | undefined;
 
@@ -175,16 +228,42 @@ export class InspectionsController {
       }
 
       const updateTx = db.transaction(() => {
+        let resolvedLocName = locationName || null;
+        let resolvedLocAddr = locationAddress || null;
+        if (locationId && !resolvedLocName) {
+          const locRow = db.prepare('SELECT name, address FROM business_locations WHERE id = ?').get(locationId) as any;
+          if (locRow) {
+            resolvedLocName = locRow.name;
+            resolvedLocAddr = locRow.address;
+          }
+        }
+
+        let resolvedTeamName = teamName || null;
+        if (teamId && !resolvedTeamName) {
+          const tRow = db.prepare('SELECT name FROM inspection_teams WHERE id = ?').get(teamId) as any;
+          if (tRow) resolvedTeamName = tRow.name;
+        }
+
         const stmt = db.prepare(`
           UPDATE inspections 
           SET checklist = ?,
               violationCodes = ?,
               recommendationNote = ?,
               recommendationTags = ?,
-              lat = ?,
-              lng = ?,
+              lat = COALESCE(?, lat),
+              lng = COALESCE(?, lng),
               severity = ?,
-              status = ?
+              status = ?,
+              locationId = COALESCE(?, locationId),
+              locationName = COALESCE(?, locationName),
+              locationAddress = COALESCE(?, locationAddress),
+              teamId = COALESCE(?, teamId),
+              teamName = COALESCE(?, teamName),
+              inspectingUnit = COALESCE(?, inspectingUnit),
+              inspectionType = COALESCE(?, inspectionType),
+              scheduledDate = COALESCE(?, scheduledDate),
+              inspectionContent = COALESCE(?, inspectionContent),
+              workflowCode = COALESCE(?, workflowCode)
           WHERE id = ?
         `);
 
@@ -197,6 +276,16 @@ export class InspectionsController {
           lng || null,
           severity || 1,
           status || 'in_progress',
+          locationId || null,
+          resolvedLocName,
+          resolvedLocAddr,
+          teamId || null,
+          resolvedTeamName,
+          inspectingUnit || null,
+          inspectionType || null,
+          scheduledDate || null,
+          inspectionContent || null,
+          workflowCode || null,
           id
         );
 
@@ -224,6 +313,85 @@ export class InspectionsController {
       updateTx();
 
       res.json({ success: true, message: 'Cập nhật hồ sơ kiểm tra thực địa thành công.' });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  /**
+   * POST /api/inspections/:id/explanation - Submit or review explanation for uninspected enterprise/facility (Requirement #6)
+   */
+  static submitExplanation(req: Request, res: Response): void {
+    try {
+      const { id } = req.params;
+      const { uninspectedReason, explanationContent, explanationStatus = 'pending_review', explanationReviewNote } = req.body;
+      const user = (req as any).user;
+
+      if (!uninspectedReason || !explanationContent) {
+        res.status(400).json({ success: false, message: 'Vui lòng nhập đầy đủ Nguyên nhân chưa kiểm tra và Nội dung giải trình.' });
+        return;
+      }
+
+      db.prepare(`
+        UPDATE inspections
+        SET uninspectedReason = ?,
+            explanationContent = ?,
+            explanationStatus = ?,
+            explainedBy = ?,
+            explainedByName = ?,
+            explainedAt = datetime('now'),
+            explanationReviewNote = COALESCE(?, explanationReviewNote)
+        WHERE id = ?
+      `).run(
+        uninspectedReason,
+        explanationContent,
+        explanationStatus,
+        user?.id || 1,
+        user?.fullName || 'Cán bộ đơn vị',
+        explanationReviewNote || null,
+        id
+      );
+
+      res.json({
+        success: true,
+        message: 'Đã lưu báo cáo giải trình trường hợp chưa thực hiện kiểm tra thành công.'
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  /**
+   * POST /api/inspections/:id/accept-result - Official Result Acceptance (Nghiệm thu kết quả kiểm tra - Requirement #7)
+   */
+  static acceptResult(req: Request, res: Response): void {
+    try {
+      const { id } = req.params;
+      const { acceptanceStatus = 'accepted', acceptanceNote } = req.body;
+      const user = (req as any).user;
+
+      db.prepare(`
+        UPDATE inspections
+        SET acceptanceStatus = ?,
+            acceptedBy = ?,
+            acceptedByName = ?,
+            acceptedAt = datetime('now'),
+            acceptanceNote = ?
+        WHERE id = ?
+      `).run(
+        acceptanceStatus,
+        user?.id || 1,
+        user?.fullName || 'Lãnh đạo Nghiệm thu',
+        acceptanceNote || (acceptanceStatus === 'accepted' ? 'Đồng ý nghiệm thu kết quả kiểm tra.' : 'Yêu cầu bổ sung làm rõ biên bản kiểm tra.'),
+        id
+      );
+
+      res.json({
+        success: true,
+        message: acceptanceStatus === 'accepted'
+          ? 'Đã nghiệm thu kết quả kiểm tra chính thức thành công!'
+          : 'Đã ghi nhận yêu cầu hoàn thiện/bổ sung hồ sơ kiểm tra.'
+      });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
     }

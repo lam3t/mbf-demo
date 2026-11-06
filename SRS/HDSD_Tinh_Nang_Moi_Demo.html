@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hướng Dẫn Sử Dụng Các Tính Năng Mới - Hệ Thống Quản Lý Kiểm Tra MobiFone</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 16mm 15mm 16mm 15mm;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.55;
+      font-size: 13px;
+      margin: 0;
+      padding: 0;
+    }
+    .cover-header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+      color: #ffffff;
+      padding: 24px 28px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .cover-badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .cover-header h1 {
+      margin: 0 0 8px 0;
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+    .cover-header p {
+      margin: 0;
+      font-size: 13px;
+      opacity: 0.92;
+    }
+    .info-box {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-left: 4px solid #2563eb;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 18px;
+    }
+    .info-box h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: #1e3a8a;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px 0;
+      font-size: 12.5px;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #eff6ff;
+      color: #1e3a8a;
+      font-weight: 700;
+    }
+    .section-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      page-break-inside: avoid;
+      background: #ffffff;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 2px solid #eff6ff;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+    .sec-num {
+      background: #1e3a8a;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .section-header h2 {
+      margin: 0;
+      font-size: 15.5px;
+      color: #0f172a;
+      font-weight: 800;
+    }
+    .menu-path {
+      display: inline-block;
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    ul, ol {
+      margin: 6px 0 8px 0;
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 5px;
+    }
+    .pill {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      font-weight: 700;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+    .pill-purple {
+      background: #f3e8ff;
+      color: #6d28d9;
+      border-color: #ddd6fe;
+    }
+    .pill-green {
+      background: #dcfce7;
+      color: #15803d;
+      border-color: #bbf7d0;
+    }
+    .pill-amber {
+      background: #fef3c7;
+      color: #b45309;
+      border-color: #fde68a;
+    }
+    .tip-note {
+      background: #f0fdf4;
+      border-left: 3px solid #16a34a;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #166534;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+    .footer {
+      text-align: center;
+      font-size: 11.5px;
+      color: #64748b;
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cover-header">
+    <div class="cover-badge">Tài liệu Hướng dẫn Sử dụng & Kịch bản Demo v2.0</div>
+    <h1>HƯỚNG DẪN SỬ DỤNG CÁC TÍNH NĂNG MỚI CẬP NHẬT<br/>HỆ THỐNG QUẢN LÝ KIỂM TRA DOANH NGHIỆP & ĐỊA BÀN</h1>
+    <p>Cập nhật đầy đủ Bản đồ số GIS (Map) và 07 nhóm chức năng nghiệp vụ theo góp ý sau buổi Demo khách hàng</p>
+  </div>
+
+  <div class="info-box">
+    <h3>🔑 Thông tin Tài khoản Đăng nhập Demo</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Vai trò Nghiệp vụ</th>
+          <th>Tên đăng nhập (Username)</th>
+          <th>Mật khẩu</th>
+          <th>Phạm vi Quyền hạn Demo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Quản trị hệ thống (Admin)</strong></td>
+          <td><code>admin</code></td>
+          <td><code>123456</code></td>
+          <td>Toàn quyền tất cả phân hệ, cấu hình quy trình đơn vị, phân quyền, duyệt & nghiệm thu</td>
+        </tr>
+        <tr>
+          <td><strong>Lãnh đạo Đơn vị / Nghiệp vụ</strong></td>
+          <td><code>lanhdao_mbf</code></td>
+          <td><code>123456</code></td>
+          <td>Phê duyệt kế hoạch, thành lập đoàn kiểm tra, nghiệm thu kết quả, duyệt giải trình</td>
+        </tr>
+        <tr>
+          <td><strong>Cán bộ Nghiệp vụ</strong></td>
+          <td><code>canbo_mbf</code></td>
+          <td><code>123456</code></td>
+          <td>Điều phối kế hoạch, tham gia đoàn kiểm tra, chấm checklist, xuất báo cáo</td>
+        </tr>
+        <tr>
+          <td><strong>Cán bộ Đơn vị / Phường</strong></td>
+          <td><code>canbo_hoankiem</code></td>
+          <td><code>123456</code></td>
+          <td>Quản lý doanh nghiệp/cơ sở, lập kế hoạch, kiểm tra thực địa, nhập báo cáo giải trình</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MỤC 0: BẢN ĐỒ SỐ -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="sec-num">MỤC 0</span>
+      <h2>Bản đồ Số Giám sát Vi phạm (GIS Map Online / Offline & Heatmap)</h2>
+    </div>
+    <div class="menu-path">📍 Đường dẫn: Menu "Bản đồ vi phạm" HOẶC "Tổng quan (Dashboard)" ➔ Tab 3 "Bản đồ & Cảnh báo"</div>
+    <p><strong>Các điểm đã khắc phục & nâng cấp:</strong></p>
+    <ul>
+      <li>Khắc phục triệt để lỗi nạp thư viện <code>Leaflet</code>, <code>MarkerCluster</code> và <code>Heatmap</code>, tự động co giãn khung bản đồ (<code>ResizeObserver</code>) khi chuyển tab.</li>
+      <li>Hỗ trợ <strong>2 chế độ hiển thị</strong>:
+        <ul>
+          <li><span class="pill">Bản đồ Cụm điểm (Cluster Markers)</span>: Gom cụm các cơ sở theo địa bàn 5 Phường (Hoàn Kiếm, Ba Đình, Đống Đa, Hai Bà Trưng, Cầu Giấy) với mã màu theo trạng thái (Đỏ: Có vi phạm, Xanh lá: Đã kiểm tra đạt, Vàng: Đang kiểm tra, Xám: Chưa kiểm tra).</li>
+          <li><span class="pill pill-amber">Bản đồ Nhiệt (Heatmap)</span>: Thể hiện mật độ và mức độ nghiêm trọng của vi phạm theo khu vực địa lý.</li>
+        </ul>
+      </li>
+      <li><strong>Thao tác Demo</strong>: Chọn lọc theo <em>Phường/Xã</em>, <em>Lĩnh vực kiểm tra (PCCC, ATTP, Môi trường, Thuế...)</em>, bấm vào từng điểm ghim (Marker) trên bản đồ để xem Popup chi tiết cơ sở và bấm nút <strong>"Mở Biên bản Kiểm tra"</strong> ngay trên bản đồ.</li>
+    </ul>
+  </div>
+
+  <!-- MỤC 1: QUẢN LÝ DOANH NGHIỆP -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="sec-num">YÊU CẦU 1</span>
+      <h2>Quản lý Thông tin Doanh nghiệp, Đa Địa điểm & Yếu tố Nước ngoài</h2>
+    </div>
+    <div class="menu-path">📍 Đường dẫn: Menu "Đối tượng quản lý"</div>
+    <ol>
+      <li><strong>Đánh dấu & Lọc Doanh nghiệp/Dịch vụ có yếu tố nước ngoài:</strong>
+        <ul>
+          <li>Trên thanh công cụ lọc của màn hình <em>Đối tượng quản lý</em>, sử dụng bộ lọc <strong>"Yếu tố nước ngoài"</strong> (<em>Tất cả / Có yếu tố nước ngoài / Trong nước</em>).</li>
+          <li>Các doanh nghiệp FDI, liên doanh hoặc có dịch vụ/lao động nước ngoài hiển thị nhãn <span class="pill pill-purple">🌐 Có yếu tố nước ngoài</span> ngay trên bảng danh sách.</li>
+          <li>Khi bấm <strong>"+ Thêm đối tượng"</strong> hoặc <strong>"Sửa"</strong>: Tích chọn ô <em>"Doanh nghiệp / Dịch vụ có yếu tố nước ngoài"</em> và nhập chi tiết quốc tịch vốn đầu tư, số lượng lao động nước ngoài hoặc dịch vụ xuyên biên giới.</li>
+        </ul>
+      </li>
+      <li><strong>Quản lý Đa địa điểm (1 Doanh nghiệp có nhiều Trụ sở, Chi nhánh, Cơ sở, Địa điểm KD):</strong>
+        <ul>
+          <li>Tại cột <em>"Số địa điểm / Cơ sở"</em> trên danh sách, hiển thị số lượng địa điểm hoạt động của từng doanh nghiệp (VD: <code>3 địa điểm</code>).</li>
+          <li>Bấm vào một doanh nghiệp (hoặc chọn hành động <strong>"Xem Hồ sơ & Lịch sử"</strong>) để mở cửa sổ <strong>Hồ sơ Chi tiết Doanh nghiệp</strong>.</li>
+          <li>Tại phần <strong>"Hệ thống Trụ sở, Chi nhánh, Cơ sở & Địa điểm kinh doanh"</strong>:
+            <ul>
+              <li>Xem danh sách toàn bộ: <span class="pill">Trụ sở chính</span>, <span class="pill pill-purple">Chi nhánh</span>, <span class="pill pill-green">Cơ sở sản xuất/dịch vụ</span>, <span class="pill pill-amber">Địa điểm kinh doanh</span>.</li>
+              <li>Bấm nút <strong>"+ Thêm cơ sở / địa điểm mới"</strong> hoặc nút <strong>"Sửa"</strong> trên từng dòng để thêm mới, cập nhật linh hoạt địa chỉ, phường/xã, người phụ trách, số điện thoại và cờ yếu tố nước ngoài của riêng từng cơ sở.</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+
+  <!-- MỤC 2: QUẢN LÝ KẾ HOẠCH KIỂM TRA -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="sec-num">YÊU CẦU 2</span>
+      <h2>Quản lý Kế hoạch Kiểm tra (Cảnh báo trùng không chặn & Điều chỉnh khi triển khai)</h2>
+    </div>
+    <div class="menu-path">📍 Đường dẫn: Menu "Kế hoạch kiểm tra" ➔ Tab 1 "Kế hoạch Định kỳ (Quý)"</div>
+    <ol>
+      <li><strong>Cảnh báo trùng nhưng KHÔNG tự động chặn việc lập kế hoạch mới:</strong>
+        <ul>
+          <li>Khi bấm <strong>"Lập kế hoạch mới"</strong>, tại bảng chọn cơ sở, các doanh nghiệp đã nằm trong kế hoạch khác hoặc đã được kiểm tra trong năm sẽ hiển thị nhãn cảnh báo màu vàng <span class="pill pill-amber">⚠️ Cảnh báo trùng (Vẫn cho phép chọn)</span>.</li>
+          <li>Ô tích chọn (Checkbox) <strong>không bị khóa</strong> — cán bộ vẫn có thể tích chọn để đưa vào kế hoạch nếu có yêu cầu phối hợp hoặc kiểm tra chuyên đề mới. Hệ thống ghi nhận danh sách cảnh báo để lãnh đạo nắm thông tin khi duyệt.</li>
+        </ul>
+      </li>
+      <li><strong>Điều chỉnh kế hoạch, thời gian, địa điểm và nội dung trong quá trình triển khai:</strong>
+        <ul>
+          <li>Mở chi tiết một Kế hoạch kiểm tra bất kỳ (kể cả kế hoạch ở trạng thái <em>Chờ duyệt</em> hoặc <em>Đã phê duyệt</em>).</li>
+          <li>Bấm nút <strong>"Điều chỉnh Kế hoạch / Thời gian / Địa điểm"</strong>:
+            <ul>
+              <li>Cập nhật <strong>Thời gian bắt đầu - kết thúc dự kiến</strong>, <strong>Địa điểm kiểm tra</strong>, <strong>Nội dung trọng tâm kiểm tra</strong> và <strong>Lý do điều chỉnh</strong>.</li>
+              <li>Có thể bổ sung hoặc điều chỉnh danh sách cơ sở trong kế hoạch; hệ thống tự động đồng bộ hồ sơ kiểm tra và lưu vết lịch sử điều chỉnh.</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+
+  <!-- MỤC 3: QUẢN LÝ LOẠI HÌNH KIỂM TRA -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="sec-num">YÊU CẦU 3</span>
+      <h2>Quản lý 03 Loại hình Kiểm tra & Cho phép Kiểm tra lại Cơ sở</h2>
+    </div>
+    <div class="menu-path">📍 Đường dẫn: Menu "Kế hoạch kiểm tra" (Tab 2) & Menu "Thực hiện kiểm tra"</div>
+    <ul>
+      <li>Hệ thống phân loại và quản lý riêng biệt <strong>03 loại hình kiểm tra</strong>:
+        <ol>
+          <li><span class="pill">Kiểm tra theo kế hoạch / định kỳ</span> (<code>planned</code>)</li>
+          <li><span class="pill pill-amber">Kiểm tra đột xuất</span> (<code>adhoc</code>)</li>
+          <li><span class="pill pill-purple">Kiểm tra theo yêu cầu nghiệp vụ</span> (<code>professional_request</code>)</li>
+        </ol>
+      </li>
+      <li><strong>Cho phép kiểm tra lại doanh nghiệp/cơ sở đã được đơn vị khác kiểm tra trước đó:</strong>
+        <ul>
+          <li>Tại Tab 2 <strong>"Đề xuất Kiểm tra Đột xuất & Yêu cầu Nghiệp vụ"</strong>, bấm <strong>"+ Tạo Đề xuất Đột xuất / Nghiệp vụ"</strong>.</li>
+          <li>Chọn Loại hình kiểm tra (<em>Kiểm tra đột xuất</em> hoặc <em>Kiểm tra theo yêu cầu nghiệp vụ</em>), chọn Doanh nghiệp và chọn cụ thể <strong>Cơ sở / Chi nhánh / Địa điểm kinh doanh</strong> cần kiểm tra.</li>
+          <li>Hệ thống <strong>cho phép tạo và phê duyệt kiểm tra lại</strong> ngay cả khi doanh nghiệp/cơ sở đó đã được đơn vị khác kiểm tra trong năm.</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <!-- MỤC 4: QUẢN LÝ ĐOÀN KIỂM TRA -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="sec-num">YÊU CẦU 4</span>
+      <h2>Quản lý Đoàn Kiểm tra, Đoàn Liên ngành & Điều chỉnh Thành phần Đoàn</h2>
+    </div>
+    <div class="menu-path">📍 Đường dẫn: Menu "Kế hoạch kiểm tra" ➔ Tab 3 "Quản lý Đoàn Kiểm tra & Liên ngành"</div>
+    <ul>
+      <li><strong>Thành lập Đoàn kiểm tra đơn vị & Đoàn kiểm tra liên ngành:</strong>
+        <ul>
+          <li>Bấm nút <strong>"+ Thành lập Đoàn Kiểm tra / Liên ngành"</strong>.</li>
+          <li>Chọn phân loại: <strong>Đoàn kiểm tra Liên ngành (nhiều đơn vị tham gia)</strong> hoặc <strong>Đoàn kiểm tra Đơn vị</strong>.</li>
+          <li>Nhập số quyết định thành lập, Đơn vị chủ trì, tích chọn các <strong>Đơn vị phối hợp liên ngành</strong> (PA04, PC06, PC07, PC03, Quản lý thị trường, Thuế, UBND/Công an Phường...), chọn <strong>Quy trình kiểm tra đặc thù của đơn vị</strong> và danh sách thành viên đoàn (Trưởng đoàn, Phó đoàn, Thư ký, Thành viên).</li>
+        </ul>
+      </li>
+      <li><strong>Bổ sung, thay đổi thành phần đoàn & điều chỉnh thời gian trong quá trình thực hiện:</strong>
+        <ul>
+          <li>Trên thẻ thông tin của mỗi Đoàn kiểm tra, bấm nút <strong>"Điều chỉnh Thành phần / Lịch kiểm tra"</strong>.</li>
+          <li>Cho phép thêm thành viên mới, đổi cán bộ tham gia, thay đổi lịch bắt đầu/kết thúc và ghi rõ lý do điều chỉnh. Toàn bộ lịch sử thay đổi được lưu tại mục <em>Lịch sử điều chỉnh đoàn</em>.</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <!-- MỤC 5: LỊCH SỬ KIỂM TRA & VI PHẠM -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="sec-num">YÊU CẦU 5</span>
+      <h2>Quản lý Lịch sử Kiểm tra & Vi phạm theo Doanh nghiệp và Từng Địa điểm</h2>
+    </div>
+    <div class="menu-path">📍 Đường dẫn: Menu "Đối tượng quản lý" ➔ Mở "Xem Hồ sơ & Lịch sử" của Doanh nghiệp</div>
+    <ul>
+      <li>Trong cửa sổ <strong>Hồ sơ Chi tiết Doanh nghiệp</strong>, kéo xuống khu vực <strong>"Tra cứu Lịch sử Kiểm tra, Chấp hành & Lịch sử Vi phạm"</strong>:
+        <ul>
+          <li>Sử dụng bộ lọc <strong>"Lọc theo Cơ sở / Địa điểm kinh doanh"</strong> (Xem toàn bộ doanh nghiệp hoặc chỉ xem riêng một Trụ sở / Chi nhánh / Địa điểm kinh doanh) hoặc bấm nút <strong>"Xem lịch sử cơ sở này"</strong> ngay trên dòng địa điểm tương ứng.</li>
+          <li><strong>Tab Lịch sử Kiểm tra</strong>: Hiển thị đầy đủ các đợt kiểm tra (Định kỳ, Đột xuất, Yêu cầu nghiệp vụ), đơn vị/đoàn thực hiện, địa điểm kiểm tra, trạng thái nghiệm thu và kết luận.</li>
+          <li><strong>Tab Lịch sử Vi phạm</strong>: Tổng hợp riêng toàn bộ các hành vi vi phạm hành chính, mức độ vi phạm và kiến nghị khắc phục gắn với từng địa điểm cụ thể của doanh nghiệp.</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <!-- MỤC 6: BÁO CÁO & GIẢI TRÌNH -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="sec-num">YÊU CẦU 6</span>
+      <h2>Quản lý Báo cáo, Giải trình Cơ sở Chưa kiểm tra & Thống kê Tiến độ</h2>
+    </div>
+    <div class="menu-path">📍 Đường dẫn: Menu "Báo cáo thống kê" ➔ Tab 3 "Báo cáo & Giải trình Cơ sở Chưa kiểm tra"</div>
+    <ol>
+      <li><strong>Thống kê tiến độ & Tổng hợp danh sách chưa thực hiện kiểm tra:</strong>
+        <ul>
+          <li>Hiển thị 4 thẻ chỉ số KPI tiến độ: <em>Tổng nhiệm vụ theo kế hoạch</em>, <em>Đã hoàn thành kiểm tra (%)</em>, <em>Chưa thực hiện kiểm tra</em>, và <em>Số cơ sở đã nhập giải trình / chưa giải trình</em>.</li>
+          <li>Lọc danh sách các cơ sở chưa kiểm tra theo Kỳ kế hoạch, Đơn vị/Phường, Loại hình kiểm tra và Tình trạng giải trình.</li>
+        </ul>
+      </li>
+      <li><strong>Nhập nguyên nhân, nội dung giải trình và tình trạng xử lý:</strong>
+        <ul>
+          <li>Cách 1: Tại bảng danh sách Tab 3 của menu <em>Báo cáo thống kê</em>, bấm nút <strong>"Nhập giải trình / Cập nhật"</strong> trên dòng cơ sở chưa kiểm tra ➔ Chọn <em>Nguyên nhân chưa kiểm tra</em>, nhập <em>Nội dung giải trình chi tiết</em>, chọn <em>Tình trạng xử lý</em> (Chờ duyệt / Đã chấp thuận giải trình / Chuyển lịch kiểm tra bù) và bấm <strong>"Lưu Báo cáo Giải trình"</strong>.</li>
+          <li>Cách 2: Mở trực tiếp <strong>Biên bản Kiểm tra</strong> tại menu <em>Thực hiện kiểm tra</em> ➔ Nhập tại khối <strong>"Báo cáo & Giải trình trường hợp chưa thực hiện kiểm tra"</strong>.</li>
+        </ul>
+      </li>
+      <li><strong>Xuất báo cáo Excel:</strong> Bấm nút <strong>"Xuất DS Chưa kiểm tra & Giải trình (.xlsx)"</strong> để tải về tệp báo cáo Excel tổng hợp.</li>
+    </ol>
+  </div>
+
+  <!-- MỤC 7: PHÂN QUYỀN & QUY TRÌNH NGHIỆP VỤ -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="sec-num">YÊU CẦU 7</span>
+      <h2>Phân quyền Chi tiết, Thẩm quyền 3 Cấp & Cấu hình Quy trình theo Đơn vị</h2>
+    </div>
+    <div class="menu-path">📍 Đường dẫn: Menu "Quản trị hệ thống" ➔ Tab 2 "2. Phân quyền & Quy trình nghiệp vụ"</div>
+    <ol>
+      <li><strong>Phân định rõ 03 cấp thẩm quyền độc lập:</strong>
+        <ul>
+          <li><strong>Cấp 1 - Thẩm quyền Phê duyệt & Điều chỉnh Kế hoạch kiểm tra</strong> (Tại màn hình <em>Kế hoạch kiểm tra</em>).</li>
+          <li><strong>Cấp 2 - Thẩm quyền Thành lập & Điều chỉnh Đoàn kiểm tra / Liên ngành</strong> (Tại Tab 3 <em>Quản lý Đoàn kiểm tra</em>).</li>
+          <li><strong>Cấp 3 - Thẩm quyền Nghiệm thu Kết quả Kiểm tra</strong>: Mở Biên bản kiểm tra đã hoàn thành tại menu <em>Thực hiện kiểm tra</em> ➔ Tại khối <strong>"Thẩm quyền Nghiệm thu Kết quả Kiểm tra"</strong>, lãnh đạo nhập nhận xét và bấm <strong>"Nghiệm thu Đạt"</strong> hoặc <strong>"Yêu cầu Bổ sung"</strong>.</li>
+        </ul>
+      </li>
+      <li><strong>Ma trận Phân quyền chi tiết theo đơn vị & vai trò:</strong>
+        <ul>
+          <li>Tích chọn bật/tắt trực tiếp các quyền: Thêm/sửa doanh nghiệp & cơ sở, Lập/sửa/duyệt/điều chỉnh kế hoạch, Thành lập/điều chỉnh đoàn kiểm tra, Giải trình và Nghiệm thu kết quả ➔ Bấm <strong>"Lưu Cấu hình Phân quyền"</strong>.</li>
+        </ul>
+      </li>
+      <li><strong>Cấu hình & Bổ sung Quy trình Kiểm tra riêng theo từng Đơn vị nghiệp vụ / Ngành dọc:</strong>
+        <ul>
+          <li>Danh sách hiển thị sẵn các quy trình đặc thù (Quy trình PA04 cho cơ sở có yếu tố nước ngoài, Quy trình Đoàn liên ngành, Quy trình Kiểm tra định kỳ Phường, Quy trình Đột xuất...).</li>
+          <li>Bấm <strong>"+ Thêm / Bổ sung Quy trình Đơn vị"</strong> hoặc <strong>"Điều chỉnh / Bổ sung bước"</strong> trên từng quy trình để thêm bước mới, sửa tên bước, gắn vai trò thực hiện và cấu hình thẩm quyền 3 cấp khi có yêu cầu mới từ ngành dọc.</li>
+        </ul>
+      </li>
+    </ol>
+    <div class="tip-note">
+      💡 <strong>Gợi ý trình tự Demo nhanh (10 phút):</strong> (1) Mở <strong>Bản đồ vi phạm</strong> xem Cluster & Heatmap ➔ (2) Mở <strong>Đối tượng quản lý</strong> lọc DN có yếu tố nước ngoài & xem Hồ sơ đa địa điểm + Lịch sử vi phạm từng cơ sở ➔ (3) Mở <strong>Kế hoạch kiểm tra</strong> thử chọn cơ sở trùng, điều chỉnh kế hoạch & xem Tab 3 <strong>Đoàn kiểm tra liên ngành</strong> ➔ (4) Mở <strong>Thực hiện kiểm tra</strong> thực hiện Nghiệm thu kết quả ➔ (5) Mở <strong>Báo cáo thống kê (Tab 3)</strong> nhập giải trình cơ sở chưa kiểm tra ➔ (6) Mở <strong>Quản trị hệ thống (Tab 2)</strong> trình diễn Phân quyền & Cấu hình Quy trình đặc thù đơn vị.
+    </div>
+  </div>
+
+  <div class="footer">
+    Hệ thống Quản lý Kế hoạch & Giám sát Kiểm tra Doanh nghiệp — Phiên bản cập nhật phục vụ Demo Khách hàng (2026)
+  </div>
+
+</body>
+</html>
