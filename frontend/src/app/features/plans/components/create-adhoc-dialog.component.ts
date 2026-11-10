@@ -792,7 +792,7 @@ export class CreateAdhocDialogComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: { ward?: string },
     private api: ApiService,
     private snackBar: MatSnackBar
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadWorkflows();

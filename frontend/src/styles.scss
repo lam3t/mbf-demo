@@ -282,3 +282,9 @@ body {
 .leaflet-tile-pane {
   z-index: 2;
 }
+
+/* Global Dialog Scroll Safeguard */
+.cdk-overlay-pane .mat-mdc-dialog-surface {
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}

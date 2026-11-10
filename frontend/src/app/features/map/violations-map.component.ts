@@ -162,7 +162,7 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
     private api: ApiService,
     private router: Router,
     private ngZone: NgZone
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadCatalogs();
@@ -293,7 +293,7 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
     if (this.currentTileLayer) {
       try {
         this.map.removeLayer(this.currentTileLayer);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     this.currentTileLayer = LeafletLib.tileLayer(provider.url, provider.options);
@@ -381,7 +381,7 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
     if (this.heatLayer) {
       try {
         this.map.removeLayer(this.heatLayer);
-      } catch (e) {}
+      } catch (e) { }
       this.heatLayer = null;
     }
 
@@ -433,7 +433,7 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
       if (this.showHeatmap && this.heatLayer) {
         try {
           this.map.addLayer(this.heatLayer);
-        } catch (e) {}
+        } catch (e) { }
       }
     }
 

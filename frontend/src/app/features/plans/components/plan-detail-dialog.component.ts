@@ -343,17 +343,24 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
   `,
   styles: [`
     .dialog-container {
-      padding: 24px;
+      padding: 20px 24px;
       min-width: 680px;
-      max-width: 840px;
+      max-width: 860px;
+      width: 100%;
+      max-height: 86vh;
+      display: flex;
+      flex-direction: column;
       background: #ffffff;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .dialog-header {
+      flex-shrink: 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       padding-bottom: 12px;
       border-bottom: 1px solid #e5e7eb;
 
@@ -378,6 +385,14 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
       }
 
       .close-btn { color: #9ca3af; }
+    }
+
+    .dialog-content {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 6px;
+      padding-bottom: 8px;
     }
 
     .loading-box {
@@ -697,10 +712,13 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
     }
 
     .dialog-footer {
+      flex-shrink: 0;
       display: flex;
       justify-content: flex-end;
-      padding-top: 16px;
+      padding-top: 14px;
+      margin-top: 8px;
       border-top: 1px solid #e5e7eb;
+      background: #ffffff;
 
       .btn-primary {
         height: 36px;
@@ -749,10 +767,25 @@ export class PlanDetailDialogComponent implements OnInit {
   }
 
   loadWorkflows(): void {
+    try {
+      const cached = localStorage.getItem('mbf_unit_workflows_v2');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.availableWorkflows = parsed;
+        }
+      }
+    } catch {}
+
     this.api.get<any>('/configs/workflows').subscribe({
       next: (res) => {
-        if (res.success && res.data) {
-          this.availableWorkflows = res.data;
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const merged = new Map<string, any>();
+          res.data.forEach((w: any) => merged.set(w.code, w));
+          this.availableWorkflows.forEach((w: any) => {
+            if (!merged.has(w.code)) merged.set(w.code, w);
+          });
+          this.availableWorkflows = Array.from(merged.values());
         }
       }
     });
