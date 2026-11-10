@@ -107,6 +107,7 @@ CREATE TABLE IF NOT EXISTS users (
   fullName TEXT NOT NULL,
   role TEXT CHECK(role IN ('admin', 'leader_mbf', 'officer_mbf', 'officer_ward')) NOT NULL,
   unit TEXT,
+  permissions TEXT DEFAULT '[]',
   isActive INTEGER DEFAULT 1,
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -121,12 +122,35 @@ CREATE TABLE IF NOT EXISTS business_objects (
   address TEXT NOT NULL,
   ward TEXT NOT NULL,
   status TEXT CHECK(status IN ('active', 'suspended')) DEFAULT 'active',
+  hasForeignElement INTEGER DEFAULT 0,
+  foreignElementDetail TEXT,
   lastCheckedYear INTEGER,
   planId INTEGER,
   createdBy INTEGER,
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (createdBy) REFERENCES users(id),
   FOREIGN KEY (planId) REFERENCES plans(id)
+);
+
+CREATE TABLE IF NOT EXISTS business_locations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  objectId INTEGER NOT NULL,
+  locationType TEXT CHECK(locationType IN ('headquarters', 'branch', 'facility', 'business_site')) DEFAULT 'facility',
+  code TEXT,
+  name TEXT NOT NULL,
+  address TEXT NOT NULL,
+  ward TEXT NOT NULL,
+  managerName TEXT,
+  phone TEXT,
+  hasForeignElement INTEGER DEFAULT 0,
+  foreignElementDetail TEXT,
+  status TEXT CHECK(status IN ('active', 'suspended', 'closed')) DEFAULT 'active',
+  lat REAL,
+  lng REAL,
+  notes TEXT,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (objectId) REFERENCES business_objects(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS quota_configs (
@@ -149,6 +173,19 @@ CREATE TABLE IF NOT EXISTS plans (
   quarter TEXT NOT NULL,
   year INTEGER NOT NULL,
   ward TEXT NOT NULL,
+  unitName TEXT DEFAULT 'Công an Phường / Đơn vị nghiệp vụ',
+  workflowCode TEXT DEFAULT 'WF_STANDARD',
+  workflowName TEXT,
+  approvingDept TEXT,
+  assignedApproverName TEXT,
+  inspectionType TEXT DEFAULT 'planned',
+  scheduledStartDate TEXT,
+  scheduledEndDate TEXT,
+  inspectionLocation TEXT,
+  inspectionContent TEXT,
+  adjustmentNote TEXT,
+  adjustedAt DATETIME,
+  adjustedBy INTEGER,
   status TEXT CHECK(status IN ('draft', 'pending', 'approved', 'rejected')) DEFAULT 'draft',
   rejectReason TEXT,
   signedDocumentUrl TEXT,
@@ -181,15 +218,99 @@ CREATE TABLE IF NOT EXISTS plan_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   planId INTEGER NOT NULL,
   objectId INTEGER NOT NULL,
+  locationId INTEGER,
+  scheduledDate TEXT,
+  inspectionContent TEXT,
+  uninspectedReason TEXT,
+  explanationContent TEXT,
+  handlingStatus TEXT DEFAULT 'none',
+  explainedBy TEXT,
+  explainedAt DATETIME,
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (planId) REFERENCES plans(id) ON DELETE CASCADE,
   FOREIGN KEY (objectId) REFERENCES business_objects(id)
 );
 
+CREATE TABLE IF NOT EXISTS inspection_teams (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  teamType TEXT DEFAULT 'inter_agency',
+  inspectionType TEXT DEFAULT 'planned',
+  leadUnit TEXT NOT NULL,
+  participatingUnits TEXT DEFAULT '[]',
+  ward TEXT,
+  planId INTEGER,
+  decisionNumber TEXT,
+  leaderName TEXT NOT NULL,
+  membersJson TEXT DEFAULT '[]',
+  scheduleStart TEXT,
+  scheduleEnd TEXT,
+  inspectionContent TEXT,
+  workflowCode TEXT DEFAULT 'WF_STANDARD',
+  status TEXT DEFAULT 'active',
+  adjustmentHistoryJson TEXT DEFAULT '[]',
+  establishedBy INTEGER,
+  establishedByName TEXT,
+  establishedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS unit_workflows (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  unitCode TEXT DEFAULT 'PC07',
+  unitName TEXT NOT NULL,
+  inspectionType TEXT DEFAULT 'all',
+  stepsJson TEXT NOT NULL DEFAULT '[]',
+  approvalAuthority TEXT,
+  planApprovalDept TEXT,
+  planApproverName TEXT,
+  planApprovalRole TEXT DEFAULT 'leader_mbf',
+  teamEstablishDept TEXT,
+  teamApproverName TEXT,
+  teamEstablishRole TEXT DEFAULT 'leader_mbf',
+  teamAuthority TEXT,
+  resultAcceptanceDept TEXT,
+  resultApproverName TEXT,
+  resultAcceptanceRole TEXT DEFAULT 'leader_mbf',
+  acceptanceAuthority TEXT,
+  description TEXT,
+  isActive INTEGER DEFAULT 1,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS inspections (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   objectId INTEGER NOT NULL,
+  locationId INTEGER,
+  locationName TEXT,
+  locationAddress TEXT,
   planId INTEGER,
+  teamId INTEGER,
+  teamName TEXT,
+  inspectingUnit TEXT,
+  inspectionType TEXT DEFAULT 'planned',
+  workflowCode TEXT DEFAULT 'WF_STANDARD',
+  workflowStepsStatusJson TEXT DEFAULT '[]',
+  scheduledDate TEXT,
+  inspectionContent TEXT,
+  uninspectedReason TEXT,
+  explanationContent TEXT,
+  explanationStatus TEXT DEFAULT 'none',
+  explainedBy TEXT,
+  explainedByName TEXT,
+  explainedAt DATETIME,
+  explanationReviewNote TEXT,
+  acceptanceStatus TEXT DEFAULT 'pending',
+  acceptedBy TEXT,
+  acceptedByName TEXT,
+  acceptedAt DATETIME,
+  acceptanceNote TEXT,
+  penaltyAmount REAL DEFAULT 0,
+  penaltyDecisionNo TEXT,
+  complianceStatus TEXT DEFAULT 'compliant',
   checklist TEXT,
   violationCodes TEXT,
   evidenceFiles TEXT,
@@ -210,11 +331,42 @@ CREATE TABLE IF NOT EXISTS inspections (
   FOREIGN KEY (planId) REFERENCES plans(id)
 );
 
+CREATE TABLE IF NOT EXISTS inspection_domains (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  sortOrder INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS inspection_checklist_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  inspectionId INTEGER NOT NULL,
+  domainId INTEGER NOT NULL,
+  criteriaCode TEXT NOT NULL,
+  criteriaName TEXT NOT NULL,
+  result TEXT CHECK(result IN ('pass', 'fail', 'na')) DEFAULT 'pass',
+  notes TEXT,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (inspectionId) REFERENCES inspections(id) ON DELETE CASCADE,
+  FOREIGN KEY (domainId) REFERENCES inspection_domains(id)
+);
+
 CREATE TABLE IF NOT EXISTS adhoc_inspection_requests (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   objectId INTEGER NOT NULL,
+  locationId INTEGER,
+  locationName TEXT,
+  inspectionType TEXT DEFAULT 'adhoc',
+  unitName TEXT DEFAULT 'Công an Phường / Đơn vị nghiệp vụ',
+  workflowCode TEXT DEFAULT 'WF_PC07_ADHOC',
+  workflowName TEXT,
+  approvingDept TEXT,
+  assignedApproverName TEXT,
   wardRequestedBy TEXT NOT NULL,
   reason TEXT NOT NULL,
+  inspectionContent TEXT,
+  scheduledDate TEXT,
   status TEXT CHECK(status IN ('pending', 'approved', 'rejected')) NOT NULL DEFAULT 'pending',
   rejectReason TEXT,
   requestedBy INTEGER NOT NULL,
@@ -250,7 +402,7 @@ CREATE TABLE IF NOT EXISTS system_configs (
 
 CREATE TABLE IF NOT EXISTS alerts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  type TEXT CHECK(type IN ('overdue_inspection', 'overdue_plan', 'quota_below', 'quota_above', 'notice_letter_pending')) NOT NULL,
+  type TEXT NOT NULL,
   relatedEntityType TEXT NOT NULL,
   relatedEntityId INTEGER NOT NULL,
   ward TEXT,
@@ -298,6 +450,7 @@ CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_objects_ward ON business_objects(ward);
 CREATE INDEX IF NOT EXISTS idx_objects_taxcode ON business_objects(taxCode);
 CREATE INDEX IF NOT EXISTS idx_objects_idnumber ON business_objects(idNumber);
+CREATE INDEX IF NOT EXISTS idx_locations_object ON business_locations(objectId);
 CREATE INDEX IF NOT EXISTS idx_plans_quarter_ward ON plans(quarter, ward);
 CREATE INDEX IF NOT EXISTS idx_plans_ward_quarter ON plans(ward, quarter);
 CREATE INDEX IF NOT EXISTS idx_plans_year ON plans(year);
@@ -305,6 +458,8 @@ CREATE INDEX IF NOT EXISTS idx_plans_status ON plans(status);
 CREATE INDEX IF NOT EXISTS idx_digital_signatures_planId ON digital_signatures(planId);
 CREATE INDEX IF NOT EXISTS idx_inspections_plan ON inspections(planId);
 CREATE INDEX IF NOT EXISTS idx_inspections_object ON inspections(objectId);
+CREATE INDEX IF NOT EXISTS idx_inspections_location ON inspections(locationId);
+CREATE INDEX IF NOT EXISTS idx_inspections_team ON inspections(teamId);
 CREATE INDEX IF NOT EXISTS idx_inspections_status ON inspections(status);
 CREATE INDEX IF NOT EXISTS idx_inspections_ward ON inspections(ward);
 CREATE INDEX IF NOT EXISTS idx_inspections_ward_status ON inspections(ward, status);
@@ -317,6 +472,28 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_createdAt ON audit_logs(createdAt);
 `;
 
 export function initDatabase(): void {
+  // 0. Initialize base schema FIRST so fresh databases (e.g. /tmp/mbf.db on Vercel cold start) have all tables before migrations run
+  try {
+    const possiblePaths = [
+      path.resolve(__dirname, 'schema.sql'),
+      path.resolve(__dirname, '../../src/db/schema.sql'),
+      path.resolve(__dirname, '../src/db/schema.sql'),
+      path.resolve(process.cwd(), 'src/db/schema.sql'),
+      path.resolve(process.cwd(), 'backend/src/db/schema.sql')
+    ];
+    const schemaPath = possiblePaths.find(p => fs.existsSync(p));
+    if (schemaPath) {
+      const schemaSql = fs.readFileSync(schemaPath, 'utf8');
+      db.exec(schemaSql);
+      console.log('✅ SQLite Schema initialized successfully from:', schemaPath);
+    } else {
+      console.log('ℹ️ Using embedded SQLite schema...');
+      db.exec(EMBEDDED_SCHEMA);
+    }
+  } catch (initSchemaErr) {
+    console.warn('⚠️ Initial schema exec note:', initSchemaErr);
+  }
+
   // 1. Pre-migration: Ensure plans, inspections, digital_signatures, system_configs, alerts schemas
   try {
     const plansCheck = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='plans'").get();
@@ -549,62 +726,66 @@ export function initDatabase(): void {
     `);
 
     // Migrate existing JSON checklists to inspection_checklist_items if empty
-    const checklistCount = db.prepare('SELECT COUNT(*) as count FROM inspection_checklist_items').get() as { count: number };
-    if (checklistCount.count === 0) {
-      const allInspections = db.prepare('SELECT id, checklist FROM inspections').all() as Array<{ id: number; checklist?: string }>;
-      if (allInspections.length > 0) {
-        console.log(`🔄 Migrating ${allInspections.length} inspection checklists to inspection_checklist_items...`);
-        const insertItem = db.prepare(`
-          INSERT INTO inspection_checklist_items (inspectionId, domainId, criteriaCode, criteriaName, result, notes)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `);
+    try {
+      const checklistCount = db.prepare('SELECT COUNT(*) as count FROM inspection_checklist_items').get() as { count: number };
+      if (checklistCount.count === 0) {
+        const allInspections = db.prepare('SELECT id, checklist FROM inspections').all() as Array<{ id: number; checklist?: string }>;
+        if (allInspections.length > 0) {
+          console.log(`🔄 Migrating ${allInspections.length} inspection checklists to inspection_checklist_items...`);
+          const insertItem = db.prepare(`
+            INSERT INTO inspection_checklist_items (inspectionId, domainId, criteriaCode, criteriaName, result, notes)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `);
 
-        db.transaction(() => {
-          for (const insp of allInspections) {
-            let chkObj: Record<string, boolean> = { dkkd: true, pccc: true, location: true, price_tag: true, hygiene: true };
-            if (insp.checklist) {
-              try {
-                const parsed = JSON.parse(insp.checklist);
-                if (Array.isArray(parsed)) {
-                  parsed.forEach((item: any) => {
-                    if (item.id) chkObj[item.id] = item.passed !== false;
-                  });
-                } else if (typeof parsed === 'object') {
-                  chkObj = { ...chkObj, ...parsed };
+          db.transaction(() => {
+            for (const insp of allInspections) {
+              let chkObj: Record<string, boolean> = { dkkd: true, pccc: true, location: true, price_tag: true, hygiene: true };
+              if (insp.checklist) {
+                try {
+                  const parsed = JSON.parse(insp.checklist);
+                  if (Array.isArray(parsed)) {
+                    parsed.forEach((item: any) => {
+                      if (item.id) chkObj[item.id] = item.passed !== false;
+                    });
+                  } else if (typeof parsed === 'object') {
+                    chkObj = { ...chkObj, ...parsed };
+                  }
+                } catch (e) {
+                  // ignore parse err
                 }
-              } catch (e) {
-                // ignore parse err
               }
+
+              const pcccPass = chkObj['pccc'] !== false ? 'pass' : 'fail';
+              const attpPass = chkObj['hygiene'] !== false ? 'pass' : 'fail';
+              const envPass = chkObj['hygiene'] !== false ? 'pass' : 'fail';
+              const ttdtPass = chkObj['location'] !== false ? 'pass' : 'fail';
+              const taxPass = (chkObj['price_tag'] !== false && chkObj['dkkd'] !== false) ? 'pass' : 'fail';
+
+              // PCCC
+              insertItem.run(insp.id, 1, 'pccc_1', 'Trang bị bình chữa cháy còn hạn & tiêu lệnh PCCC', pcccPass, '');
+              insertItem.run(insp.id, 1, 'pccc_2', 'Lối thoát nạn & hành lang thoát hiểm thông thoáng', pcccPass, '');
+
+              // ATTP
+              insertItem.run(insp.id, 2, 'attp_1', 'Giấy chứng nhận cơ sở đủ điều kiện ATTP / Cam kết ATTP', attpPass, '');
+              insertItem.run(insp.id, 2, 'attp_2', 'Nguồn gốc nguyên liệu & điều kiện vệ sinh bảo quản', attpPass, '');
+
+              // MOI_TRUONG
+              insertItem.run(insp.id, 3, 'env_1', 'Thu gom, phân loại & xử lý rác thải / nước thải đúng quy định', envPass, '');
+              insertItem.run(insp.id, 3, 'env_2', 'Không gây ô nhiễm tiếng ồn, khói bụi vượt quy chuẩn', 'pass', '');
+
+              // TTDT
+              insertItem.run(insp.id, 4, 'ttdt_1', 'Không lấn chiếm lòng lề đường, vỉa hè, hành lang an toàn', ttdtPass, '');
+              insertItem.run(insp.id, 4, 'ttdt_2', 'Biển hiệu, bảng quảng cáo đúng quy chuẩn cấp phép', 'pass', '');
+
+              // THUE
+              insertItem.run(insp.id, 5, 'tax_1', 'Đăng ký kinh doanh & niêm yết giá công khai', taxPass, '');
+              insertItem.run(insp.id, 5, 'tax_2', 'Kê khai & thực hiện đầy đủ nghĩa vụ thuế / hóa đơn', chkObj['dkkd'] !== false ? 'pass' : 'fail', '');
             }
-
-            const pcccPass = chkObj['pccc'] !== false ? 'pass' : 'fail';
-            const attpPass = chkObj['hygiene'] !== false ? 'pass' : 'fail';
-            const envPass = chkObj['hygiene'] !== false ? 'pass' : 'fail';
-            const ttdtPass = chkObj['location'] !== false ? 'pass' : 'fail';
-            const taxPass = (chkObj['price_tag'] !== false && chkObj['dkkd'] !== false) ? 'pass' : 'fail';
-
-            // PCCC
-            insertItem.run(insp.id, 1, 'pccc_1', 'Trang bị bình chữa cháy còn hạn & tiêu lệnh PCCC', pcccPass, '');
-            insertItem.run(insp.id, 1, 'pccc_2', 'Lối thoát nạn & hành lang thoát hiểm thông thoáng', pcccPass, '');
-
-            // ATTP
-            insertItem.run(insp.id, 2, 'attp_1', 'Giấy chứng nhận cơ sở đủ điều kiện ATTP / Cam kết ATTP', attpPass, '');
-            insertItem.run(insp.id, 2, 'attp_2', 'Nguồn gốc nguyên liệu & điều kiện vệ sinh bảo quản', attpPass, '');
-
-            // MOI_TRUONG
-            insertItem.run(insp.id, 3, 'env_1', 'Thu gom, phân loại & xử lý rác thải / nước thải đúng quy định', envPass, '');
-            insertItem.run(insp.id, 3, 'env_2', 'Không gây ô nhiễm tiếng ồn, khói bụi vượt quy chuẩn', 'pass', '');
-
-            // TTDT
-            insertItem.run(insp.id, 4, 'ttdt_1', 'Không lấn chiếm lòng lề đường, vỉa hè, hành lang an toàn', ttdtPass, '');
-            insertItem.run(insp.id, 4, 'ttdt_2', 'Biển hiệu, bảng quảng cáo đúng quy chuẩn cấp phép', 'pass', '');
-
-            // THUE
-            insertItem.run(insp.id, 5, 'tax_1', 'Đăng ký kinh doanh & niêm yết giá công khai', taxPass, '');
-            insertItem.run(insp.id, 5, 'tax_2', 'Kê khai & thực hiện đầy đủ nghĩa vụ thuế / hóa đơn', chkObj['dkkd'] !== false ? 'pass' : 'fail', '');
-          }
-        })();
+          })();
+        }
       }
+    } catch (chkMigErr) {
+      console.warn('⚠️ Checklist migration note:', chkMigErr);
     }
 
     // Migrate audit_logs table schema (add ward, beforeData, afterData, ipAddress)
@@ -1216,7 +1397,7 @@ export function initDatabase(): void {
 
         db.transaction(() => {
           allObjs.forEach((obj, idx) => {
-            const isForeign = (obj.type === 'enterprise' && idx % 3 === 0) ? 1 : 0;
+            const isForeign = (obj.type === 'enterprise' && (idx % 3 === 0 || obj.taxCode === '0109999002' || obj.taxCode === '0109999001')) ? 1 : 0;
             const foreignDetail = isForeign
               ? (idx % 2 === 0 ? 'Vốn đầu tư FDI (Hàn Quốc - 65%), có chuyên gia nước ngoài làm việc' : 'Liên doanh Nhật Bản - Singapore, cung cấp dịch vụ thương mại xuyên biên giới')
               : null;
@@ -1244,7 +1425,7 @@ export function initDatabase(): void {
               baseCoord[1] + (idx % 4) * 0.0012
             );
 
-            // 2. For enterprises, add 1-2 additional branches / business locations across wards
+            // 2. For enterprises, always add 2 additional branches / business locations across wards (total 3 locations)
             if (obj.type === 'enterprise') {
               const wardsList = Object.keys(wardCoords);
               const branchWard = wardsList[(idx + 1) % wardsList.length];
@@ -1265,25 +1446,23 @@ export function initDatabase(): void {
                 branchCoord[1] + 0.0018
               );
 
-              if (idx < 8) {
-                const locWard = wardsList[(idx + 2) % wardsList.length];
-                const locCoord = wardCoords[locWard] || baseCoord;
-                insertLoc.run(
-                  obj.id,
-                  'business_location',
-                  `DDKD-${obj.id}-03`,
-                  `Địa điểm kinh doanh & Kho vận - ${obj.name}`,
-                  `Tầng 2, Tòa nhà Thương mại số ${45 + idx}, ${locWard}`,
-                  locWard,
-                  `Lê Phụ Trách Cơ Sở`,
-                  `09${String(30000000 + obj.id * 319).slice(0, 8)}`,
-                  isForeign,
-                  foreignDetail,
-                  'active',
-                  locCoord[0] + 0.0020,
-                  locCoord[1] - 0.0014
-                );
-              }
+              const locWard = wardsList[(idx + 2) % wardsList.length];
+              const locCoord = wardCoords[locWard] || baseCoord;
+              insertLoc.run(
+                obj.id,
+                'business_location',
+                `DDKD-${obj.id}-03`,
+                `Địa điểm kinh doanh & Kho vận số 2 - ${obj.name}`,
+                `Tầng 1-2, Tòa nhà Thương mại số ${45 + idx}, ${locWard}`,
+                locWard,
+                `Lê Phụ Trách Cơ Sở (${locWard})`,
+                `09${String(30000000 + obj.id * 319).slice(0, 8)}`,
+                isForeign,
+                foreignDetail,
+                'active',
+                locCoord[0] + 0.0020,
+                locCoord[1] - 0.0014
+              );
             }
 
             // Link existing inspections of this object to its primary location if not yet linked
@@ -1303,14 +1482,176 @@ export function initDatabase(): void {
       }
     }
 
-    // Auto-populate default inspection_teams if empty
+    // Ensure target object MST 0109999002 (and MST 0109999001) has 3 locations AND 2-3 violation records per location + plan history across 2025 & 2026
+    try {
+      const targetObj = db.prepare("SELECT * FROM business_objects WHERE taxCode = '0109999002'").get() as any;
+      if (targetObj) {
+        let objLocs = db.prepare('SELECT * FROM business_locations WHERE objectId = ? ORDER BY id ASC').all(targetObj.id) as any[];
+        if (objLocs.length < 3) {
+          const insLoc = db.prepare(`
+            INSERT INTO business_locations (objectId, locationType, locationCode, name, address, ward, contactPerson, phone, hasForeignElement, foreignElementDetail, status, lat, lng)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'Liên doanh thương mại & chuỗi bán lẻ có yếu tố nước ngoài', 'active', ?, ?)
+          `);
+          if (objLocs.length === 0) {
+            insLoc.run(targetObj.id, 'headquarters', `CS-${targetObj.id}-01`, 'Trụ sở chính - Trung tâm Thương mại & DVTH Lê Duẩn', 'Số 334 Lê Duẩn (Khu vực giáp ranh)', 'Phường Đống Đa', 'Lê Minh Quân (Giám đốc)', '0912334001', 21.0155, 105.8410);
+          }
+          if (objLocs.length <= 1) {
+            insLoc.run(targetObj.id, 'branch', `CN-${targetObj.id}-02`, 'Chi nhánh số 1 - Siêu thị & Kho vận Bạch Mai', 'Số 168 Bạch Mai, Phường Hai Bà Trưng', 'Phường Hai Bà Trưng', 'Nguyễn Hoàng Hải (Giám đốc CN1)', '0912334002', 21.0038, 105.8515);
+          }
+          if (objLocs.length <= 2) {
+            insLoc.run(targetObj.id, 'business_location', `DDKD-${targetObj.id}-03`, 'Địa điểm kinh doanh số 2 - Tổ hợp Dịch vụ & Ẩm thực Thái Hà', 'Tầng 1-2 Tòa nhà 125 Thái Hà, Phường Đống Đa', 'Phường Đống Đa', 'Trần Thị Thu Trang (Cửa hàng trưởng CS2)', '0912334003', 21.0122, 105.8218);
+          }
+          objLocs = db.prepare('SELECT * FROM business_locations WHERE objectId = ? ORDER BY id ASC').all(targetObj.id) as any[];
+        } else {
+          // Update names to be clean and realistic for demo
+          db.prepare("UPDATE business_locations SET name = 'Trụ sở chính - Trung tâm Thương mại & DVTH Lê Duẩn', address = 'Số 334 Lê Duẩn (Khu vực giáp ranh)', ward = 'Phường Đống Đa' WHERE id = ?").run(objLocs[0].id);
+          db.prepare("UPDATE business_locations SET name = 'Chi nhánh số 1 - Siêu thị & Kho vận Bạch Mai', address = 'Số 168 Bạch Mai, Phường Hai Bà Trưng', ward = 'Phường Hai Bà Trưng' WHERE id = ?").run(objLocs[1].id);
+          db.prepare("UPDATE business_locations SET name = 'Địa điểm kinh doanh số 2 - Tổ hợp Dịch vụ & Ẩm thực Thái Hà', address = 'Tầng 1-2 Tòa nhà 125 Thái Hà, Phường Đống Đa', ward = 'Phường Đống Đa' WHERE id = ?").run(objLocs[2].id);
+          objLocs = db.prepare('SELECT * FROM business_locations WHERE objectId = ? ORDER BY id ASC').all(targetObj.id) as any[];
+        }
+
+        // Check how many violation inspections exist for targetObj
+        const existingViolCount = db.prepare("SELECT COUNT(*) as cnt FROM inspections WHERE objectId = ? AND violationCodes IS NOT NULL AND violationCodes != '[]' AND violationCodes != ''").get(targetObj.id) as { cnt: number };
+        if (existingViolCount.cnt < 6 && objLocs.length >= 3) {
+          // Ensure historical 2025 plans exist so year filter (2026 vs 2025 vs All) works richly
+          db.exec(`
+            INSERT OR IGNORE INTO plans (id, quarter, year, ward, unitName, workflowCode, workflowName, approvingDept, assignedApproverName, inspectionType, status, submittedBy, submittedAt, approvedBy, approvedAt, dueDate, createdAt)
+            VALUES
+              (101, 'Q3/2025', 2025, 'Phường Đống Đa', 'Phòng Cảnh sát PCCC & CNCH (PC07)', 'WF_PC07_PLANNED', 'Quy trình Kiểm tra Định kỳ An toàn PCCC & CNCH (PC07)', 'Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)', 'Đại tá Lê Minh Hải (Trưởng phòng PC07)', 'planned', 'approved', 3, '2025-07-05 09:00:00', 2, '2025-07-06 14:00:00', '2025-09-30 17:00:00', '2025-07-01 08:00:00'),
+              (102, 'Q4/2025', 2025, 'Phường Hai Bà Trưng', 'Phòng Cảnh sát Kinh tế / An ninh Kinh tế (PC04 / PA04)', 'WF_PC04_PLANNED', 'Quy trình Kiểm tra Định kỳ Chấp hành Pháp luật Kinh tế & Thương mại (PC04)', 'Ban Chỉ huy Phòng Cảnh sát Kinh tế (PC04)', 'Đại tá Trần Quốc Tuấn (Trưởng phòng PC04)', 'planned', 'approved', 3, '2025-10-05 09:00:00', 2, '2025-10-06 14:00:00', '2025-12-30 17:00:00', '2025-10-01 08:00:00'),
+              (103, 'Q1/2026', 2026, 'Phường Đống Đa', 'Phòng Cảnh sát QLHC về TTXH (PC06)', 'WF_PC06_PLANNED', 'Quy trình Kiểm tra Định kỳ Cơ sở Kinh doanh có Điều kiện về ANTT (PC06)', 'Ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)', 'Đại tá Phạm Hồng Quân (Trưởng phòng PC06)', 'planned', 'approved', 3, '2026-01-10 09:00:00', 2, '2026-01-12 14:00:00', '2026-03-30 17:00:00', '2026-01-05 08:00:00');
+          `);
+
+          // Remove old incomplete inspections for targetObj to seed clean 7 inspections across 3 locations
+          db.prepare('DELETE FROM inspections WHERE objectId = ?').run(targetObj.id);
+          db.prepare('DELETE FROM plan_items WHERE objectId = ?').run(targetObj.id);
+
+          const insPlanItem = db.prepare(`
+            INSERT INTO plan_items (planId, objectId, locationId, scheduledDate, inspectionContent, createdAt)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `);
+          const insInsp = db.prepare(`
+            INSERT INTO inspections (
+              objectId, locationId, locationName, locationAddress, planId, inspectionType,
+              teamId, teamName, inspectingUnit, scheduledDate, inspectionContent, workflowCode,
+              violationCodes, recommendationNote, recommendationTags, status, ward, lat, lng,
+              severity, completedAt, dueDate, isOverdue, isLocked, isAdhoc, acceptanceStatus, acceptedByName, acceptedAt, createdAt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?, ?, ?, ?, 0, 1, ?, 'accepted', 'Đại tá Trần Quốc Tuấn (Lãnh đạo PA04)', ?, ?)
+          `);
+
+          const loc1 = objLocs[0]; // Trụ sở chính - Số 334 Lê Duẩn
+          const loc2 = objLocs[1]; // Chi nhánh số 1 - Số 168 Bạch Mai
+          const loc3 = objLocs[2]; // Địa điểm KD số 2 - 125 Thái Hà
+
+          // --- LOCATION 1 (Trụ sở chính - 3 vi phạm) ---
+          insPlanItem.run(3, targetObj.id, loc1.id, '2026-04-12', 'Kiểm tra định kỳ Q2/2026 về PCCC, ANTT và ĐKKD tại Trụ sở chính', '2026-04-05 09:00:00');
+          insInsp.run(
+            targetObj.id, loc1.id, loc1.name, loc1.address, 3, 'planned',
+            1, 'Đoàn Kiểm tra Liên ngành An ninh Kinh tế & Thương mại Điện tử (Đợt 1/2026)', 'Phòng Cảnh sát PCCC & CNCH (PC07)', '2026-04-12',
+            'Kiểm tra điều kiện an toàn PCCC, lối thoát nạn và giấy phép kinh doanh tại Trụ sở chính 334 Lê Duẩn', 'WF_PC07_PLANNED',
+            JSON.stringify(['L02', 'L04']),
+            'Yêu cầu bổ sung 08 bình chữa cháy CO2 tại tầng hầm, khắc phục hệ thống đèn chỉ dẫn thoát nạn và niêm yết giá dịch vụ tại sảnh chính trong 07 ngày.',
+            JSON.stringify(['PCCC', 'THUE']),
+            loc1.ward, 21.0155, 105.8410, 4, '2026-04-12 15:30:00', '2026-05-15 17:00:00', 0, '2026-04-12 16:00:00', '2026-04-06 08:00:00'
+          );
+
+          insPlanItem.run(103, targetObj.id, loc1.id, '2026-02-18', 'Kiểm tra chuyên đề đầu năm Q1/2026 tại Trụ sở chính', '2026-01-10 09:00:00');
+          insInsp.run(
+            targetObj.id, loc1.id, loc1.name, loc1.address, 103, 'professional_request',
+            2, 'Đoàn Kiểm tra Chuyên đề Doanh nghiệp FDI & Dịch vụ Nước ngoài', 'Phòng An ninh Kinh tế (PA04)', '2026-02-18',
+            'Kiểm tra theo yêu cầu nghiệp vụ về hồ sơ pháp lý liên doanh và quản lý lao động nước ngoài tại Trụ sở chính', 'WF_PA04_FOREIGN',
+            JSON.stringify(['L01', 'L03']),
+            'Cơ sở chưa cập nhật kịp thời giấy phép thay đổi nội dung đăng ký hoạt động thương mại; để phương tiện lấn chiếm hành lang an toàn trước mặt tiền.',
+            JSON.stringify(['ANTT', 'THUE']),
+            loc1.ward, 21.0155, 105.8410, 3, '2026-02-18 11:20:00', '2026-03-15 17:00:00', 0, '2026-02-18 14:00:00', '2026-02-01 08:00:00'
+          );
+
+          insPlanItem.run(101, targetObj.id, loc1.id, '2025-08-20', 'Kiểm tra định kỳ Q3/2025 tại Trụ sở chính', '2025-07-05 09:00:00');
+          insInsp.run(
+            targetObj.id, loc1.id, loc1.name, loc1.address, 101, 'planned',
+            1, 'Đoàn Kiểm tra Liên ngành Quận Đống Đa', 'Công an Phường Đống Đa', '2025-08-20',
+            'Kiểm tra định kỳ năm 2025 về trật tự đô thị và môi trường tại Trụ sở chính 334 Lê Duẩn', 'WF_STANDARD',
+            JSON.stringify(['L03', 'L06']),
+            'Nhắc nhở và xử phạt hành chính hành vi tập kết hàng hóa trên vỉa hè giờ cao điểm và hệ thống thông gió khu kỹ thuật gây tiếng ồn.',
+            JSON.stringify(['ANTT', 'MOI_TRUONG']),
+            loc1.ward, 21.0155, 105.8410, 3, '2025-08-20 16:10:00', '2025-09-15 17:00:00', 0, '2025-08-20 17:00:00', '2025-08-01 08:00:00'
+          );
+
+          // --- LOCATION 2 (Chi nhánh số 1 - Siêu thị & Kho vận Bạch Mai - 2 vi phạm) ---
+          insPlanItem.run(4, targetObj.id, loc2.id, '2026-04-16', 'Kiểm tra định kỳ Q2/2026 tại Chi nhánh số 1 Bạch Mai', '2026-04-06 09:00:00');
+          insInsp.run(
+            targetObj.id, loc2.id, loc2.name, loc2.address, 4, 'planned',
+            2, 'Đoàn Kiểm tra Chuyên đề Kinh tế & Thương mại (PC04)', 'Phòng Cảnh sát Kinh tế (PC04)', '2026-04-16',
+            'Kiểm tra nguồn gốc hàng hóa, niêm yết giá và an toàn PCCC kho vận tại Chi nhánh số 1 (168 Bạch Mai)', 'WF_PC04_PLANNED',
+            JSON.stringify(['L02', 'L04', 'L05']),
+            'Kho hàng tầng 2 xếp hàng hóa che khuất tủ cứu hỏa nội bộ; một số mặt hàng thực phẩm nhập khẩu thiếu tem nhãn phụ tiếng Việt và chưa niêm yết giá.',
+            JSON.stringify(['PCCC', 'ATTP', 'THUE']),
+            loc2.ward, 21.0038, 105.8515, 4, '2026-04-16 14:45:00', '2026-05-20 17:00:00', 0, '2026-04-16 16:00:00', '2026-04-08 08:00:00'
+          );
+
+          insPlanItem.run(102, targetObj.id, loc2.id, '2025-11-12', 'Kiểm tra định kỳ Q4/2025 tại Chi nhánh số 1 Bạch Mai', '2025-10-05 09:00:00');
+          insInsp.run(
+            targetObj.id, loc2.id, loc2.name, loc2.address, 102, 'adhoc',
+            3, 'Tổ Công tác Kiểm tra Đột xuất ANTT - PCCC', 'Phòng Cảnh sát PCCC & CNCH (PC07)', '2025-11-12',
+            'Kiểm tra đột xuất công tác phòng chống cháy nổ mùa hanh khô tại Kho vận Chi nhánh 1 Bạch Mai', 'WF_PC07_ADHOC',
+            JSON.stringify(['L02', 'L03']),
+            'Lối thoát hiểm phía sau kho bị khóa chốt trong giờ làm việc; xe tải bốc dỡ hàng hóa dừng đỗ lấn chiếm lòng đường Bạch Mai.',
+            JSON.stringify(['PCCC', 'ANTT']),
+            loc2.ward, 21.0038, 105.8515, 4, '2025-11-12 10:30:00', '2025-11-30 17:00:00', 1, '2025-11-12 11:30:00', '2025-11-05 08:00:00'
+          );
+
+          // --- LOCATION 3 (Địa điểm kinh doanh số 2 - Tổ hợp Dịch vụ & Ẩm thực Thái Hà - 2 vi phạm) ---
+          insPlanItem.run(103, targetObj.id, loc3.id, '2026-03-08', 'Kiểm tra ATTP & Môi trường Q1/2026 tại Địa điểm KD số 2 Thái Hà', '2026-01-12 09:00:00');
+          insInsp.run(
+            targetObj.id, loc3.id, loc3.name, loc3.address, 103, 'adhoc',
+            3, 'Tổ Công tác Kiểm tra Đột xuất ANTT - PCCC Địa bàn Đống Đa & Cầu Giấy', 'Công an Phường Đống Đa', '2026-03-08',
+            'Kiểm tra đột xuất vệ sinh an toàn thực phẩm, xử lý nước thải và trật tự đô thị tại Tổ hợp Ẩm thực 125 Thái Hà', 'WF_ADHOC_FAST',
+            JSON.stringify(['L05', 'L06']),
+            'Khu bếp chế biến chưa xuất trình đầy đủ sổ lưu mẫu thức ăn 24h; bể tách mỡ nước thải chưa được vệ sinh định kỳ gây mùi.',
+            JSON.stringify(['ATTP', 'MOI_TRUONG']),
+            loc3.ward, 21.0122, 105.8218, 4, '2026-03-08 17:15:00', '2026-03-25 17:00:00', 1, '2026-03-08 18:00:00', '2026-03-01 08:00:00'
+          );
+
+          insPlanItem.run(101, targetObj.id, loc3.id, '2025-09-14', 'Kiểm tra theo yêu cầu nghiệp vụ Q3/2025 tại Địa điểm KD số 2 Thái Hà', '2025-07-10 09:00:00');
+          insInsp.run(
+            targetObj.id, loc3.id, loc3.name, loc3.address, 101, 'professional_request',
+            1, 'Đoàn Kiểm tra Liên ngành An ninh Kinh tế & Thương mại Điện tử', 'Phòng Cảnh sát QLHC về TTXH (PC06)', '2025-09-14',
+            'Kiểm tra việc chấp hành quy định biển hiệu quảng cáo, niêm yết giá và điều kiện ANTT tại Địa điểm KD số 2 Thái Hà', 'WF_PC06_PLANNED',
+            JSON.stringify(['L01', 'L04']),
+            'Biển hiệu quảng cáo lắp đặt vượt kích thước quy định; khu vực quầy bar tầng 2 chưa niêm yết giá đồ uống rõ ràng.',
+            JSON.stringify(['ANTT', 'THUE']),
+            loc3.ward, 21.0122, 105.8218, 3, '2025-09-14 15:00:00', '2025-09-30 17:00:00', 0, '2025-09-14 16:00:00', '2025-09-01 08:00:00'
+          );
+
+          db.prepare('UPDATE business_objects SET lastCheckedYear = 2026 WHERE id = ?').run(targetObj.id);
+        }
+      }
+    } catch (mstErr) {
+      console.warn('⚠️ Enrich MST 0109999002 note:', mstErr);
+    }
+
+    // Ensure cutoff_configs never blocks plan submission during demos & draft plans have a default scan document ready
+    try {
+      db.exec(`
+        INSERT OR REPLACE INTO cutoff_configs (id, quarter, cutoffDateTime) VALUES
+          (1, 'Q2/2026', '2027-12-31 23:59:59'),
+          (2, 'Q3/2026', '2027-12-31 23:59:59'),
+          (3, 'Q4/2026', '2027-12-31 23:59:59');
+        UPDATE plans SET signedDocumentUrl = '/uploads/Van_ban_trinh_duyet_ke_hoach_Q2_2026.pdf' WHERE signedDocumentUrl IS NULL;
+      `);
+    } catch (cutErr) {
+      console.warn('⚠️ Cutoff update note:', cutErr);
+    }
+
+    // Auto-populate / upgrade default inspection_teams with full roleInTeam, position, and adjustmentHistoryJson
     const teamCount = db.prepare('SELECT COUNT(*) as count FROM inspection_teams').get() as { count: number };
-    if (teamCount.count === 0) {
+    const hasRichTeams = db.prepare("SELECT COUNT(*) as count FROM inspection_teams WHERE code = 'DKT-2026-PC07-04'").get() as { count: number };
+    if (teamCount.count === 0 || hasRichTeams.count === 0) {
       const insertTeam = db.prepare(`
-        INSERT OR IGNORE INTO inspection_teams (
+        INSERT OR REPLACE INTO inspection_teams (
           code, name, teamType, inspectionType, leadUnit, participatingUnits, ward, decisionNumber,
-          leaderName, membersJson, scheduleStart, scheduleEnd, inspectionContent, workflowCode, status, establishedByName
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          leaderName, membersJson, scheduleStart, scheduleEnd, inspectionContent, workflowCode, status, adjustmentHistoryJson, establishedByName
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       insertTeam.run(
         'DKT-2026-LN01',
@@ -1318,46 +1659,52 @@ export function initDatabase(): void {
         'inter_agency',
         'planned',
         'Phòng An ninh Kinh tế (PA04)',
-        JSON.stringify(['Phòng An ninh Kinh tế (PA04)', 'Đội Quản lý Thị trường số 1', 'Phòng Cảnh sát PCCC & CNCH', 'UBND Phường Hoàn Kiếm', 'Chi cục Thuế Khu vực']),
+        JSON.stringify(['Phòng An ninh Kinh tế (PA04)', 'Đội Quản lý Thị trường số 1', 'Phòng Cảnh sát PCCC & CNCH (PC07)', 'UBND Phường Hoàn Kiếm', 'Chi cục Thuế Khu vực']),
         'Phường Hoàn Kiếm',
         'QĐ-142/PA04-LN',
         'Thượng tá Nguyễn Hoàng Nam (PA04)',
         JSON.stringify([
-          { fullName: 'Thượng tá Nguyễn Hoàng Nam', role: 'Trưởng đoàn', unit: 'Phòng An ninh Kinh tế (PA04)', phone: '0912345111' },
-          { fullName: 'Thiếu tá Lê Văn Cường', role: 'Phó trưởng đoàn', unit: 'Công an Phường Hoàn Kiếm', phone: '0912345222' },
-          { fullName: 'Ông Trần Minh Đức', role: 'Thành viên', unit: 'Đội Quản lý Thị trường số 1', phone: '0912345333' },
-          { fullName: 'Đại úy Phạm Quốc Bảo', role: 'Thành viên', unit: 'Cảnh sát PCCC & CNCH', phone: '0912345444' },
-          { fullName: 'Bà Vũ Thị Thu Hà', role: 'Thư ký đoàn', unit: 'UBND Phường Hoàn Kiếm', phone: '0912345555' }
+          { fullName: 'Thượng tá Nguyễn Hoàng Nam', roleInTeam: 'Trưởng đoàn', role: 'Trưởng đoàn', unit: 'Phòng An ninh Kinh tế (PA04)', position: 'Phó Trưởng phòng PA04', phone: '0912345111' },
+          { fullName: 'Thiếu tá Lê Văn Cường', roleInTeam: 'Phó trưởng đoàn', role: 'Phó trưởng đoàn', unit: 'Công an Phường Hoàn Kiếm', position: 'Phó Trưởng Công an Phường', phone: '0912345222' },
+          { fullName: 'Ông Trần Minh Đức', roleInTeam: 'Thành viên', role: 'Thành viên', unit: 'Đội Quản lý Thị trường số 1', position: 'Kiểm soát viên thị trường', phone: '0912345333' },
+          { fullName: 'Đại úy Phạm Quốc Bảo', roleInTeam: 'Thành viên', role: 'Thành viên', unit: 'Phòng Cảnh sát PCCC & CNCH (PC07)', position: 'Cán bộ kiểm tra PCCC', phone: '0912345444' },
+          { fullName: 'Bà Vũ Thị Thu Hà', roleInTeam: 'Thư ký đoàn', role: 'Thư ký đoàn', unit: 'UBND Phường Hoàn Kiếm', position: 'Công chức Văn phòng - Thống kê', phone: '0912345555' }
         ]),
         '2026-04-05',
         '2026-06-25',
         'Kiểm tra liên ngành việc chấp hành pháp luật về ĐKKD, PCCC, ATTP và hoạt động thương mại có yếu tố nước ngoài.',
         'WF_INTER_AGENCY',
-        'active',
+        'adjusted',
+        JSON.stringify([
+          { adjustedAt: '12/04/2026 09:30', adjustedBy: 'Đại tá Trần Quốc Tuấn (Trưởng phòng PA04)', reason: 'Bổ sung 01 cán bộ Phòng Cảnh sát PCCC (PC07) và điều chỉnh lịch kiểm tra khu vực giáp ranh Hoàn Kiếm - Ba Đình', note: 'Bổ sung nhân sự PC07 phối hợp liên ngành' }
+        ]),
         'Đại tá Trần Quốc Tuấn (Lãnh đạo PA04)'
       );
       insertTeam.run(
         'DKT-2026-NV02',
-        'Đoàn Kiểm tra Chuyên đề Doanh nghiệp FDI & Dịch vụ Nước ngoài',
+        'Đoàn Kiểm tra Chuyên đề Doanh nghiệp FDI & Dịch vụ Nước ngoài (PC04 / PA04)',
         'inter_agency',
         'professional_request',
-        'Phòng An ninh Kinh tế (PA04)',
-        JSON.stringify(['Phòng An ninh Kinh tế (PA04)', 'Phòng Quản lý Xuất nhập cảnh (PA08)', 'Sở Kế hoạch & Đầu tư', 'Công an Phường Ba Đình']),
+        'Phòng Cảnh sát Kinh tế / An ninh Kinh tế (PC04 / PA04)',
+        JSON.stringify(['Phòng Cảnh sát Kinh tế / An ninh Kinh tế (PC04 / PA04)', 'Phòng Quản lý Xuất nhập cảnh (PA08)', 'Sở Kế hoạch & Đầu tư', 'Công an Phường Ba Đình']),
         'Phường Ba Đình',
         'QĐ-189/PA04-NV',
-        'Trung tá Đỗ Quang Huy (PA04)',
+        'Trung tá Đỗ Quang Huy (PC04/PA04)',
         JSON.stringify([
-          { fullName: 'Trung tá Đỗ Quang Huy', role: 'Trưởng đoàn', unit: 'Phòng An ninh Kinh tế (PA04)', phone: '0988111222' },
-          { fullName: 'Thiếu tá Hoàng Thanh Tùng', role: 'Phó trưởng đoàn', unit: 'Phòng Quản lý XNC (PA08)', phone: '0988111333' },
-          { fullName: 'Ông Nguyễn Thành Long', role: 'Thành viên', unit: 'Sở Kế hoạch & Đầu tư', phone: '0988111444' },
-          { fullName: 'Đại úy Bùi Văn Kiên', role: 'Thành viên', unit: 'Công an Phường Ba Đình', phone: '0988111555' }
+          { fullName: 'Trung tá Đỗ Quang Huy', roleInTeam: 'Trưởng đoàn', role: 'Trưởng đoàn', unit: 'Phòng Cảnh sát Kinh tế / An ninh Kinh tế (PC04 / PA04)', position: 'Đội trưởng Đội Nghiệp vụ Kinh tế', phone: '0988111222' },
+          { fullName: 'Thiếu tá Hoàng Thanh Tùng', roleInTeam: 'Phó trưởng đoàn', role: 'Phó trưởng đoàn', unit: 'Phòng Quản lý XNC (PA08)', position: 'Phó Đội trưởng Quản lý cư trú NN', phone: '0988111333' },
+          { fullName: 'Ông Nguyễn Thành Long', roleInTeam: 'Thành viên', role: 'Thành viên', unit: 'Sở Kế hoạch & Đầu tư', position: 'Chuyên viên Thanh tra ĐKKD FDI', phone: '0988111444' },
+          { fullName: 'Đại úy Bùi Văn Kiên', roleInTeam: 'Thư ký đoàn', role: 'Thư ký đoàn', unit: 'Công an Phường Ba Đình', position: 'Cảnh sát khu vực phụ trách địa bàn', phone: '0988111555' }
         ]),
         '2026-04-10',
         '2026-05-30',
         'Kiểm tra theo yêu cầu nghiệp vụ đối với các doanh nghiệp, chi nhánh có vốn đầu tư nước ngoài và sử dụng lao động nước ngoài.',
         'WF_PA04_FOREIGN',
         'active',
-        'Đại tá Trần Quốc Tuấn (Lãnh đạo PA04)'
+        JSON.stringify([
+          { adjustedAt: '14/04/2026 14:15', adjustedBy: 'Thượng tá Vũ Minh Đức (Phó Trưởng phòng PC04)', reason: 'Cập nhật lịch kiểm tra thực tế tại 3 chi nhánh của doanh nghiệp FDI trên địa bàn Ba Đình & Đống Đa', note: 'Điều chỉnh lịch kiểm tra chuỗi chi nhánh' }
+        ]),
+        'Đại tá Trần Quốc Tuấn (Lãnh đạo PC04/PA04)'
       );
       insertTeam.run(
         'DKT-2026-DX03',
@@ -1365,21 +1712,72 @@ export function initDatabase(): void {
         'unit',
         'adhoc',
         'Công an Phường Đống Đa',
-        JSON.stringify(['Công an Phường Đống Đa', 'UBND Phường Đống Đa']),
+        JSON.stringify(['Công an Phường Đống Đa', 'UBND Phường Đống Đa', 'Đội Cảnh sát PCCC & CNCH Khu vực 2']),
         'Phường Đống Đa',
         'QĐ-75/CAĐĐ-KT',
         'Thiếu tá Phạm Văn Hùng',
         JSON.stringify([
-          { fullName: 'Thiếu tá Phạm Văn Hùng', role: 'Trưởng đoàn', unit: 'Công an Phường Đống Đa', phone: '0904555666' },
-          { fullName: 'Thượng úy Ngô Minh Tuấn', role: 'Thành viên', unit: 'Công an Phường Đống Đa', phone: '0904555777' },
-          { fullName: 'Ông Lê Hoàng Nam', role: 'Thành viên', unit: 'Cán bộ Đô thị Phường Đống Đa', phone: '0904555888' }
+          { fullName: 'Thiếu tá Phạm Văn Hùng', roleInTeam: 'Trưởng đoàn', role: 'Trưởng đoàn', unit: 'Công an Phường Đống Đa', position: 'Phó Trưởng Công an Phường', phone: '0904555666' },
+          { fullName: 'Thượng úy Ngô Minh Tuấn', roleInTeam: 'Phó trưởng đoàn', role: 'Phó trưởng đoàn', unit: 'Đội Cảnh sát PCCC & CNCH KV2', position: 'Cán bộ kiểm tra an toàn PCCC', phone: '0904555777' },
+          { fullName: 'Ông Lê Hoàng Nam', roleInTeam: 'Thành viên', role: 'Thành viên', unit: 'UBND Phường Đống Đa', position: 'Cán bộ Quản lý Đô thị - Môi trường', phone: '0904555888' }
         ]),
         '2026-04-12',
         '2026-06-30',
         'Kiểm tra đột xuất các cơ sở kinh doanh có điều kiện về ANTT, PCCC khi có phản ánh hoặc dấu hiệu vi phạm.',
         'WF_ADHOC_FAST',
         'active',
-        'Thượng tá Nguyễn Hoàng Nam (PA04)'
+        JSON.stringify([]),
+        'Trung tá Nguyễn Hoàng Nam (Trưởng CAP)'
+      );
+      insertTeam.run(
+        'DKT-2026-PC07-04',
+        'Đoàn Kiểm tra Chuyên ngành An toàn PCCC & CNCH Các Tổ hợp Thương mại (PC07)',
+        'unit',
+        'planned',
+        'Phòng Cảnh sát PCCC & CNCH (PC07)',
+        JSON.stringify(['Phòng Cảnh sát PCCC & CNCH (PC07)', 'Đội Công tác Phòng cháy', 'Công an Phường Hai Bà Trưng']),
+        'Phường Hai Bà Trưng',
+        'QĐ-215/PC07-KT',
+        'Thiếu tá Hoàng Văn Sơn (PC07)',
+        JSON.stringify([
+          { fullName: 'Thiếu tá Hoàng Văn Sơn', roleInTeam: 'Trưởng đoàn', role: 'Trưởng đoàn', unit: 'Phòng Cảnh sát PCCC & CNCH (PC07)', position: 'Đội trưởng Đội Công tác Phòng cháy', phone: '0918222111' },
+          { fullName: 'Đại úy Nguyễn Tuấn Kiệt', roleInTeam: 'Phó trưởng đoàn', role: 'Phó trưởng đoàn', unit: 'Phòng Cảnh sát PCCC & CNCH (PC07)', position: 'Phó Đội trưởng Đội Kiểm tra PCCC', phone: '0918222222' },
+          { fullName: 'Thượng úy Đặng Quốc Khánh', roleInTeam: 'Thành viên', role: 'Thành viên', unit: 'Phòng Cảnh sát PCCC & CNCH (PC07)', position: 'Kỹ sư thẩm duyệt hệ thống PCCC', phone: '0918222333' },
+          { fullName: 'Trung úy Trần Minh Hiếu', roleInTeam: 'Thư ký đoàn', role: 'Thư ký đoàn', unit: 'Công an Phường Hai Bà Trưng', position: 'Cán bộ Cảnh sát khu vực', phone: '0918222444' }
+        ]),
+        '2026-04-08',
+        '2026-06-20',
+        'Kiểm tra định kỳ chuyên ngành hệ thống báo cháy tự động, họng nước chữa cháy và lối thoát nạn tại các trung tâm thương mại, kho hàng.',
+        'WF_PC07_PLANNED',
+        'adjusted',
+        JSON.stringify([
+          { adjustedAt: '15/04/2026 08:45', adjustedBy: 'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)', reason: 'Bổ sung Kỹ sư thẩm duyệt PCCC tham gia kiểm tra kỹ thuật tại Chi nhánh Bạch Mai & Lê Duẩn', note: 'Tăng cường cán bộ kỹ thuật PC07' }
+        ]),
+        'Đại tá Lê Minh Hải (Trưởng phòng PC07)'
+      );
+      insertTeam.run(
+        'DKT-2026-PC06-05',
+        'Đoàn Kiểm tra Liên ngành Cơ sở Kinh doanh Có Điều kiện về ANTT & Lưu trú (PC06)',
+        'inter_agency',
+        'planned',
+        'Phòng Cảnh sát QLHC về TTXH (PC06)',
+        JSON.stringify(['Phòng Cảnh sát QLHC về TTXH (PC06)', 'Phòng Cảnh sát PCCC & CNCH (PC07)', 'Công an Phường Cầu Giấy', 'Phòng Văn hóa & Thông tin']),
+        'Phường Cầu Giấy',
+        'QĐ-308/PC06-LN',
+        'Thiếu tá Ngô Quốc Khánh (PC06)',
+        JSON.stringify([
+          { fullName: 'Thiếu tá Ngô Quốc Khánh', roleInTeam: 'Trưởng đoàn', role: 'Trưởng đoàn', unit: 'Phòng Cảnh sát QLHC về TTXH (PC06)', position: 'Đội trưởng Đội Quản lý ngành nghề KD có ĐK', phone: '0977333111' },
+          { fullName: 'Đại úy Lê Thanh Hải', roleInTeam: 'Phó trưởng đoàn', role: 'Phó trưởng đoàn', unit: 'Công an Phường Cầu Giấy', position: 'Phó Trưởng Công an Phường Cầu Giấy', phone: '0977333222' },
+          { fullName: 'Thượng úy Vũ Hoàng Long', roleInTeam: 'Thành viên', role: 'Thành viên', unit: 'Phòng Cảnh sát PCCC & CNCH (PC07)', position: 'Cán bộ kiểm tra PCCC', phone: '0977333333' },
+          { fullName: 'Bà Nguyễn Thị Thanh Tâm', roleInTeam: 'Thư ký đoàn', role: 'Thư ký đoàn', unit: 'Phòng Văn hóa & Thông tin', position: 'Chuyên viên quản lý văn hóa', phone: '0977333444' }
+        ]),
+        '2026-04-14',
+        '2026-06-28',
+        'Kiểm tra giấy chứng nhận đủ điều kiện về ANTT, khai báo lưu trú và an toàn phòng cháy tại các cơ sở lưu trú, karaoke, massage.',
+        'WF_PC06_PLANNED',
+        'active',
+        JSON.stringify([]),
+        'Đại tá Phạm Hồng Quân (Trưởng phòng PC06)'
       );
     }
 

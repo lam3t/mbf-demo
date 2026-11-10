@@ -145,6 +145,38 @@
 
     <!-- Right Map View -->
     <div class="map-view-wrapper">
+      <!-- Floating Base Map Style Switcher -->
+      <div class="map-style-switcher">
+        <button
+          type="button"
+          class="style-btn"
+          [class.active]="selectedBaseMap === 'google_streets'"
+          (click)="switchBaseMap('google_streets')">
+          🗺️ Đường phố VN
+        </button>
+        <button
+          type="button"
+          class="style-btn"
+          [class.active]="selectedBaseMap === 'carto_voyager'"
+          (click)="switchBaseMap('carto_voyager')">
+          🧭 Hành chính Sáng
+        </button>
+        <button
+          type="button"
+          class="style-btn"
+          [class.active]="selectedBaseMap === 'google_hybrid'"
+          (click)="switchBaseMap('google_hybrid')">
+          🛰️ Vệ tinh
+        </button>
+        <button
+          type="button"
+          class="style-btn"
+          [class.active]="selectedBaseMap === 'osm'"
+          (click)="switchBaseMap('osm')">
+          🌐 OSM
+        </button>
+      </div>
+
       <div id="violationsLeafletMap" class="leaflet-map-canvas"></div>
 
       <!-- Floating Heatmap Legend Overlay -->

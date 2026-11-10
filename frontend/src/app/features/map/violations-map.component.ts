@@ -68,9 +68,51 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
   @Input() isEmbedded = false;
 
   private map: L.Map | null = null;
+  private currentTileLayer: any = null;
   private heatLayer: any = null;
   private markerClusterGroup: any = null;
   private resizeObserver: ResizeObserver | null = null;
+  private tileErrorCount = 0;
+
+  selectedBaseMap: 'google_streets' | 'carto_voyager' | 'google_hybrid' | 'osm' = 'google_streets';
+
+  readonly BASE_MAP_PROVIDERS: Record<string, { label: string; url: string; options: any }> = {
+    google_streets: {
+      label: 'Bản đồ Đường phố (VN)',
+      url: 'https://mt{s}.google.com/vt/lyrs=m&hl=vi&x={x}&y={y}&z={z}',
+      options: {
+        subdomains: ['0', '1', '2', '3'],
+        maxZoom: 20,
+        attribution: '&copy; Google Maps Vietnam'
+      }
+    },
+    carto_voyager: {
+      label: 'Bản đồ Hành chính Sáng',
+      url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+      options: {
+        subdomains: 'abcd',
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap &copy; CARTO'
+      }
+    },
+    google_hybrid: {
+      label: 'Bản đồ Vệ tinh',
+      url: 'https://mt{s}.google.com/vt/lyrs=y&hl=vi&x={x}&y={y}&z={z}',
+      options: {
+        subdomains: ['0', '1', '2', '3'],
+        maxZoom: 20,
+        attribution: '&copy; Google Satellite'
+      }
+    },
+    osm: {
+      label: 'OpenStreetMap',
+      url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      options: {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }
+    }
+  };
 
   // Filter state
   selectedTimeRange = 'all';
@@ -172,14 +214,12 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
     this.map = LeafletLib.map(mapElement, {
       center: [21.0285, 105.8542],
       zoom: 13,
-      zoomControl: true
+      zoomControl: true,
+      preferCanvas: true
     });
 
-    // Online OpenStreetMap tile layer
-    LeafletLib.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19
-    }).addTo(this.map);
+    // Load resilient multi-CDN tile layer with automatic fallback on tileerror
+    this.setBaseTileLayer(this.selectedBaseMap);
 
     // Initialize MarkerClusterGroup or fallback to LayerGroup
     const mcFn = LeafletLib.markerClusterGroup || (L as any).markerClusterGroup;
@@ -212,12 +252,11 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
     }
 
     // Ensure proper size calculation when container renders or resizes
-    setTimeout(() => {
-      this.map?.invalidateSize();
-    }, 200);
-    setTimeout(() => {
-      this.map?.invalidateSize();
-    }, 600);
+    [100, 300, 700, 1200].forEach(delay => {
+      setTimeout(() => {
+        this.map?.invalidateSize();
+      }, delay);
+    });
 
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => {
@@ -238,6 +277,46 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
         this.goToWardDashboard(wardName);
       });
     };
+  }
+
+  switchBaseMap(providerKey: 'google_streets' | 'carto_voyager' | 'google_hybrid' | 'osm'): void {
+    this.selectedBaseMap = providerKey;
+    this.tileErrorCount = 0;
+    this.setBaseTileLayer(providerKey);
+  }
+
+  private setBaseTileLayer(providerKey: 'google_streets' | 'carto_voyager' | 'google_hybrid' | 'osm'): void {
+    if (!this.map) return;
+    const LeafletLib = getLeaflet();
+    const provider = this.BASE_MAP_PROVIDERS[providerKey] || this.BASE_MAP_PROVIDERS['google_streets'];
+
+    if (this.currentTileLayer) {
+      try {
+        this.map.removeLayer(this.currentTileLayer);
+      } catch (e) {}
+    }
+
+    this.currentTileLayer = LeafletLib.tileLayer(provider.url, provider.options);
+
+    this.currentTileLayer.on('tileerror', () => {
+      this.tileErrorCount++;
+      // Auto-switch to backup tile server if primary tile CDN is blocked or throttled
+      if (this.tileErrorCount >= 4) {
+        this.tileErrorCount = 0;
+        const fallbackOrder: Array<'google_streets' | 'carto_voyager' | 'osm'> = ['google_streets', 'carto_voyager', 'osm'];
+        const nextIdx = (fallbackOrder.indexOf(providerKey as any) + 1) % fallbackOrder.length;
+        const nextProvider = fallbackOrder[nextIdx];
+        if (nextProvider && nextProvider !== this.selectedBaseMap) {
+          this.selectedBaseMap = nextProvider;
+          this.setBaseTileLayer(nextProvider);
+        }
+      }
+    });
+
+    this.currentTileLayer.addTo(this.map);
+    if (typeof this.currentTileLayer.bringToBack === 'function') {
+      this.currentTileLayer.bringToBack();
+    }
   }
 
   fetchViolationsGeo(): void {

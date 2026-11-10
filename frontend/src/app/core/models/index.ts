@@ -27,6 +27,7 @@ export interface BusinessLocation {
   id?: number;
   objectId?: number;
   locationType: LocationType;
+  code?: string;
   locationCode?: string;
   name: string;
   address: string;
@@ -307,13 +308,21 @@ export interface InspectionTeam {
 export interface UnitWorkflow {
   id?: number;
   code: string;
+  unitCode?: string;
   name: string;
   unitName: string;
   inspectionType?: string;
-  steps: Array<{ stepOrder: number; stepName: string; unitRole: string }>;
+  steps?: any[];
+  planApprovalDept?: string;
+  planApproverName?: string;
   planApprovalRole?: string;
+  teamEstablishDept?: string;
+  teamApproverName?: string;
   teamEstablishRole?: string;
+  resultAcceptanceDept?: string;
+  resultApproverName?: string;
   resultAcceptanceRole?: string;
+  description?: string;
   isActive?: boolean;
   updatedAt?: string;
 }

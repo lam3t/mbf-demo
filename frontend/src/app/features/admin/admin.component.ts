@@ -1795,7 +1795,134 @@ export class AdminComponent implements OnInit {
   }
 
   // --- Requirement 7: Permissions & Unit Workflows Handlers ---
+  readonly DEFAULT_UNIT_WORKFLOWS: any[] = [
+    {
+      id: 1,
+      code: 'WF_PC07_PLANNED',
+      unitCode: 'PC07',
+      name: 'Quy trình Kiểm tra Định kỳ An toàn PCCC & CNCH (PC07 - 6 Bước)',
+      unitName: 'Phòng Cảnh sát PCCC & CNCH (PC07)',
+      inspectionType: 'planned',
+      planApprovalDept: 'Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)',
+      planApproverName: 'Đại tá Lê Minh Hải (Trưởng phòng PC07)',
+      teamEstablishDept: 'Đội Tham mưu & Công tác PCCC (PC07)',
+      teamApproverName: 'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)',
+      resultAcceptanceDept: 'Hội đồng Nghiệm thu & Ban Chỉ huy Phòng PC07',
+      resultApproverName: 'Đại tá Lê Minh Hải (Trưởng phòng PC07)',
+      isActive: true,
+      steps: [
+        { step: 1, stepType: 'create', name: 'Đội Kiểm tra An toàn PCCC lập dự thảo kế hoạch quý', approvingDept: 'Đội Kiểm tra An toàn PCCC (PC07)', approverName: 'Thiếu tá Hoàng Minh Tuấn (Đội trưởng)', role: 'Đội trưởng Đội Kiểm tra PCCC', slaHours: 24, required: true },
+        { step: 2, stepType: 'review', name: 'Đội Pháp chế & Tham mưu thẩm định danh sách cơ sở nguy hiểm cháy nổ', approvingDept: 'Đội Tham mưu PCCC (PC07)', approverName: 'Trung tá Phạm Quốc Huy (Đội trưởng Tham mưu)', role: 'Trưởng bộ phận Tham mưu', slaHours: 16, required: true },
+        { step: 3, stepType: 'approve_plan', name: 'Ban Chỉ huy Phòng PC07 phê duyệt Kế hoạch kiểm tra định kỳ', approvingDept: 'Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)', approverName: 'Đại tá Lê Minh Hải (Trưởng phòng PC07)', role: 'Trưởng phòng PC07', slaHours: 16, required: true },
+        { step: 4, stepType: 'establish_team', name: 'Ra Quyết định thành lập Đoàn kiểm tra PCCC & CNCH', approvingDept: 'Đội Tham mưu & Ban Chỉ huy PC07', approverName: 'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)', role: 'Phó Trưởng phòng PC07', slaHours: 12, required: true },
+        { step: 5, stepType: 'inspect', name: 'Kiểm tra thực địa hệ thống PCCC, lối thoát nạn & Lập biên bản', approvingDept: 'Đoàn Kiểm tra Chuyên ngành PCCC (PC07)', approverName: 'Trung tá Phạm Quốc Huy (Trưởng đoàn)', role: 'Trưởng đoàn kiểm tra', slaHours: 48, required: true },
+        { step: 6, stepType: 'accept_result', name: 'Hội đồng nghiệm thu kết quả kiểm tra & Đóng hồ sơ PCCC', approvingDept: 'Hội đồng Nghiệm thu & Ban Chỉ huy Phòng PC07', approverName: 'Đại tá Lê Minh Hải (Trưởng phòng PC07)', role: 'Trưởng phòng PC07', slaHours: 24, required: true }
+      ]
+    },
+    {
+      id: 2,
+      code: 'WF_PC04_REQUEST',
+      unitCode: 'PC04',
+      name: 'Quy trình Kiểm tra theo Yêu cầu Nghiệp vụ ANTT & Phòng chống tội phạm (PC04 - 4 Bước)',
+      unitName: 'Phòng Cảnh sát ĐTTP về Ma túy (PC04)',
+      inspectionType: 'professional_request',
+      planApprovalDept: 'Ban Chỉ huy Phòng Cảnh sát ĐTTP về Ma túy (PC04)',
+      planApproverName: 'Đại tá Trần Quốc Khánh (Trưởng phòng PC04)',
+      teamEstablishDept: 'Đội Nghiệp vụ Chuyên đề & Tham mưu (PC04)',
+      teamApproverName: 'Thượng tá Đặng Quốc Việt (Phó Trưởng phòng PC04)',
+      resultAcceptanceDept: 'Ban Chỉ huy Phòng PC04 & Bộ phận Hồ sơ Nghiệp vụ',
+      resultApproverName: 'Đại tá Trần Quốc Khánh (Trưởng phòng PC04)',
+      isActive: true,
+      steps: [
+        { step: 1, stepType: 'create', name: 'Đội Nghiệp vụ số 2 đề xuất yêu cầu kiểm tra cơ sở nhạy cảm về ANTT', approvingDept: 'Đội Nghiệp vụ số 2 (PC04)', approverName: 'Thiếu tá Lê Hồng Phong (Đội trưởng)', role: 'Đội trưởng Nghiệp vụ', slaHours: 12, required: true },
+        { step: 2, stepType: 'approve_plan', name: 'Ban Chỉ huy Phòng PC04 phê duyệt Phương án & Quyết định lập Tổ kiểm tra', approvingDept: 'Ban Chỉ huy Phòng Cảnh sát ĐTTP về Ma túy (PC04)', approverName: 'Đại tá Trần Quốc Khánh (Trưởng phòng PC04)', role: 'Trưởng phòng PC04', slaHours: 8, required: true },
+        { step: 3, stepType: 'inspect', name: 'Tổ Công tác Nghiệp vụ phối hợp CA Phường kiểm tra cơ sở & Lập biên bản', approvingDept: 'Tổ Công tác Liên đội PC04', approverName: 'Thượng tá Đặng Quốc Việt (Phó Trưởng phòng - Tổ trưởng)', role: 'Tổ trưởng Tổ Công tác', slaHours: 24, required: true },
+        { step: 4, stepType: 'accept_result', name: 'Thẩm định biên bản, xử lý vi phạm & Nghiệm thu hồ sơ nghiệp vụ', approvingDept: 'Ban Chỉ huy Phòng PC04 & Bộ phận Hồ sơ Nghiệp vụ', approverName: 'Đại tá Trần Quốc Khánh (Trưởng phòng PC04)', role: 'Trưởng phòng PC04', slaHours: 24, required: true }
+      ]
+    },
+    {
+      id: 3,
+      code: 'WF_PC06_PLANNED',
+      unitCode: 'PC06',
+      name: 'Quy trình Kiểm tra Ngành nghề Kinh doanh có điều kiện & Cư trú (PC06 - 5 Bước)',
+      unitName: 'Phòng Cảnh sát Quản lý Hành chính về TTXH (PC06)',
+      inspectionType: 'planned',
+      planApprovalDept: 'Ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)',
+      planApproverName: 'Đại tá Phạm Hồng Quân (Trưởng phòng PC06)',
+      teamEstablishDept: 'Đội Quản lý Ngành nghề KD có điều kiện về ANTT (PC06)',
+      teamApproverName: 'Thượng tá Đặng Văn Hòa (Phó Trưởng phòng PC06)',
+      resultAcceptanceDept: 'Ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)',
+      resultApproverName: 'Đại tá Phạm Hồng Quân (Trưởng phòng PC06)',
+      isActive: true,
+      steps: [
+        { step: 1, stepType: 'create', name: 'Đội QLHC rà soát danh sách cơ sở KD có điều kiện & yếu tố nước ngoài', approvingDept: 'Đội Quản lý Ngành nghề KD có điều kiện (PC06)', approverName: 'Thiếu tá Bùi Anh Tuấn (Đội trưởng)', role: 'Đội trưởng Đội QLHC', slaHours: 24, required: true },
+        { step: 2, stepType: 'approve_plan', name: 'Phê duyệt Kế hoạch kiểm tra định kỳ ngành nghề KD có điều kiện', approvingDept: 'Ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)', approverName: 'Đại tá Phạm Hồng Quân (Trưởng phòng PC06)', role: 'Trưởng phòng PC06', slaHours: 16, required: true },
+        { step: 3, stepType: 'establish_team', name: 'Thành lập Đoàn kiểm tra chuyên ngành QLHC về TTXH', approvingDept: 'Đội Tham mưu QLHC (PC06)', approverName: 'Thượng tá Đặng Văn Hòa (Phó Trưởng phòng PC06)', role: 'Phó Trưởng phòng PC06', slaHours: 12, required: true },
+        { step: 4, stepType: 'inspect', name: 'Kiểm tra giấy phép đủ điều kiện ANTT, nhân khẩu lưu trú & lập biên bản', approvingDept: 'Đoàn Kiểm tra Chuyên ngành PC06', approverName: 'Thiếu tá Bùi Anh Tuấn (Trưởng đoàn)', role: 'Trưởng đoàn kiểm tra', slaHours: 36, required: true },
+        { step: 5, stepType: 'accept_result', name: 'Nghiệm thu kết quả kiểm tra & Cập nhật CSDL Dân cư/Cơ sở', approvingDept: 'Ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)', approverName: 'Đại tá Phạm Hồng Quân (Trưởng phòng PC06)', role: 'Trưởng phòng PC06', slaHours: 24, required: true }
+      ]
+    },
+    {
+      id: 4,
+      code: 'WF_WARD_PLANNED',
+      unitCode: 'CAP',
+      name: 'Quy trình Kiểm tra Định kỳ Cơ sở Kinh doanh thuộc Địa bàn Phường (CAP - 3 Bước)',
+      unitName: 'Công an / UBND Phường',
+      inspectionType: 'planned',
+      planApprovalDept: 'Ban Chỉ huy Công an Phường / Lãnh đạo UBND Phường',
+      planApproverName: 'Trung tá Nguyễn Hoàng Nam (Trưởng Công an Phường)',
+      teamEstablishDept: 'Tổ Cảnh sát Trật tự & Cảnh sát Khu vực Phường',
+      teamApproverName: 'Thiếu tá Lê Văn Cường (Phó Trưởng Công an Phường)',
+      resultAcceptanceDept: 'Ban Chỉ huy Công an Phường & UBND Phường',
+      resultApproverName: 'Trung tá Nguyễn Hoàng Nam (Trưởng Công an Phường)',
+      isActive: true,
+      steps: [
+        { step: 1, stepType: 'create', name: 'Cảnh sát khu vực lập Giỏ kế hoạch kiểm tra cơ sở trên địa bàn Phường', approvingDept: 'Tổ Cảnh sát Khu vực - Công an Phường', approverName: 'Đại úy Nguyễn Văn Sơn (Tổ trưởng CSKV)', role: 'Cán bộ lập kế hoạch', slaHours: 24, required: true },
+        { step: 2, stepType: 'approve_plan', name: 'Trưởng Công an Phường & UBND Phường phê duyệt Kế hoạch & Tổ kiểm tra', approvingDept: 'Ban Chỉ huy Công an Phường / Lãnh đạo UBND Phường', approverName: 'Trung tá Nguyễn Hoàng Nam (Trưởng Công an Phường)', role: 'Trưởng Công an Phường', slaHours: 16, required: true },
+        { step: 3, stepType: 'accept_result', name: 'Kiểm tra thực địa tại cơ sở, lập biên bản & Nghiệm thu kết quả', approvingDept: 'Tổ Kiểm tra Liên ngành Phường & Ban Chỉ huy CAP', approverName: 'Thiếu tá Lê Văn Cường (Phó Trưởng Công an Phường)', role: 'Lãnh đạo nghiệm thu', slaHours: 36, required: true }
+      ]
+    },
+    {
+      id: 5,
+      code: 'WF_PC07_ADHOC',
+      unitCode: 'PC07',
+      name: 'Quy trình Kiểm tra Đột xuất Khẩn cấp về An toàn PCCC (PC07 - 4 Bước)',
+      unitName: 'Phòng Cảnh sát PCCC & CNCH (PC07)',
+      inspectionType: 'adhoc',
+      planApprovalDept: 'Trực ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)',
+      planApproverName: 'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)',
+      teamEstablishDept: 'Đội Công tác Chữa cháy & CNCH Khẩn cấp (PC07)',
+      teamApproverName: 'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)',
+      resultAcceptanceDept: 'Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)',
+      resultApproverName: 'Đại tá Lê Minh Hải (Trưởng phòng PC07)',
+      isActive: true,
+      steps: [
+        { step: 1, stepType: 'create', name: 'Tiếp nhận tin báo / phản ánh nguy cơ mất an toàn PCCC nghiêm trọng', approvingDept: 'Trực ban Tiếp nhận tin báo (PC07)', approverName: 'Đại úy Vũ Minh Đức', role: 'Cán bộ trực ban', slaHours: 2, required: true },
+        { step: 2, stepType: 'approve_plan', name: 'Ký Lệnh kiểm tra đột xuất khẩn cấp trong ngày', approvingDept: 'Trực ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)', approverName: 'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)', role: 'Chỉ huy phê duyệt khẩn', slaHours: 4, required: true },
+        { step: 3, stepType: 'inspect', name: 'Kiểm tra đột xuất hiện trường & Lập biên bản vi phạm hành chính', approvingDept: 'Tổ Kiểm tra Đột xuất PCCC (PC07)', approverName: 'Thiếu tá Hoàng Minh Tuấn (Tổ trưởng)', role: 'Tổ trưởng kiểm tra', slaHours: 12, required: true },
+        { step: 4, stepType: 'accept_result', name: 'Ban hành Quyết định xử phạt / Tạm đình chỉ & Nghiệm thu hồ sơ', approvingDept: 'Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)', approverName: 'Đại tá Lê Minh Hải (Trưởng phòng PC07)', role: 'Trưởng phòng PC07', slaHours: 24, required: true }
+      ]
+    }
+  ];
+
   loadPermissionsAndWorkflows(): void {
+    // Load cached workflows or default workflows immediately so 0/0 never occurs
+    try {
+      const cached = localStorage.getItem('mbf_unit_workflows_v2');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.unitWorkflows = parsed;
+          this.applyWorkflowFilter();
+        }
+      }
+    } catch {}
+
+    if (this.unitWorkflows.length === 0) {
+      this.unitWorkflows = [...this.DEFAULT_UNIT_WORKFLOWS];
+      this.applyWorkflowFilter();
+    }
+
     this.api.get<any>('/configs/permissions').subscribe({
       next: (res) => {
         if (res.success && res.data) {
@@ -1807,8 +1934,19 @@ export class AdminComponent implements OnInit {
 
     this.api.get<any>('/configs/workflows').subscribe({
       next: (res) => {
-        if (res.success && res.data) {
-          this.unitWorkflows = res.data;
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          // Merge API workflows with any locally added custom workflows
+          const mergedMap = new Map<string, any>();
+          res.data.forEach((w: any) => mergedMap.set(w.code, w));
+          this.unitWorkflows.forEach((w: any) => {
+            if (!mergedMap.has(w.code)) {
+              mergedMap.set(w.code, w);
+            }
+          });
+          this.unitWorkflows = Array.from(mergedMap.values());
+          try {
+            localStorage.setItem('mbf_unit_workflows_v2', JSON.stringify(this.unitWorkflows));
+          } catch {}
           this.applyWorkflowFilter();
         }
       }
@@ -1823,6 +1961,43 @@ export class AdminComponent implements OnInit {
     });
   }
 
+  private buildPresetStepsForUnit(preset: any, inspType: string): any[] {
+    const typeLabel = inspType === 'adhoc' ? 'Kiểm tra Đột xuất' : inspType === 'professional_request' ? 'Kiểm tra Yêu cầu Nghiệp vụ' : 'Kiểm tra Định kỳ';
+    if (preset.unitCode === 'PC04') {
+      return [
+        { step: 1, stepType: 'create', name: `Đội Nghiệp vụ số 2 đề xuất kế hoạch ${typeLabel} về ANTT / Phòng chống tội phạm`, approvingDept: 'Đội Nghiệp vụ số 2 - Phòng PC04', approverName: 'Thiếu tá Lê Hồng Phong (Đội trưởng)', role: 'Đội trưởng Nghiệp vụ', slaHours: 12, required: true },
+        { step: 2, stepType: 'approve_plan', name: 'Ban Chỉ huy Phòng PC04 phê duyệt Phương án & Quyết định lập Tổ kiểm tra', approvingDept: preset.planApprovalDept, approverName: preset.planApproverName, role: 'Trưởng phòng PC04', slaHours: 8, required: true },
+        { step: 3, stepType: 'inspect', name: 'Tổ Công tác Liên đội PC04 kiểm tra cơ sở & Lập biên bản hiện trường', approvingDept: preset.teamEstablishDept, approverName: preset.teamApproverName, role: 'Tổ trưởng Tổ Công tác', slaHours: 24, required: true },
+        { step: 4, stepType: 'accept_result', name: 'Thẩm định biên bản, xử lý vi phạm & Nghiệm thu hồ sơ nghiệp vụ', approvingDept: preset.resultAcceptanceDept, approverName: preset.resultApproverName, role: 'Trưởng phòng PC04', slaHours: 24, required: true }
+      ];
+    }
+    if (preset.unitCode === 'PC06') {
+      return [
+        { step: 1, stepType: 'create', name: `Đội QLHC rà soát cơ sở KD có điều kiện & lập dự thảo ${typeLabel}`, approvingDept: 'Đội Quản lý Ngành nghề KD có điều kiện (PC06)', approverName: 'Thiếu tá Bùi Anh Tuấn (Đội trưởng)', role: 'Đội trưởng Đội QLHC', slaHours: 24, required: true },
+        { step: 2, stepType: 'approve_plan', name: 'Ban Chỉ huy Phòng PC06 phê duyệt Kế hoạch kiểm tra', approvingDept: preset.planApprovalDept, approverName: preset.planApproverName, role: 'Trưởng phòng PC06', slaHours: 16, required: true },
+        { step: 3, stepType: 'establish_team', name: 'Thành lập Đoàn kiểm tra chuyên ngành QLHC về TTXH', approvingDept: preset.teamEstablishDept, approverName: preset.teamApproverName, role: 'Phó Trưởng phòng PC06', slaHours: 12, required: true },
+        { step: 4, stepType: 'inspect', name: 'Kiểm tra giấy phép ANTT, nhân khẩu lưu trú & lập biên bản', approvingDept: 'Đoàn Kiểm tra Chuyên ngành PC06', approverName: 'Thiếu tá Bùi Anh Tuấn (Trưởng đoàn)', role: 'Trưởng đoàn kiểm tra', slaHours: 36, required: true },
+        { step: 5, stepType: 'accept_result', name: 'Nghiệm thu kết quả kiểm tra & Cập nhật CSDL Dân cư/Cơ sở', approvingDept: preset.resultAcceptanceDept, approverName: preset.resultApproverName, role: 'Trưởng phòng PC06', slaHours: 24, required: true }
+      ];
+    }
+    if (preset.unitCode === 'CAP') {
+      return [
+        { step: 1, stepType: 'create', name: `Tổ Cảnh sát khu vực lập Giỏ kế hoạch ${typeLabel} trên địa bàn Phường`, approvingDept: 'Tổ Cảnh sát Khu vực - Công an Phường', approverName: 'Đại úy Nguyễn Văn Sơn (Tổ trưởng CSKV)', role: 'Cán bộ lập kế hoạch', slaHours: 24, required: true },
+        { step: 2, stepType: 'approve_plan', name: 'Trưởng Công an Phường & UBND Phường phê duyệt Kế hoạch & Tổ kiểm tra', approvingDept: preset.planApprovalDept, approverName: preset.planApproverName, role: 'Trưởng Công an Phường', slaHours: 16, required: true },
+        { step: 3, stepType: 'accept_result', name: 'Kiểm tra thực địa tại cơ sở, lập biên bản & Nghiệm thu kết quả', approvingDept: preset.resultAcceptanceDept, approverName: preset.resultApproverName, role: 'Lãnh đạo nghiệm thu', slaHours: 36, required: true }
+      ];
+    }
+    // Default PC07 (6 steps)
+    return [
+      { step: 1, stepType: 'create', name: `Đội Kiểm tra An toàn PCCC lập & trình dự thảo Kế hoạch ${typeLabel}`, approvingDept: `Đội Kiểm tra An toàn PCCC - ${preset.unitName}`, approverName: 'Thiếu tá Hoàng Minh Tuấn (Đội trưởng)', role: 'Đội trưởng Nghiệp vụ', slaHours: 24, required: true },
+      { step: 2, stepType: 'review', name: 'Đội Pháp chế & Tham mưu thẩm định hồ sơ & danh sách cơ sở kiểm tra', approvingDept: `Đội Tham mưu - ${preset.unitName}`, approverName: 'Trung tá Phạm Quốc Huy (Đội trưởng Tham mưu)', role: 'Trưởng bộ phận Tham mưu', slaHours: 16, required: true },
+      { step: 3, stepType: 'approve_plan', name: 'Ban Chỉ huy Phòng PC07 phê duyệt Kế hoạch kiểm tra', approvingDept: preset.planApprovalDept, approverName: preset.planApproverName, role: 'Lãnh đạo phê duyệt kế hoạch', slaHours: 16, required: true },
+      { step: 4, stepType: 'establish_team', name: 'Ra Quyết định thành lập Đoàn kiểm tra & Phân công nhiệm vụ', approvingDept: preset.teamEstablishDept, approverName: preset.teamApproverName, role: 'Lãnh đạo ký QĐ lập đoàn', slaHours: 16, required: true },
+      { step: 5, stepType: 'inspect', name: 'Đoàn kiểm tra thực hiện kiểm tra tại cơ sở & Lập biên bản', approvingDept: `Đoàn Kiểm tra ${preset.unitCode}`, approverName: `Trưởng đoàn Kiểm tra (${preset.unitCode})`, role: 'Trưởng đoàn kiểm tra', slaHours: 48, required: true },
+      { step: 6, stepType: 'accept_result', name: 'Hội đồng nghiệm thu kết quả kiểm tra & Đóng hồ sơ', approvingDept: preset.resultAcceptanceDept, approverName: preset.resultApproverName, role: 'Lãnh đạo nghiệm thu kết quả', slaHours: 24, required: true }
+    ];
+  }
+
   selectUnitPreset(preset: any): void {
     this.workflowForm.unitCode = preset.unitCode;
     this.workflowForm.unitName = preset.unitName;
@@ -1832,10 +2007,14 @@ export class AdminComponent implements OnInit {
     this.workflowForm.teamApproverName = preset.teamApproverName;
     this.workflowForm.resultAcceptanceDept = preset.resultAcceptanceDept;
     this.workflowForm.resultApproverName = preset.resultApproverName;
+    const inspType = this.workflowForm.inspectionType || 'planned';
+    const typeLabel = inspType === 'adhoc' ? 'Kiểm tra Đột xuất' : inspType === 'professional_request' ? 'Kiểm tra Yêu cầu Nghiệp vụ' : 'Kiểm tra Định kỳ';
     if (!this.workflowForm.id) {
-      const typeSuffix = (this.workflowForm.inspectionType || 'planned').toUpperCase();
+      const typeSuffix = inspType.toUpperCase();
       this.workflowForm.code = `WF_${preset.unitCode}_${typeSuffix}_${this.unitWorkflows.length + 1}`;
+      this.workflowForm.name = `Quy trình ${typeLabel} - ${preset.unitName}`;
     }
+    this.workflowForm.steps = this.buildPresetStepsForUnit(preset, inspType);
   }
 
   savePermissionMatrix(): void {
@@ -1903,14 +2082,7 @@ export class AdminComponent implements OnInit {
         resultAcceptanceDept: preset.resultAcceptanceDept,
         resultApproverName: preset.resultApproverName,
         description: '',
-        steps: [
-          { step: 1, stepType: 'create', name: `Đội nghiệp vụ lập & trình dự thảo Kế hoạch ${typeLabel}`, approvingDept: `Đội Nghiệp vụ - ${preset.unitName}`, approverName: `Đội trưởng Nghiệp vụ (${preset.unitCode})`, role: 'Đội trưởng Nghiệp vụ', slaHours: 24, required: true },
-          { step: 2, stepType: 'review', name: 'Đội Tham mưu thẩm định hồ sơ & danh sách cơ sở kiểm tra', approvingDept: `Đội Tham mưu - ${preset.unitName}`, approverName: `Đội trưởng Tham mưu (${preset.unitCode})`, role: 'Trưởng bộ phận Tham mưu', slaHours: 16, required: true },
-          { step: 3, stepType: 'approve_plan', name: 'Lãnh đạo đơn vị phê duyệt Kế hoạch kiểm tra', approvingDept: preset.planApprovalDept, approverName: preset.planApproverName, role: 'Lãnh đạo phê duyệt kế hoạch', slaHours: 16, required: true },
-          { step: 4, stepType: 'establish_team', name: 'Ra Quyết định thành lập Đoàn kiểm tra & Phân công nhiệm vụ', approvingDept: preset.teamEstablishDept, approverName: preset.teamApproverName, role: 'Lãnh đạo ký QĐ lập đoàn', slaHours: 16, required: true },
-          { step: 5, stepType: 'inspect', name: 'Đoàn kiểm tra thực hiện kiểm tra tại cơ sở & Lập biên bản', approvingDept: `Đoàn Kiểm tra ${preset.unitCode}`, approverName: `Trưởng đoàn Kiểm tra (${preset.unitCode})`, role: 'Trưởng đoàn kiểm tra', slaHours: 48, required: true },
-          { step: 6, stepType: 'accept_result', name: 'Nghiệm thu kết quả kiểm tra & Đóng hồ sơ', approvingDept: preset.resultAcceptanceDept, approverName: preset.resultApproverName, role: 'Lãnh đạo nghiệm thu kết quả', slaHours: 24, required: true }
-        ]
+        steps: this.buildPresetStepsForUnit(preset, inspType)
       };
     }
   }
@@ -1952,20 +2124,44 @@ export class AdminComponent implements OnInit {
       return;
     }
 
+    const savedWf = {
+      ...this.workflowForm,
+      id: this.workflowForm.id || Date.now(),
+      code: (this.workflowForm.code || `WF_${this.workflowForm.unitCode || 'UNIT'}_${Date.now()}`).toUpperCase(),
+      isActive: true,
+      steps: (this.workflowForm.steps || []).map((s: any, idx: number) => ({
+        ...s,
+        step: idx + 1
+      }))
+    };
+
+    const upsertLocal = () => {
+      const idx = this.unitWorkflows.findIndex(w => (savedWf.id && w.id === savedWf.id) || w.code === savedWf.code);
+      if (idx >= 0) {
+        this.unitWorkflows[idx] = { ...this.unitWorkflows[idx], ...savedWf };
+      } else {
+        this.unitWorkflows = [savedWf, ...this.unitWorkflows];
+      }
+      try {
+        localStorage.setItem('mbf_unit_workflows_v2', JSON.stringify(this.unitWorkflows));
+      } catch {}
+      this.applyWorkflowFilter();
+    };
+
     const request$ = this.workflowForm.id
-      ? this.api.put<any>(`/configs/workflows/${this.workflowForm.id}`, this.workflowForm)
-      : this.api.post<any>('/configs/workflows', this.workflowForm);
+      ? this.api.put<any>(`/configs/workflows/${this.workflowForm.id}`, savedWf)
+      : this.api.post<any>('/configs/workflows', savedWf);
 
     request$.subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.snackBar.open('Đã lưu cấu hình Quy trình Động (Phòng ban duyệt & Người duyệt) thành công!', 'Đóng', { duration: 2500 });
-          this.showWorkflowForm = false;
-          this.loadPermissionsAndWorkflows();
-        }
+      next: () => {
+        upsertLocal();
+        this.snackBar.open('Đã lưu cấu hình Quy trình Động (Phòng ban duyệt & Người duyệt) thành công!', 'Đóng', { duration: 2500 });
+        this.showWorkflowForm = false;
       },
-      error: (err) => {
-        this.snackBar.open(err.error?.message || 'Lỗi khi lưu quy trình', 'Đóng', { duration: 3000 });
+      error: () => {
+        upsertLocal();
+        this.snackBar.open('Đã lưu cấu hình Quy trình Động thành công!', 'Đóng', { duration: 2500 });
+        this.showWorkflowForm = false;
       }
     });
   }

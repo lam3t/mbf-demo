@@ -62,7 +62,12 @@ export class InspectionsListComponent implements OnInit {
   selectedWard = '';
   selectedQuarter = '';
   selectedInspectionType = '';
+  selectedObjectId = '';
+  selectedLocationName = '';
   searchTerm = '';
+
+  enterpriseOptions: Array<{ id: number; name: string; taxCode?: string }> = [];
+  locationOptions: Array<{ name: string; objectId: number; ward: string }> = [];
 
   // Stats
   stats = {
@@ -138,8 +143,10 @@ export class InspectionsListComponent implements OnInit {
       next: (res) => {
         this.isLoading = false;
         if (res.success) {
-          this.inspections = res.data;
-          this.filteredInspections = res.data;
+          const rawList: Inspection[] = res.data || [];
+          this.inspections = rawList;
+          this.buildEnterpriseAndLocationOptions(rawList);
+          this.applyClientFilters();
           this.calculateStats();
         }
       },
@@ -147,6 +154,56 @@ export class InspectionsListComponent implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  private buildEnterpriseAndLocationOptions(list: Inspection[]): void {
+    const objMap = new Map<number, { id: number; name: string; taxCode?: string }>();
+    const locMap = new Map<string, { name: string; objectId: number; ward: string }>();
+
+    list.forEach(item => {
+      if (item.objectId && item.objectName && !objMap.has(item.objectId)) {
+        objMap.set(item.objectId, {
+          id: item.objectId,
+          name: item.objectName,
+          taxCode: item.taxCode || item.idNumber
+        });
+      }
+      const locName = (item as any).locationName;
+      if (locName) {
+        const key = `${item.objectId}_${locName}`;
+        if (!locMap.has(key)) {
+          locMap.set(key, {
+            name: locName,
+            objectId: item.objectId,
+            ward: item.ward
+          });
+        }
+      }
+    });
+
+    if (this.enterpriseOptions.length === 0 || objMap.size > this.enterpriseOptions.length) {
+      this.enterpriseOptions = Array.from(objMap.values());
+    }
+    this.locationOptions = Array.from(locMap.values()).filter(l =>
+      !this.selectedObjectId || Number(l.objectId) === Number(this.selectedObjectId)
+    );
+  }
+
+  applyClientFilters(): void {
+    let list = [...this.inspections];
+    if (this.selectedObjectId) {
+      list = list.filter(i => Number(i.objectId) === Number(this.selectedObjectId));
+    }
+    if (this.selectedLocationName) {
+      list = list.filter(i => ((i as any).locationName || '') === this.selectedLocationName);
+    }
+    this.filteredInspections = list;
+  }
+
+  onEnterpriseFilterChange(): void {
+    this.selectedLocationName = '';
+    this.buildEnterpriseAndLocationOptions(this.inspections);
+    this.applyClientFilters();
   }
 
   calculateStats(): void {
@@ -205,6 +262,8 @@ export class InspectionsListComponent implements OnInit {
     this.selectedWard = '';
     this.selectedQuarter = '';
     this.selectedInspectionType = '';
+    this.selectedObjectId = '';
+    this.selectedLocationName = '';
     this.searchTerm = '';
     this.loadInspections();
   }

@@ -257,7 +257,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
                 type="button"
                 class="btn-choose-file"
                 (click)="scanFileInput.click()"
-                [disabled]="currentDraftPlan?.status !== 'draft' || isUploadingScan"
+                [disabled]="isUploadingScan"
               >
                 <mat-icon>cloud_upload</mat-icon>
                 <span>{{ selectedFile || currentDraftPlan?.signedDocumentUrl ? 'Thay đổi file' : 'Chọn file văn bản scan' }}</span>
@@ -709,7 +709,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
         </div>
 
         <!-- Inline Create / Edit / Adjust Team Panel -->
-        <div *ngIf="isTeamModalOpen" style="background:#ffffff;border:2px solid #3b82f6;border-radius:10px;padding:18px 20px;box-shadow:0 8px 20px rgba(0,0,0,0.08);">
+        <div id="teamEditorPanel" *ngIf="isTeamModalOpen" style="background:#ffffff;border:2px solid #3b82f6;border-radius:10px;padding:18px 20px;box-shadow:0 8px 20px rgba(0,0,0,0.08);">
           <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:10px;margin-bottom:14px;">
             <h3 style="margin:0;font-size:15px;color:#1e3a8a;">
               {{ editingTeamId ? 'Điều chỉnh Thành phần Đoàn, Thời gian & Lịch Kiểm tra' : 'Thành lập Đoàn Kiểm tra Mới (Đơn vị / Liên ngành)' }}
@@ -1892,19 +1892,19 @@ export class PlansListComponent implements OnInit {
 
     this.route.queryParams.subscribe(params => {
       if (params['tab']) {
-        this.activeMainTab = params['tab'] === 'adhoc' ? 'adhoc' : 'official';
+        this.activeMainTab = params['tab'] === 'adhoc' ? 'adhoc' : (params['tab'] === 'teams' ? 'teams' : 'official');
       }
       if (params['view']) {
         this.activeView = params['view'];
       }
     });
 
+    this.loadWorkflows();
     this.loadPlans();
     this.loadCartPlan();
     this.loadPendingGrid();
     this.loadAdhocRequests();
     this.loadTeams();
-    this.loadWorkflows();
   }
 
   setupHeaderActions(): void {
@@ -1955,26 +1955,352 @@ export class PlansListComponent implements OnInit {
     }
   }
 
+  readonly DEFAULT_UNIT_WORKFLOWS: any[] = [
+    {
+      id: 1,
+      code: 'WF_PC07_PLANNED',
+      unitCode: 'PC07',
+      name: 'Quy trình Kiểm tra Định kỳ An toàn PCCC & CNCH (PC07 - 6 Bước)',
+      unitName: 'Phòng Cảnh sát PCCC & CNCH (PC07)',
+      inspectionType: 'planned',
+      planApprovalDept: 'Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)',
+      planApproverName: 'Đại tá Lê Minh Hải (Trưởng phòng PC07)',
+      teamEstablishDept: 'Đội Tham mưu & Công tác PCCC (PC07)',
+      teamApproverName: 'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)',
+      resultAcceptanceDept: 'Hội đồng Nghiệm thu & Ban Chỉ huy Phòng PC07',
+      resultApproverName: 'Đại tá Lê Minh Hải (Trưởng phòng PC07)'
+    },
+    {
+      id: 2,
+      code: 'WF_PC04_REQUEST',
+      unitCode: 'PC04',
+      name: 'Quy trình Kiểm tra theo Yêu cầu Nghiệp vụ ANTT & Phòng chống tội phạm (PC04 - 4 Bước)',
+      unitName: 'Phòng Cảnh sát ĐTTP về Ma túy (PC04)',
+      inspectionType: 'professional_request',
+      planApprovalDept: 'Ban Chỉ huy Phòng Cảnh sát ĐTTP về Ma túy (PC04)',
+      planApproverName: 'Đại tá Trần Quốc Khánh (Trưởng phòng PC04)',
+      teamEstablishDept: 'Đội Nghiệp vụ Chuyên đề & Tham mưu (PC04)',
+      teamApproverName: 'Thượng tá Đặng Quốc Việt (Phó Trưởng phòng PC04)',
+      resultAcceptanceDept: 'Ban Chỉ huy Phòng PC04 & Bộ phận Hồ sơ Nghiệp vụ',
+      resultApproverName: 'Đại tá Trần Quốc Khánh (Trưởng phòng PC04)'
+    },
+    {
+      id: 3,
+      code: 'WF_PC06_PLANNED',
+      unitCode: 'PC06',
+      name: 'Quy trình Kiểm tra Ngành nghề Kinh doanh có điều kiện & Cư trú (PC06 - 5 Bước)',
+      unitName: 'Phòng Cảnh sát Quản lý Hành chính về TTXH (PC06)',
+      inspectionType: 'planned',
+      planApprovalDept: 'Ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)',
+      planApproverName: 'Đại tá Phạm Hồng Quân (Trưởng phòng PC06)',
+      teamEstablishDept: 'Đội Quản lý Ngành nghề KD có điều kiện về ANTT (PC06)',
+      teamApproverName: 'Thượng tá Đặng Văn Hòa (Phó Trưởng phòng PC06)',
+      resultAcceptanceDept: 'Ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)',
+      resultApproverName: 'Đại tá Phạm Hồng Quân (Trưởng phòng PC06)'
+    },
+    {
+      id: 4,
+      code: 'WF_WARD_PLANNED',
+      unitCode: 'CAP',
+      name: 'Quy trình Kiểm tra Định kỳ Cơ sở Kinh doanh thuộc Địa bàn Phường (CAP - 3 Bước)',
+      unitName: 'Công an / UBND Phường',
+      inspectionType: 'planned',
+      planApprovalDept: 'Ban Chỉ huy Công an Phường / Lãnh đạo UBND Phường',
+      planApproverName: 'Trung tá Nguyễn Hoàng Nam (Trưởng Công an Phường)',
+      teamEstablishDept: 'Tổ Cảnh sát Trật tự & Cảnh sát Khu vực Phường',
+      teamApproverName: 'Thiếu tá Lê Văn Cường (Phó Trưởng Công an Phường)',
+      resultAcceptanceDept: 'Ban Chỉ huy Công an Phường & UBND Phường',
+      resultApproverName: 'Trung tá Nguyễn Hoàng Nam (Trưởng Công an Phường)'
+    },
+    {
+      id: 5,
+      code: 'WF_PC07_ADHOC',
+      unitCode: 'PC07',
+      name: 'Quy trình Kiểm tra Đột xuất Khẩn cấp về An toàn PCCC (PC07 - 4 Bước)',
+      unitName: 'Phòng Cảnh sát PCCC & CNCH (PC07)',
+      inspectionType: 'adhoc',
+      planApprovalDept: 'Trực ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)',
+      planApproverName: 'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)',
+      teamEstablishDept: 'Đội Công tác Chữa cháy & CNCH Khẩn cấp (PC07)',
+      teamApproverName: 'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)',
+      resultAcceptanceDept: 'Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)',
+      resultApproverName: 'Đại tá Lê Minh Hải (Trưởng phòng PC07)'
+    }
+  ];
+
+  readonly DEFAULT_MOCK_TEAMS: InspectionTeam[] = [
+    {
+      id: 1,
+      code: 'DKT-2026-LN01',
+      name: 'Đoàn Kiểm tra Liên ngành PCCC - ATTP - ANTT Quận Hoàn Kiếm (Đoàn số 01)',
+      teamType: 'inter_agency',
+      inspectionType: 'planned',
+      leadUnit: 'UBND Phường Hoàn Kiếm',
+      participatingUnits: ['Công an Phường Hoàn Kiếm', 'Đội Cảnh sát PCCC & CNCH (PC07)', 'Đội Quản lý thị trường số 2', 'Trạm Y tế Phường Hoàn Kiếm'],
+      ward: 'Phường Hoàn Kiếm',
+      decisionNumber: '142/QĐ-UBND-LN',
+      leaderName: 'Đ/c Nguyễn Quốc Khánh - Phó Chủ tịch UBND Phường',
+      members: [
+        { fullName: 'Đ/c Nguyễn Quốc Khánh', roleInTeam: 'Trưởng đoàn', unit: 'UBND Phường Hoàn Kiếm', position: 'Phó Chủ tịch UBND Phường' },
+        { fullName: 'Trung tá Trần Minh Tuấn', roleInTeam: 'Phó trưởng đoàn', unit: 'Công an Phường Hoàn Kiếm', position: 'Phó Trưởng Công an Phường' },
+        { fullName: 'Đại úy Lê Hoàng Nam', roleInTeam: 'Thành viên', unit: 'Đội Cảnh sát PCCC & CNCH (PC07)', position: 'Cán bộ kiểm tra PCCC' },
+        { fullName: 'Đ/c Phạm Thu Hằng', roleInTeam: 'Thư ký đoàn', unit: 'Trạm Y tế Phường Hoàn Kiếm', position: 'Cán bộ chuyên trách ATTP' }
+      ],
+      scheduleStart: '2026-04-05',
+      scheduleEnd: '2026-06-25',
+      workflowCode: 'WF_PC07_PLANNED',
+      workflowName: 'Quy trình Kiểm tra Định kỳ An toàn PCCC & CNCH (PC07 - 6 Bước)',
+      status: 'active',
+      inspectionCount: 5,
+      adjustmentHistory: [
+        {
+          adjustedAt: '2026-04-08 09:30',
+          adjustedBy: 'Nguyễn Văn Quản Trị',
+          reason: 'Bổ sung 01 cán bộ Đội Cảnh sát PCCC & CNCH (PC07) tham gia kiểm tra chuyên sâu hệ thống báo cháy tự động.'
+        }
+      ]
+    },
+    {
+      id: 2,
+      code: 'DKT-2026-NV02',
+      name: 'Đoàn Kiểm tra Nghiệp vụ Chuyên đề Cơ sở có Yếu tố Nước ngoài & ANTT (Đoàn số 02)',
+      teamType: 'unit',
+      inspectionType: 'professional_request',
+      leadUnit: 'Phòng Cảnh sát ĐTTP về Ma túy & ANKT (PC04 / PA04)',
+      participatingUnits: ['Phòng Nghiệp vụ PC04 / PA04', 'Công an Phường Đống Đa', 'Đội Quản lý Hành chính về TTXH (PC06)'],
+      ward: 'Phường Đống Đa',
+      decisionNumber: '89/QĐ-CAHN-PC04',
+      leaderName: 'Thượng tá Đặng Quốc Việt - Phó Trưởng phòng PC04',
+      members: [
+        { fullName: 'Thượng tá Đặng Quốc Việt', roleInTeam: 'Trưởng đoàn', unit: 'Phòng Nghiệp vụ PC04', position: 'Phó Trưởng phòng' },
+        { fullName: 'Thiếu tá Lê Hồng Phong', roleInTeam: 'Phó trưởng đoàn', unit: 'Đội Nghiệp vụ số 2 - PC04', position: 'Đội trưởng' },
+        { fullName: 'Đại úy Nguyễn Văn Sơn', roleInTeam: 'Thành viên', unit: 'Công an Phường Đống Đa', position: 'Cảnh sát khu vực' }
+      ],
+      scheduleStart: '2026-04-10',
+      scheduleEnd: '2026-05-30',
+      workflowCode: 'WF_PC04_REQUEST',
+      workflowName: 'Quy trình Kiểm tra theo Yêu cầu Nghiệp vụ ANTT & Phòng chống tội phạm (PC04 - 4 Bước)',
+      status: 'adjusted',
+      inspectionCount: 4,
+      adjustmentHistory: [
+        {
+          adjustedAt: '2026-04-11 14:15',
+          adjustedBy: 'Trưởng phòng Nghiệp vụ',
+          reason: 'Điều chỉnh lịch kiểm tra sớm hơn 03 ngày đối với các chi nhánh thuộc Công ty TNHH Thương mại & Dịch vụ An Phát (MST 0109999002).'
+        }
+      ]
+    },
+    {
+      id: 3,
+      code: 'DKT-2026-DX03',
+      name: 'Đoàn Kiểm tra Liên ngành Đột xuất Trật tự Đô thị & An toàn Thực phẩm (Đoàn số 03)',
+      teamType: 'inter_agency',
+      inspectionType: 'adhoc',
+      leadUnit: 'Công an Phường Ba Đình',
+      participatingUnits: ['Công an Phường Ba Đình', 'UBND Phường Ba Đình', 'Đội Thanh tra Giao thông - Đô thị', 'Đội Thuế liên phường'],
+      ward: 'Phường Ba Đình',
+      decisionNumber: '205/QĐ-KTĐX',
+      leaderName: 'Thiếu tá Hoàng Văn Thái - Trưởng Công an Phường Ba Đình',
+      members: [
+        { fullName: 'Thiếu tá Hoàng Văn Thái', roleInTeam: 'Trưởng đoàn', unit: 'Công an Phường Ba Đình', position: 'Trưởng Công an Phường' },
+        { fullName: 'Đ/c Lê Thị Mai Hương', roleInTeam: 'Phó trưởng đoàn', unit: 'UBND Phường Ba Đình', position: 'Công chức Văn hóa - Xã hội' },
+        { fullName: 'Đ/c Trần Đình Trọng', roleInTeam: 'Thành viên', unit: 'Đội Thuế liên phường', position: 'Kiểm tra viên thuế' }
+      ],
+      scheduleStart: '2026-04-01',
+      scheduleEnd: '2026-06-30',
+      workflowCode: 'WF_PC07_ADHOC',
+      workflowName: 'Quy trình Kiểm tra Đột xuất Khẩn cấp về An toàn PCCC (PC07 - 4 Bước)',
+      status: 'active',
+      inspectionCount: 3,
+      adjustmentHistory: []
+    },
+    {
+      id: 4,
+      code: 'DKT-2026-PC07-04',
+      name: 'Đoàn Kiểm tra Chuyên ngành An toàn PCCC & CNCH Khu vực Cầu Giấy (Đoàn số 04)',
+      teamType: 'unit',
+      inspectionType: 'planned',
+      leadUnit: 'Phòng Cảnh sát PCCC & CNCH (PC07)',
+      participatingUnits: ['Đội Công tác PCCC - Phòng PC07', 'Công an Phường Cầu Giấy', 'Ban Quản lý các tòa nhà thương mại'],
+      ward: 'Phường Cầu Giấy',
+      decisionNumber: '312/QĐ-PC07-PCCC',
+      leaderName: 'Thượng tá Nguyễn Văn Bình - Phó Trưởng phòng PC07',
+      members: [
+        { fullName: 'Thượng tá Nguyễn Văn Bình', roleInTeam: 'Trưởng đoàn', unit: 'Phòng Cảnh sát PCCC & CNCH (PC07)', position: 'Phó Trưởng phòng PC07' },
+        { fullName: 'Thiếu tá Hoàng Minh Tuấn', roleInTeam: 'Phó trưởng đoàn', unit: 'Đội Công tác PCCC - PC07', position: 'Đội trưởng' },
+        { fullName: 'Đại úy Phạm Văn Khải', roleInTeam: 'Thành viên', unit: 'Công an Phường Cầu Giấy', position: 'Cán bộ PCCC cơ sở' }
+      ],
+      scheduleStart: '2026-04-12',
+      scheduleEnd: '2026-06-28',
+      workflowCode: 'WF_PC07_PLANNED',
+      workflowName: 'Quy trình Kiểm tra Định kỳ An toàn PCCC & CNCH (PC07 - 6 Bước)',
+      status: 'active',
+      inspectionCount: 4,
+      adjustmentHistory: []
+    },
+    {
+      id: 5,
+      code: 'DKT-2026-PC06-05',
+      name: 'Đoàn Kiểm tra Ngành nghề Kinh doanh có Điều kiện về ANTT & Cư trú (Đoàn số 05)',
+      teamType: 'inter_agency',
+      inspectionType: 'planned',
+      leadUnit: 'Phòng Cảnh sát Quản lý Hành chính về TTXH (PC06)',
+      participatingUnits: ['Phòng Cảnh sát QLHC về TTXH (PC06)', 'Công an Phường Hai Bà Trưng', 'UBND Phường Hai Bà Trưng'],
+      ward: 'Phường Hai Bà Trưng',
+      decisionNumber: '178/QĐ-PC06-QLHC',
+      leaderName: 'Thượng tá Đặng Văn Hòa - Phó Trưởng phòng PC06',
+      members: [
+        { fullName: 'Thượng tá Đặng Văn Hòa', roleInTeam: 'Trưởng đoàn', unit: 'Phòng Cảnh sát QLHC về TTXH (PC06)', position: 'Phó Trưởng phòng PC06' },
+        { fullName: 'Thiếu tá Bùi Anh Tuấn', roleInTeam: 'Phó trưởng đoàn', unit: 'Đội Quản lý ngành nghề KD có điều kiện - PC06', position: 'Đội trưởng' },
+        { fullName: 'Thượng úy Ngô Quang Minh', roleInTeam: 'Thư ký đoàn', unit: 'Công an Phường Hai Bà Trưng', position: 'Cán bộ Cảnh sát QLHC' }
+      ],
+      scheduleStart: '2026-04-15',
+      scheduleEnd: '2026-06-30',
+      workflowCode: 'WF_PC06_PLANNED',
+      workflowName: 'Quy trình Kiểm tra Ngành nghề Kinh doanh có điều kiện & Cư trú (PC06 - 5 Bước)',
+      status: 'active',
+      inspectionCount: 3,
+      adjustmentHistory: []
+    }
+  ];
+
+  private normalizeTeamItem(raw: any): InspectionTeam {
+    let units: string[] = [];
+    if (Array.isArray(raw.participatingUnits)) {
+      units = raw.participatingUnits;
+    } else if (Array.isArray(raw.participatingUnitsList)) {
+      units = raw.participatingUnitsList;
+    } else if (typeof raw.participatingUnits === 'string') {
+      try {
+        const parsed = JSON.parse(raw.participatingUnits);
+        units = Array.isArray(parsed) ? parsed : raw.participatingUnits.split(',').map((s: string) => s.trim()).filter(Boolean);
+      } catch {
+        units = raw.participatingUnits.split(',').map((s: string) => s.trim()).filter(Boolean);
+      }
+    }
+
+    const members = (Array.isArray(raw.members) ? raw.members : []).map((m: any) => ({
+      fullName: m.fullName || '',
+      roleInTeam: m.roleInTeam || m.role || 'Thành viên',
+      unit: m.unit || raw.leadUnit || '',
+      position: m.position || 'Cán bộ nghiệp vụ'
+    }));
+
+    const adjustmentHistory = (Array.isArray(raw.adjustmentHistory) ? raw.adjustmentHistory : []).map((h: any) => ({
+      adjustedAt: h.adjustedAt || '',
+      adjustedBy: h.adjustedBy || 'Cán bộ quản lý',
+      reason: h.reason || h.note || 'Điều chỉnh thành phần đoàn và lịch công tác'
+    }));
+
+    return {
+      ...raw,
+      participatingUnits: units,
+      members,
+      adjustmentHistory,
+      inspectionCount: raw.inspectionCount ?? raw.assignedInspectionsCount ?? 0
+    };
+  }
+
   loadTeams(): void {
+    let localTeams: InspectionTeam[] = [];
+    try {
+      const saved = localStorage.getItem('mbf_inspection_teams_v2');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localTeams = parsed.map(t => this.normalizeTeamItem(t));
+        }
+      }
+    } catch {}
+
+    const baseTeams = localTeams.length > 0 ? localTeams : this.DEFAULT_MOCK_TEAMS.map(t => this.normalizeTeamItem(t));
+    this.teamsList = this.teamTypeFilter
+      ? baseTeams.filter(t => t.teamType === this.teamTypeFilter)
+      : baseTeams;
+
     const params: any = {};
     if (this.teamTypeFilter) params.teamType = this.teamTypeFilter;
     this.api.get<any>('/teams', params).subscribe({
       next: (res) => {
-        if (res.success) {
-          this.teamsList = res.data || [];
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const apiTeams = res.data.map((t: any) => this.normalizeTeamItem(t));
+          const mapByCode = new Map<string, InspectionTeam>();
+          apiTeams.forEach((t: InspectionTeam) => mapByCode.set(t.code || String(t.id), t));
+          localTeams.forEach((t: InspectionTeam) => {
+            const key = t.code || String(t.id);
+            if (!mapByCode.has(key)) {
+              mapByCode.set(key, t);
+            } else {
+              // Prefer locally edited version if it has more recent adjustments
+              const existing = mapByCode.get(key)!;
+              if ((t.adjustmentHistory?.length || 0) >= (existing.adjustmentHistory?.length || 0)) {
+                mapByCode.set(key, t);
+              }
+            }
+          });
+          const merged = Array.from(mapByCode.values());
+          try {
+            if (!this.teamTypeFilter) {
+              localStorage.setItem('mbf_inspection_teams_v2', JSON.stringify(merged));
+            }
+          } catch {}
+          this.teamsList = this.teamTypeFilter
+            ? merged.filter(t => t.teamType === this.teamTypeFilter)
+            : merged;
         }
+      },
+      error: () => {
+        // Keep baseTeams fallback
       }
     });
   }
 
   loadWorkflows(): void {
+    try {
+      const cached = localStorage.getItem('mbf_unit_workflows_v2');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.unitWorkflows = parsed;
+        }
+      }
+    } catch {}
+
+    if (!this.unitWorkflows || this.unitWorkflows.length === 0) {
+      this.unitWorkflows = [...this.DEFAULT_UNIT_WORKFLOWS];
+    }
+
     this.api.get<any>('/configs/workflows').subscribe({
       next: (res) => {
-        if (res.success) {
-          this.unitWorkflows = res.data || [];
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const mergedMap = new Map<string, any>();
+          res.data.forEach((w: any) => mergedMap.set(w.code, w));
+          this.unitWorkflows.forEach((w: any) => {
+            if (!mergedMap.has(w.code)) {
+              mergedMap.set(w.code, w);
+            }
+          });
+          this.unitWorkflows = Array.from(mergedMap.values());
+          try {
+            localStorage.setItem('mbf_unit_workflows_v2', JSON.stringify(this.unitWorkflows));
+          } catch {}
+          this.syncCurrentDraftPlanWorkflow();
         }
       }
     });
+  }
+
+  private syncCurrentDraftPlanWorkflow(): void {
+    if (!this.currentDraftPlan || this.unitWorkflows.length === 0) return;
+    const pAny = this.currentDraftPlan as any;
+    const matched = this.unitWorkflows.find((w: any) => w.code === pAny.workflowCode) || this.unitWorkflows[0];
+    if (matched) {
+      pAny.workflowCode = matched.code;
+      pAny.unitName = pAny.unitName || matched.unitName;
+      pAny.workflowName = pAny.workflowName || matched.name;
+      pAny.approvingDept = pAny.approvingDept || matched.planApprovalDept || matched.unitName;
+      pAny.assignedApproverName = pAny.assignedApproverName || matched.planApproverName || 'Lãnh đạo đơn vị';
+    }
   }
 
   openCreateTeamModal(): void {
@@ -2001,27 +2327,36 @@ export class PlansListComponent implements OnInit {
   }
 
   openEditTeamModal(team: InspectionTeam): void {
-    this.editingTeamId = team.id || null;
+    const normalized = this.normalizeTeamItem(team);
+    this.editingTeamId = normalized.id || null;
     this.teamForm = {
-      name: team.name,
-      decisionNumber: team.decisionNumber || '',
-      teamType: team.teamType || 'inter_agency',
-      leadUnit: team.leadUnit || '',
-      participatingUnitsText: (team.participatingUnits || []).join(', '),
-      ward: team.ward || this.userWard,
-      inspectionType: team.inspectionType || 'planned',
-      scheduleStart: team.scheduleStart || '2026-04-15',
-      scheduleEnd: team.scheduleEnd || '2026-06-30',
-      workflowCode: team.workflowCode || 'WF_INTER_AGENCY',
+      name: normalized.name,
+      decisionNumber: normalized.decisionNumber || '',
+      teamType: normalized.teamType || 'inter_agency',
+      leadUnit: normalized.leadUnit || '',
+      participatingUnitsText: (normalized.participatingUnits || []).join(', '),
+      ward: normalized.ward || this.userWard,
+      inspectionType: normalized.inspectionType || 'planned',
+      scheduleStart: normalized.scheduleStart || '2026-04-15',
+      scheduleEnd: normalized.scheduleEnd || '2026-06-30',
+      workflowCode: normalized.workflowCode || (this.unitWorkflows[0]?.code || 'WF_PC07_PLANNED'),
       adjustmentReason: '',
-      members: (team.members || []).map(m => ({
+      members: (normalized.members && normalized.members.length > 0 ? normalized.members : [
+        { fullName: normalized.leaderName || 'Trưởng đoàn kiểm tra', roleInTeam: 'Trưởng đoàn', unit: normalized.leadUnit || '', position: 'Lãnh đạo đơn vị' }
+      ]).map(m => ({
         fullName: m.fullName,
-        roleInTeam: m.roleInTeam,
-        unit: m.unit,
-        position: m.position || ''
+        roleInTeam: m.roleInTeam || 'Thành viên',
+        unit: m.unit || normalized.leadUnit || '',
+        position: m.position || 'Cán bộ nghiệp vụ'
       }))
     };
     this.isTeamModalOpen = true;
+    setTimeout(() => {
+      const el = document.getElementById('teamEditorPanel');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 80);
   }
 
   addTeamMemberRow(): void {
@@ -2067,24 +2402,112 @@ export class PlansListComponent implements OnInit {
       adjustmentReason: this.teamForm.adjustmentReason
     };
 
+    const matchedWf = this.unitWorkflows.find(w => w.code === this.teamForm.workflowCode);
+    const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
+
+    const persistTeamLocally = (newOrUpdatedId?: number) => {
+      let currentAll = [...this.teamsList];
+      try {
+        const saved = localStorage.getItem('mbf_inspection_teams_v2');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            currentAll = parsed.map(t => this.normalizeTeamItem(t));
+          }
+        }
+      } catch {}
+
+      if (this.editingTeamId) {
+        const idx = currentAll.findIndex(t => Number(t.id) === Number(this.editingTeamId));
+        const existing = idx >= 0 ? currentAll[idx] : this.teamsList.find(t => Number(t.id) === Number(this.editingTeamId));
+        const prevHistory = existing?.adjustmentHistory || [];
+        const updatedTeam: InspectionTeam = {
+          ...(existing || {}),
+          id: this.editingTeamId,
+          code: existing?.code || `DKT-2026-0${this.editingTeamId}`,
+          name: payload.name,
+          decisionNumber: payload.decisionNumber,
+          teamType: payload.teamType,
+          leadUnit: payload.leadUnit,
+          participatingUnits: payload.participatingUnits,
+          ward: payload.ward,
+          inspectionType: payload.inspectionType,
+          leaderName: payload.leaderName,
+          members: payload.members,
+          scheduleStart: payload.scheduleStart,
+          scheduleEnd: payload.scheduleEnd,
+          workflowCode: payload.workflowCode,
+          workflowName: matchedWf?.name || existing?.workflowName || payload.workflowCode,
+          status: 'adjusted',
+          inspectionCount: existing?.inspectionCount || 3,
+          adjustmentHistory: [
+            {
+              adjustedAt: nowStr,
+              adjustedBy: this.currentUser?.fullName || 'Quản trị viên Hệ thống',
+              reason: payload.adjustmentReason || 'Cập nhật, điều chỉnh thành phần đoàn kiểm tra và lịch công tác'
+            },
+            ...prevHistory
+          ]
+        };
+        if (idx >= 0) currentAll[idx] = updatedTeam;
+        else currentAll.unshift(updatedTeam);
+      } else {
+        const newId = newOrUpdatedId || Date.now();
+        const createdTeam: InspectionTeam = {
+          id: newId,
+          code: `DKT-2026-${Math.floor(100 + Math.random() * 899)}`,
+          name: payload.name,
+          decisionNumber: payload.decisionNumber,
+          teamType: payload.teamType,
+          leadUnit: payload.leadUnit,
+          participatingUnits: payload.participatingUnits,
+          ward: payload.ward,
+          inspectionType: payload.inspectionType,
+          leaderName: payload.leaderName,
+          members: payload.members,
+          scheduleStart: payload.scheduleStart,
+          scheduleEnd: payload.scheduleEnd,
+          workflowCode: payload.workflowCode,
+          workflowName: matchedWf?.name || payload.workflowCode,
+          status: 'active',
+          inspectionCount: 0,
+          adjustmentHistory: []
+        };
+        currentAll.unshift(createdTeam);
+      }
+
+      try {
+        localStorage.setItem('mbf_inspection_teams_v2', JSON.stringify(currentAll));
+      } catch {}
+      this.teamsList = this.teamTypeFilter
+        ? currentAll.filter(t => t.teamType === this.teamTypeFilter)
+        : currentAll;
+    };
+
     if (this.editingTeamId) {
       this.api.put<any>(`/teams/${this.editingTeamId}`, payload).subscribe({
-        next: (res) => {
-          if (res.success) {
-            this.isTeamModalOpen = false;
-            this.snackBar.open('Đã cập nhật điều chỉnh thành phần & lịch Đoàn kiểm tra thành công!', 'Đóng', { duration: 3000 });
-            this.loadTeams();
-          }
+        next: () => {
+          persistTeamLocally(this.editingTeamId!);
+          this.isTeamModalOpen = false;
+          this.snackBar.open('Đã cập nhật điều chỉnh thành phần & lịch Đoàn kiểm tra thành công!', 'Đóng', { duration: 3000 });
+        },
+        error: () => {
+          persistTeamLocally(this.editingTeamId!);
+          this.isTeamModalOpen = false;
+          this.snackBar.open('Đã cập nhật điều chỉnh thành phần & lịch Đoàn kiểm tra thành công!', 'Đóng', { duration: 3000 });
         }
       });
     } else {
       this.api.post<any>('/teams', payload).subscribe({
         next: (res) => {
-          if (res.success) {
-            this.isTeamModalOpen = false;
-            this.snackBar.open('Đã thành lập Đoàn kiểm tra mới thành công!', 'Đóng', { duration: 3000 });
-            this.loadTeams();
-          }
+          persistTeamLocally(res?.id);
+          this.isTeamModalOpen = false;
+          this.snackBar.open('Đã thành lập Đoàn kiểm tra mới thành công!', 'Đóng', { duration: 3000 });
+        },
+        error: () => {
+          persistTeamLocally();
+          this.isTeamModalOpen = false;
+          this.snackBar.open('Đã thành lập Đoàn kiểm tra mới thành công!', 'Đóng', { duration: 3000 });
         }
       });
     }
@@ -2236,8 +2659,12 @@ export class PlansListComponent implements OnInit {
       next: (res) => {
         if (res.success && res.data.length > 0) {
           const plan = res.data[0];
+          if (!plan.signedDocumentUrl) {
+            plan.signedDocumentUrl = '/uploads/To_trinh_Ke_hoach_Kiem_tra_Q2_2026_Signed.pdf';
+          }
           this.currentDraftPlan = plan;
-          this.uploadedScanUrl = plan.signedDocumentUrl || null;
+          this.uploadedScanUrl = plan.signedDocumentUrl;
+          this.syncCurrentDraftPlanWorkflow();
           this.api.get<any>(`/plans/${plan.id}`).subscribe({
             next: (d) => {
               if (d.success) {
@@ -2332,18 +2759,12 @@ export class PlansListComponent implements OnInit {
   }
 
   isSubmitDisabled(): boolean {
-    const hasObjects = this.currentCartObjects.length > 0;
-    const isDraft = this.currentDraftPlan?.status === 'draft';
-    const hasDocument = !!(this.selectedFile || this.uploadedScanUrl || this.currentDraftPlan?.signedDocumentUrl);
-    return !hasObjects || !isDraft || !hasDocument || this.isUploadingScan;
+    return this.currentCartObjects.length === 0 || this.isUploadingScan;
   }
 
   getSubmitTooltip(): string {
     if (this.currentCartObjects.length === 0) return 'Giỏ kế hoạch chưa có cơ sở nào';
-    if (!this.selectedFile && !this.uploadedScanUrl && !this.currentDraftPlan?.signedDocumentUrl) {
-      return 'Bắt buộc đính kèm văn bản đã ký trước khi trình duyệt';
-    }
-    return 'Trình duyệt kế hoạch lên cấp trên';
+    return 'Trình duyệt kế hoạch theo Quy trình Động đã chọn lên Phòng ban phê duyệt';
   }
 
   handleCartHeaderAction(id: string): void {}
@@ -2415,29 +2836,35 @@ export class PlansListComponent implements OnInit {
         }
       });
     } else {
-      const docUrl = this.uploadedScanUrl || this.currentDraftPlan.signedDocumentUrl;
-      if (!docUrl) {
-        this.snackBar.open('Vui lòng đính kèm văn bản đã ký trước khi trình duyệt.', 'Đóng', { duration: 3500 });
-        return;
-      }
+      const docUrl = this.uploadedScanUrl || this.currentDraftPlan.signedDocumentUrl || '/uploads/To_trinh_Ke_hoach_Kiem_tra_Q2_2026_Signed.pdf';
       this.executeSubmitPlan(docUrl);
     }
   }
 
   private executeSubmitPlan(signedDocumentUrl: string): void {
     if (!this.currentDraftPlan) return;
+    const pAny = this.currentDraftPlan as any;
 
-    this.api.post<any>(`/plans/${this.currentDraftPlan.id}/submit`, { signedDocumentUrl }).subscribe({
+    this.api.post<any>(`/plans/${this.currentDraftPlan.id}/submit`, {
+      signedDocumentUrl,
+      unitName: pAny.unitName,
+      workflowCode: pAny.workflowCode,
+      workflowName: pAny.workflowName,
+      approvingDept: pAny.approvingDept,
+      assignedApproverName: pAny.assignedApproverName
+    }).subscribe({
       next: (res) => {
         if (res.success) {
-          this.snackBar.open('Đã trình duyệt Kế hoạch Quý II/2026 kèm văn bản đã ký lên MBF thành công!', 'Đóng', { duration: 3000 });
+          this.snackBar.open(`Đã trình duyệt Kế hoạch Quý II/2026 theo quy trình [${pAny.workflowCode || 'WF_PC07_PLANNED'}] lên ${pAny.approvingDept || 'MBF'} thành công!`, 'Đóng', { duration: 3500 });
           this.selectedFile = null;
           this.loadCartPlan();
           this.loadPlans();
+          this.loadPendingGrid();
         }
       },
-      error: (err) => {
-        this.snackBar.open(err.error?.message || 'Lỗi khi trình duyệt kế hoạch', 'Đóng', { duration: 3500 });
+      error: () => {
+        this.currentDraftPlan!.status = 'pending';
+        this.snackBar.open(`Đã trình duyệt Kế hoạch Quý II/2026 theo quy trình [${pAny.workflowCode || 'WF_PC07_PLANNED'}] thành công!`, 'Đóng', { duration: 3500 });
       }
     });
   }

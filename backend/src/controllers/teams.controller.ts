@@ -46,13 +46,29 @@ export class TeamsController {
       `;
 
       const rows = db.prepare(query).all(...params) as any[];
-      const data = rows.map(row => ({
-        ...row,
-        participatingUnitsList: TeamsController.safeParseJson(row.participatingUnits, []),
-        members: TeamsController.safeParseJson(row.membersJson, []),
-        adjustmentHistory: TeamsController.safeParseJson(row.adjustmentHistoryJson, []),
-        workflowSteps: TeamsController.safeParseJson(row.workflowStepsJson, [])
-      }));
+      const data = rows.map(row => {
+        const parsedUnits = TeamsController.safeParseJson(row.participatingUnits, []);
+        const parsedMembers = TeamsController.safeParseJson(row.membersJson, []).map((m: any) => ({
+          ...m,
+          roleInTeam: m.roleInTeam || m.role || 'Thành viên',
+          role: m.role || m.roleInTeam || 'Thành viên',
+          position: m.position || 'Cán bộ nghiệp vụ'
+        }));
+        const parsedHistory = TeamsController.safeParseJson(row.adjustmentHistoryJson, []).map((h: any) => ({
+          ...h,
+          reason: h.reason || h.note || 'Điều chỉnh thành phần đoàn và lịch công tác',
+          note: h.note || h.reason || 'Điều chỉnh thành phần đoàn và lịch công tác'
+        }));
+        return {
+          ...row,
+          participatingUnits: parsedUnits,
+          participatingUnitsList: parsedUnits,
+          members: parsedMembers,
+          adjustmentHistory: parsedHistory,
+          workflowSteps: TeamsController.safeParseJson(row.workflowStepsJson, []),
+          inspectionCount: row.assignedInspectionsCount || 0
+        };
+      });
 
       res.json({ success: true, data });
     } catch (err: any) {
@@ -86,15 +102,30 @@ export class TeamsController {
         ORDER BY i.id DESC
       `).all(id);
 
+      const parsedUnits = TeamsController.safeParseJson(row.participatingUnits, []);
+      const parsedMembers = TeamsController.safeParseJson(row.membersJson, []).map((m: any) => ({
+        ...m,
+        roleInTeam: m.roleInTeam || m.role || 'Thành viên',
+        role: m.role || m.roleInTeam || 'Thành viên',
+        position: m.position || 'Cán bộ nghiệp vụ'
+      }));
+      const parsedHistory = TeamsController.safeParseJson(row.adjustmentHistoryJson, []).map((h: any) => ({
+        ...h,
+        reason: h.reason || h.note || 'Điều chỉnh thành phần đoàn và lịch công tác',
+        note: h.note || h.reason || 'Điều chỉnh thành phần đoàn và lịch công tác'
+      }));
+
       res.json({
         success: true,
         data: {
           ...row,
-          participatingUnitsList: TeamsController.safeParseJson(row.participatingUnits, []),
-          members: TeamsController.safeParseJson(row.membersJson, []),
-          adjustmentHistory: TeamsController.safeParseJson(row.adjustmentHistoryJson, []),
+          participatingUnits: parsedUnits,
+          participatingUnitsList: parsedUnits,
+          members: parsedMembers,
+          adjustmentHistory: parsedHistory,
           workflowSteps: TeamsController.safeParseJson(row.workflowStepsJson, []),
-          inspections
+          inspections,
+          inspectionCount: inspections.length
         }
       });
     } catch (err: any) {
@@ -208,10 +239,12 @@ export class TeamsController {
       }
 
       const history = TeamsController.safeParseJson(existing.adjustmentHistoryJson, []);
+      const noteText = req.body.adjustmentReason || adjustmentNote || 'Cập nhật, điều chỉnh thành phần đoàn kiểm tra và lịch công tác';
       history.unshift({
-        adjustedAt: new Date().toISOString(),
+        adjustedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
         adjustedBy: req.user?.fullName || 'Cán bộ quản lý',
-        note: adjustmentNote || 'Cập nhật, điều chỉnh thành phần đoàn kiểm tra và lịch công tác'
+        reason: noteText,
+        note: noteText
       });
 
       const unitsJson = participatingUnits !== undefined

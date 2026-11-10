@@ -121,6 +121,24 @@
         </div>
 
         <div class="filter-select-wrap">
+          <select [(ngModel)]="selectedObjectId" (change)="onEnterpriseFilterChange()" class="custom-select">
+            <option value="">🏢 Tất cả Doanh nghiệp / Đối tượng</option>
+            <option *ngFor="let ent of enterpriseOptions" [value]="ent.id">
+              {{ ent.name }} ({{ ent.taxCode || '—' }})
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-select-wrap">
+          <select [(ngModel)]="selectedLocationName" (change)="applyClientFilters()" class="custom-select">
+            <option value="">📍 Tất cả Cơ sở / Địa điểm KD</option>
+            <option *ngFor="let loc of locationOptions" [value]="loc.name">
+              {{ loc.name }} ({{ loc.ward }})
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-select-wrap">
           <select [(ngModel)]="selectedInspectionType" (change)="onFilterChange()" class="custom-select">
             <option value="">Tất cả loại hình KT</option>
             <option value="planned">📅 Theo kế hoạch / Định kỳ</option>

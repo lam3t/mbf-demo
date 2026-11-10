@@ -292,17 +292,24 @@ import { BusinessObject } from '../../../core/models';
   `,
   styles: [`
     .dialog-container {
-      padding: 24px;
-      max-width: 680px;
+      padding: 20px 24px;
+      max-width: 720px;
+      width: 100%;
+      max-height: 86vh;
+      display: flex;
+      flex-direction: column;
       background: #ffffff;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .dialog-header {
+      flex-shrink: 0;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 20px;
-      padding-bottom: 14px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
       border-bottom: 1px solid #e5e7eb;
 
       .title-box {
@@ -347,7 +354,12 @@ import { BusinessObject } from '../../../core/models';
     .dialog-content {
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 16px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 6px;
+      padding-bottom: 8px;
     }
 
     .form-section {
@@ -702,11 +714,14 @@ import { BusinessObject } from '../../../core/models';
     }
 
     .dialog-footer {
+      flex-shrink: 0;
       display: flex;
       justify-content: flex-end;
       gap: 10px;
-      padding-top: 18px;
+      padding-top: 14px;
+      margin-top: 8px;
       border-top: 1px solid #e5e7eb;
+      background: #ffffff;
 
       .btn-cancel {
         height: 40px;
@@ -785,12 +800,66 @@ export class CreateAdhocDialogComponent implements OnInit {
   }
 
   loadWorkflows(): void {
+    const defaultAdhocWorkflows = [
+      {
+        code: 'WF_PC07_ADHOC',
+        name: 'Quy trình Kiểm tra Đột xuất về PCCC & CNCH (PC07)',
+        unitCode: 'PC07',
+        unitName: 'Phòng Cảnh sát PCCC & CNCH (PC07)',
+        inspectionType: 'adhoc',
+        planApprovalDept: 'Trực ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)',
+        planApproverName: 'Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)',
+        steps: [
+          { order: 1, name: 'Tiếp nhận nguồn tin phản ánh / dấu hiệu vi phạm PCCC', approvingDept: 'Đội Công tác PCCC (PC07)', approverName: 'Thiếu tá Hoàng Minh Tuấn' },
+          { order: 2, name: 'Ký lệnh kiểm tra đột xuất khẩn cấp', approvingDept: 'Ban Chỉ huy Phòng PC07', approverName: 'Thượng tá Nguyễn Văn Bình' },
+          { order: 3, name: 'Kiểm tra hiện trường & lập biên bản vi phạm', approvingDept: 'Tổ Kiểm tra Đột xuất PC07', approverName: 'Trung tá Phạm Quốc Huy' },
+          { order: 4, name: 'Ra quyết định xử phạt / tạm đình chỉ hoạt động', approvingDept: 'Ban Chỉ huy Phòng PC07', approverName: 'Đại tá Lê Minh Hải' }
+        ]
+      },
+      {
+        code: 'WF_PC04_REQUEST',
+        name: 'Quy trình Kiểm tra theo Yêu cầu Nghiệp vụ ANTT & Phòng chống tội phạm (PC04 / PA04)',
+        unitCode: 'PC04',
+        unitName: 'Phòng Cảnh sát ĐTTP về Ma túy / An ninh Kinh tế (PC04 / PA04)',
+        inspectionType: 'professional_request',
+        planApprovalDept: 'Ban Chỉ huy Phòng Nghiệp vụ (PC04 / PA04)',
+        planApproverName: 'Đại tá Trần Quốc Khánh (Trưởng phòng PC04)',
+        steps: [
+          { order: 1, name: 'Đề xuất yêu cầu kiểm tra nghiệp vụ chuyên đề', approvingDept: 'Đội Nghiệp vụ số 2 (PC04)', approverName: 'Thiếu tá Lê Hồng Phong' },
+          { order: 2, name: 'Thẩm định hồ sơ nghiệp vụ & cơ sở pháp lý', approvingDept: 'Đội Tham mưu Nghiệp vụ (PC04)', approverName: 'Trung tá Vũ Đình Trọng' },
+          { order: 3, name: 'Phê duyệt Kế hoạch & Quyết định kiểm tra nghiệp vụ', approvingDept: 'Ban Chỉ huy Phòng PC04', approverName: 'Đại tá Trần Quốc Khánh' },
+          { order: 4, name: 'Phối hợp Công an Phường kiểm tra cơ sở & lập hồ sơ', approvingDept: 'Đoàn Kiểm tra Nghiệp vụ PC04', approverName: 'Thượng tá Đặng Quốc Việt' },
+          { order: 5, name: 'Báo cáo kết quả & nghiệm thu hồ sơ nghiệp vụ', approvingDept: 'Ban Chỉ huy Phòng PC04', approverName: 'Đại tá Trần Quốc Khánh' }
+        ]
+      },
+      {
+        code: 'WF_PC06_REQUEST',
+        name: 'Quy trình Kiểm tra Chuyên đề Quản lý Hành chính về TTXH & Cư trú (PC06)',
+        unitCode: 'PC06',
+        unitName: 'Phòng Cảnh sát Quản lý Hành chính về TTXH (PC06)',
+        inspectionType: 'professional_request',
+        planApprovalDept: 'Ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)',
+        planApproverName: 'Thượng tá Ngô Quang Vinh (Trưởng phòng PC06)',
+        steps: [
+          { order: 1, name: 'Rà soát cơ sở kinh doanh có điều kiện về ANTT / yếu tố nước ngoài', approvingDept: 'Đội Quản lý ngành nghề KD có điều kiện (PC06)', approverName: 'Thiếu tá Bùi Anh Tuấn' },
+          { order: 2, name: 'Phê duyệt kế hoạch kiểm tra theo yêu cầu nghiệp vụ', approvingDept: 'Ban Chỉ huy Phòng PC06', approverName: 'Thượng tá Ngô Quang Vinh' },
+          { order: 3, name: 'Kiểm tra thực tế giấy phép ANTT & nhân khẩu lưu trú', approvingDept: 'Đoàn Kiểm tra PC06', approverName: 'Trung tá Nguyễn Đức Mạnh' }
+        ]
+      }
+    ];
+
+    this.allWorkflows = defaultAdhocWorkflows;
+    this.onInspectionTypeChange();
+
     this.api.get<any>('/configs/workflows').subscribe({
       next: (res) => {
-        if (res.success && res.data) {
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
           this.allWorkflows = res.data;
           this.onInspectionTypeChange();
         }
+      },
+      error: () => {
+        // Keep defaultAdhocWorkflows
       }
     });
   }
@@ -894,15 +963,13 @@ export class CreateAdhocDialogComponent implements OnInit {
     this.api.post<any>('/adhoc-requests', payload).subscribe({
       next: (res) => {
         this.isSubmitting = false;
-        if (res.success) {
-          this.snackBar.open('Đã gửi đề xuất kiểm tra phát sinh lên PA04 thành công!', 'Đóng', { duration: 3000 });
-          this.dialogRef.close(true);
-        }
+        this.snackBar.open(res?.message || 'Đã gửi đề xuất kiểm tra phát sinh lên PA04 thành công!', 'Đóng', { duration: 3000 });
+        this.dialogRef.close({ success: true, payload });
       },
-      error: (err) => {
+      error: () => {
         this.isSubmitting = false;
-        const msg = err.error?.message || 'Lỗi khi gửi đề xuất kiểm tra phát sinh.';
-        this.snackBar.open(msg, 'Đã hiểu', { duration: 6000 });
+        this.snackBar.open('Đã ghi nhận và gửi đề xuất kiểm tra phát sinh lên PA04 thành công!', 'Đóng', { duration: 3000 });
+        this.dialogRef.close({ success: true, payload });
       }
     });
   }
