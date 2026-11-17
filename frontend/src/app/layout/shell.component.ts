@@ -651,12 +651,14 @@ interface NavSubItem {
           outline: none;
           color: #4b5563;
           cursor: pointer;
-          width: 38px;
-          height: 38px;
-          display: flex;
+          width: 40px;
+          height: 40px;
+          display: inline-flex;
           align-items: center;
           justify-content: center;
           border-radius: 8px;
+          overflow: visible;
+          flex-shrink: 0;
           transition: all 0.15s ease;
 
           &:hover {
@@ -672,21 +674,27 @@ interface NavSubItem {
             font-size: 22px;
             width: 22px;
             height: 22px;
+            line-height: 22px;
           }
 
           .noti-badge-pill {
             position: absolute;
             top: 2px;
             right: 2px;
-            background-color: #b45309;
+            min-width: 18px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #1e3a8a;
             color: #ffffff;
             font-size: 10px;
             font-weight: 700;
-            padding: 1px 5px;
+            padding: 0 4px;
             border-radius: 9999px;
-            line-height: 1.2;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+            line-height: 1;
             border: 1.5px solid #ffffff;
+            pointer-events: none;
 
             &.alert-badge {
               background-color: #b91c1c;
