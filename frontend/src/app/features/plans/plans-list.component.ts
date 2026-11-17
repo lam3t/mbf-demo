@@ -580,68 +580,42 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
               <tr>
                 <th style="width: 40px;" class="text-center">#</th>
                 <th style="width: 140px;">Đơn vị đề xuất</th>
-                <th style="width: 145px;">Phân loại KT</th>
-                <th style="width: 110px;">Mã định danh</th>
-                <th>Tên Doanh nghiệp & Cơ sở / Địa điểm</th>
-                <th style="min-width: 240px;">Căn cứ / Lý do & Nội dung nghiệp vụ</th>
-                <th style="width: 90px;" class="text-center">Quý/Năm</th>
-                <th style="width: 140px;">Người đề xuất</th>
-                <th style="width: 120px;" class="text-center">Trạng thái</th>
-                <th *ngIf="isMBF || isAdmin" style="width: 130px;" class="text-center">Thao tác PA04</th>
+                <th style="width: 24%;">Tổ chức, cá nhân (MST)</th>
+                <th>Nội dung / Lý do đề xuất</th>
+                <th style="width: 110px;" class="text-center">Trạng thái</th>
+                <th *ngIf="isMBF || isAdmin" style="width: 110px;" class="text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngIf="isLoadingAdhoc">
-                <td [attr.colspan]="(isMBF || isAdmin) ? 10 : 9" class="empty-cart-row">
+                <td [attr.colspan]="(isMBF || isAdmin) ? 6 : 5" class="empty-cart-row">
                   <mat-icon>sync</mat-icon>
                   <p>Đang tải danh sách đề xuất phát sinh...</p>
                 </td>
               </tr>
               <tr *ngIf="!isLoadingAdhoc && filteredAdhocRequests.length === 0">
-                <td [attr.colspan]="(isMBF || isAdmin) ? 10 : 9" class="empty-cart-row">
+                <td [attr.colspan]="(isMBF || isAdmin) ? 6 : 5" class="empty-cart-row">
                   <mat-icon>inbox</mat-icon>
                   <p>Không có đề xuất kiểm tra phát sinh nào trong danh mục này.</p>
                 </td>
               </tr>
               <tr *ngFor="let req of filteredAdhocRequests; let i = index">
                 <td class="text-center">{{ i + 1 }}</td>
-                <td><strong>{{ req.wardRequestedBy }}</strong></td>
                 <td>
-                  <span
-                    class="badge-status"
-                    [ngClass]="req.inspectionType === 'professional_request' ? 'badge-in_progress' : 'badge-pending'"
-                  >
-                    {{ req.inspectionType === 'professional_request' ? '📋 Yêu cầu nghiệp vụ' : '⚡ Kiểm tra đột xuất' }}
-                  </span>
+                  <strong>{{ req.wardRequestedBy }}</strong>
+                  <div style="font-size: 11px; color: #64748b;">{{ req.relatedQuarter }}/{{ req.relatedYear }}</div>
                 </td>
-                <td><code>{{ req.taxCode || req.idNumber }}</code></td>
                 <td>
                   <strong>{{ req.objectName }}</strong>
-                  <div *ngIf="req.locationName" style="font-size:11.5px;color:#1e40af;font-weight:600;margin-top:2px;">
-                    🏢 {{ req.locationName }}
+                  <div style="font-size: 11.5px; color: #64748b;">
+                    MST: {{ req.taxCode || req.idNumber }} • {{ req.objectAddress }}
                   </div>
-                  <div style="font-size:11.5px;color:#64748b;">{{ req.objectAddress }}</div>
                 </td>
                 <td>
-                  <div *ngIf="req.inspectionContent" style="font-size:11.5px;font-weight:600;color:#1e3a8a;margin-bottom:3px;">
-                    Chuyên đề: {{ req.inspectionContent }} {{ req.scheduledDate ? '(Dự kiến: ' + req.scheduledDate + ')' : '' }}
-                  </div>
-                  <div class="adhoc-reason-box">
-                    <mat-icon class="reason-icon">report_problem</mat-icon>
-                    <span class="reason-text">{{ req.reason }}</span>
-                  </div>
+                  <div style="font-size: 12.5px; color: #1e293b;">{{ req.reason }}</div>
                   <div *ngIf="req.status === 'rejected' && req.rejectReason" class="adhoc-reject-box">
                     <mat-icon>cancel</mat-icon>
                     <span>Lý do từ chối: {{ req.rejectReason }}</span>
-                  </div>
-                </td>
-                <td class="text-center">
-                  <span class="badge-status badge-in_progress">{{ req.relatedQuarter }}/{{ req.relatedYear }}</span>
-                </td>
-                <td>
-                  <div style="display: flex; flex-direction: column; gap: 2px;">
-                    <span>{{ req.requestedByName || 'Cán bộ phường' }}</span>
-                    <span style="font-size: 11px; color: #94a3b8;">{{ req.requestedAt | date:'dd/MM/yyyy' }}</span>
                   </div>
                 </td>
                 <td class="text-center">
@@ -1126,13 +1100,13 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
 
     .adhoc-reject-box {
       display: flex;
-      align-items: center;
-      gap: 4px;
-      margin-top: 4px;
-      font-size: 11.5px;
+      align-items: flex-start;
+      gap: 6px;
+      margin-top: 6px;
+      font-size: 12px;
       color: #b91c1c;
       font-weight: 500;
-      mat-icon { font-size: 14px; width: 14px; height: 14px; color: #b91c1c; }
+      mat-icon { font-size: 15px; width: 15px; height: 15px; color: #b91c1c; flex-shrink: 0; margin-top: 2px; }
     }
 
     /* Quota Banner */

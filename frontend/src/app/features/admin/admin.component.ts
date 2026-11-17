@@ -444,65 +444,47 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
             </div>
           </div>
 
-          <!-- Unit Workflows List -->
-          <div class="workflows-cards-grid">
-            <div class="wf-card" *ngFor="let wf of filteredWorkflows" style="border-left: 4px solid #1e3a8a;">
-              <div class="wf-card-top">
-                <div>
-                  <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px;">
-                    <span class="wf-unit-tag" style="background: #1e3a8a; color: #ffffff; font-weight: 800;">🏢 {{ wf.unitCode || 'UNIT' }} — {{ wf.unitName }}</span>
-                    <span
-                      style="font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 4px;"
-                      [style.background]="wf.inspectionType === 'adhoc' ? '#fef2f2' : wf.inspectionType === 'professional_request' ? '#f1f5f9' : '#eff6ff'"
-                      [style.color]="wf.inspectionType === 'adhoc' ? '#b91c1c' : wf.inspectionType === 'professional_request' ? '#1e3a8a' : '#1e3a8a'">
-                      {{ wf.inspectionType === 'adhoc' ? '⚡ Quy trình Kiểm tra Đột xuất' : wf.inspectionType === 'professional_request' ? '🎯 Quy trình Yêu cầu Nghiệp vụ' : '📅 Quy trình Kiểm tra Định kỳ / Theo kế hoạch' }}
+          <!-- Unit Workflows Compact Table -->
+          <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
+            <table class="role-matrix-table" style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th style="width: 18%;">Đơn vị</th>
+                  <th style="width: 34%;">Tên quy trình</th>
+                  <th style="width: 18%;">Loại hình</th>
+                  <th style="width: 10%; text-align: center;">Số bước</th>
+                  <th style="width: 20%; text-align: right;">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let wf of filteredWorkflows">
+                  <td>
+                    <strong style="color: #1e3a8a;">{{ wf.unitCode || 'UNIT' }}</strong>
+                    <div style="font-size: 11.5px; color: #64748b;">{{ wf.unitName }}</div>
+                  </td>
+                  <td>
+                    <strong>{{ wf.name }}</strong>
+                    <div style="font-size: 11.5px; color: #64748b; font-family: monospace;">{{ wf.code }}</div>
+                  </td>
+                  <td>
+                    <span class="badge-status" [ngClass]="wf.inspectionType === 'adhoc' ? 'badge-danger' : 'badge-in_progress'">
+                      {{ wf.inspectionType === 'adhoc' ? 'Đột xuất' : (wf.inspectionType === 'professional_request' ? 'Yêu cầu NV' : 'Định kỳ') }}
                     </span>
-                    <span class="wf-code-tag">Mã: {{ wf.code }}</span>
-                  </div>
-                  <h4 class="wf-title">{{ wf.name }}</h4>
-                  <p *ngIf="wf.description" style="margin: 3px 0 0 0; font-size: 12px; color: #64748b;">{{ wf.description }}</p>
-                </div>
-                <div class="wf-actions" style="display: flex; gap: 6px; flex-wrap: wrap;">
-                  <button mat-stroked-button color="primary" (click)="openWorkflowEditor(wf)">
-                    <mat-icon>edit</mat-icon> Cấu hình Phòng ban & Người duyệt
-                  </button>
-                  <button mat-stroked-button (click)="cloneWorkflowForUnit(wf)" title="Nhân bản thành quy trình mới cho đơn vị">
-                    <mat-icon>content_copy</mat-icon> Nhân bản
-                  </button>
-                </div>
-              </div>
-
-              <!-- 3 Milestones: Approving Department + Specific Approver Person -->
-              <div class="wf-authorities-strip" style="background: #f8fafc; border: 1px solid #e2e8f0;">
-                <div style="border-right: 1px solid #e2e8f0; padding-right: 8px;">
-                  <div style="font-size: 11px; font-weight: 700; color: #1e3a8a; text-transform: uppercase;">1. Duyệt Kế hoạch Kiểm tra</div>
-                  <div style="margin-top: 2px;">🏢 <strong>Phòng ban:</strong> {{ wf.planApprovalDept || wf.unitName }}</div>
-                  <div>👤 <strong>Người duyệt:</strong> <span style="color: #0f172a; font-weight: 700;">{{ wf.planApproverName || wf.planApprovalRole }}</span></div>
-                </div>
-                <div style="border-right: 1px solid #e2e8f0; padding-right: 8px;">
-                  <div style="font-size: 11px; font-weight: 700; color: #1e3a8a; text-transform: uppercase;">2. Duyệt Thành lập Đoàn Kiểm tra</div>
-                  <div style="margin-top: 2px;">🏢 <strong>Phòng ban:</strong> {{ wf.teamEstablishDept || wf.unitName }}</div>
-                  <div>👤 <strong>Người duyệt:</strong> <span style="color: #0f172a; font-weight: 700;">{{ wf.teamApproverName || wf.teamEstablishRole }}</span></div>
-                </div>
-                <div>
-                  <div style="font-size: 11px; font-weight: 700; color: #172554; text-transform: uppercase;">3. Nghiệm thu Kết quả Kiểm tra</div>
-                  <div style="margin-top: 2px;">🏢 <strong>Phòng ban:</strong> {{ wf.resultAcceptanceDept || wf.unitName }}</div>
-                  <div>👤 <strong>Người duyệt:</strong> <span style="color: #0f172a; font-weight: 700;">{{ wf.resultApproverName || wf.resultAcceptanceRole }}</span></div>
-                </div>
-              </div>
-
-              <!-- Dynamic Steps Flow with Department & Approver on every step -->
-              <div class="wf-steps-flow" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 8px;">
-                <div class="wf-step-pill" *ngFor="let s of wf.steps; let i = index" style="align-items: flex-start;">
-                  <span class="s-idx" style="margin-top: 2px; flex-shrink: 0;">{{ i + 1 }}</span>
-                  <div class="s-info" style="flex: 1;">
-                    <div class="s-name" style="line-height: 1.35; margin-bottom: 3px;">{{ s.name }}</div>
-                    <div class="s-role" style="color: #1e40af; font-weight: 600;">🏢 {{ s.approvingDept || wf.planApprovalDept }}</div>
-                    <div class="s-role" style="color: #0f172a; font-weight: 700;">👤 {{ s.approverName || s.role }} <span style="color: #64748b; font-weight: 400;">(SLA: {{ s.slaHours || 24 }}h)</span></div>
-                  </div>
-                </div>
-              </div>
-            </div>
+                  </td>
+                  <td style="text-align: center;">
+                    <strong>{{ wf.steps?.length || 0 }}</strong> bước
+                  </td>
+                  <td style="text-align: right; white-space: nowrap;">
+                    <button mat-stroked-button (click)="openWorkflowEditor(wf)" style="margin-right: 6px; font-size: 12px;">
+                      Cấu hình
+                    </button>
+                    <button mat-stroked-button (click)="cloneWorkflowForUnit(wf)" style="font-size: 12px;">
+                      Nhân bản
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
