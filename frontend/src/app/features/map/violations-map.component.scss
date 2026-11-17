@@ -468,7 +468,7 @@
         &.severity-1 { background: #eff6ff; color: #1e3a8a; }
         &.severity-2 { background: #fef3c7; color: #b45309; }
         &.severity-3 { background: #fffbeb; color: #c2410c; }
-        &.severity-4, &.severity-5 { background: #fee2e2; color: #b91c1c; }
+        &.severity-4, &.severity-5 { background: #fef2f2; color: #b91c1c; }
       }
     }
 
@@ -506,7 +506,7 @@
         gap: 4px;
 
         .popup-violation-chip {
-          background: #fee2e2;
+          background: #fef2f2;
           color: #b91c1c;
           border: 1px solid #fecaca;
           font-family: monospace;

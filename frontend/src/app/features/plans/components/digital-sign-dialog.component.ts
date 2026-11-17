@@ -294,15 +294,15 @@ import { AuthService } from '../../../core/services/auth.service';
       align-items: center;
       gap: 16px;
       padding: 16px;
-      background: #f0fdf4;
+      background: #eff6ff;
       border: 1.5px solid #86efac;
       border-radius: 8px;
-      color: #166534;
+      color: #1e3a8a;
 
       .progress-step-text {
         font-size: 13px;
         strong { font-size: 13.5px; color: #14532d; }
-        p { margin: 2px 0 0; font-size: 12px; color: #166534; }
+        p { margin: 2px 0 0; font-size: 12px; color: #1e3a8a; }
       }
     }
 

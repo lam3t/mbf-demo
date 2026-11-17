@@ -205,7 +205,7 @@
 
   &.alert-error {
     background: #fef2f2;
-    color: #991b1b;
+    color: #b91c1c;
     border: 1px solid #fecaca;
   }
 }
@@ -263,7 +263,7 @@
 
   &.enterprise { background: #e0f2fe; color: #0369a1; }
   &.household { background: #fef3c7; color: #b45309; }
-  &.individual { background: #f3e8ff; color: #7e22ce; }
+  &.individual { background: #f1f5f9; color: #7e22ce; }
 }
 
 /* Section Card */
@@ -395,7 +395,7 @@
     }
 
     &.has-error:not(.active) {
-      border-color: #fca5a5;
+      border-color: #fecaca;
       background: #fef2f2;
       color: #b91c1c;
     }

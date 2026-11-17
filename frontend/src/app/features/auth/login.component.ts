@@ -266,7 +266,7 @@ import { AuthService } from '../../core/services/auth.service';
       align-items: center;
       gap: 8px;
       padding: 10px 14px;
-      background-color: #fee2e2;
+      background-color: #fef2f2;
       border: 1px solid #fecaca;
       border-radius: 6px;
       color: #b91c1c;
@@ -465,8 +465,8 @@ import { AuthService } from '../../core/services/auth.service';
             }
           }
 
-          &.admin .acc-icon-box { background: #fee2e2; color: #b91c1c; }
-          &.leader .acc-icon-box { background: #f3e8ff; color: #1e3a8a; }
+          &.admin .acc-icon-box { background: #fef2f2; color: #b91c1c; }
+          &.leader .acc-icon-box { background: #f1f5f9; color: #1e3a8a; }
           &.officer .acc-icon-box { background: #eff6ff; color: #1e3a8a; }
           &.ward .acc-icon-box { background: #eff6ff; color: #1e3a8a; }
 

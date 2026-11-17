@@ -330,7 +330,7 @@ export interface ConflictResolutionResult {
           }
 
           &.other {
-            background: #fee2e2;
+            background: #fef2f2;
             color: #b91c1c;
           }
         }
@@ -391,7 +391,7 @@ export interface ConflictResolutionResult {
                 font-size: 10.5px;
                 font-weight: 700;
                 background: #eff6ff;
-                color: #15803d;
+                color: #1e3a8a;
                 border: 1px solid #86efac;
                 padding: 1px 6px;
                 border-radius: 4px;
@@ -451,7 +451,7 @@ export interface ConflictResolutionResult {
                   display: inline-flex;
                   align-items: center;
                   gap: 4px;
-                  background: #e0e7ff;
+                  background: #eff6ff;
                   color: #3730a3;
                   padding: 4px 8px;
                   border-radius: 4px;

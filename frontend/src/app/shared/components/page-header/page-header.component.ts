@@ -171,7 +171,7 @@ export interface PageHeaderAction {
     }
 
     .btn-action-danger {
-      background-color: #fee2e2;
+      background-color: #fef2f2;
       color: #b91c1c;
       border: 1px solid #fecaca;
       border-radius: 6px;

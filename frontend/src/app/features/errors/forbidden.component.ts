@@ -46,7 +46,7 @@ import { User } from '../../core/models';
     }
     .error-card {
       background: #ffffff;
-      border: 1px solid #fee2e2;
+      border: 1px solid #fef2f2;
       border-radius: 16px;
       padding: 48px 36px;
       text-align: center;
@@ -60,7 +60,7 @@ import { User } from '../../core/models';
       line-height: 1;
       letter-spacing: -2px;
       margin-bottom: 8px;
-      &.text-danger { color: #fca5a5; }
+      &.text-danger { color: #fecaca; }
     }
     .error-icon-wrap {
       width: 64px;
@@ -88,7 +88,7 @@ import { User } from '../../core/models';
     .role-tag {
       font-weight: 700;
       color: #b91c1c;
-      background: #fee2e2;
+      background: #fef2f2;
       padding: 2px 8px;
       border-radius: 4px;
     }
@@ -97,7 +97,7 @@ import { User } from '../../core/models';
       justify-content: center;
       gap: 12px;
       .btn-home { background: #1e3a8a; color: #ffffff; mat-icon { margin-right: 4px; } }
-      .btn-logout { color: #b91c1c; border-color: #fca5a5; mat-icon { margin-right: 4px; } }
+      .btn-logout { color: #b91c1c; border-color: #fecaca; mat-icon { margin-right: 4px; } }
     }
   `]
 })

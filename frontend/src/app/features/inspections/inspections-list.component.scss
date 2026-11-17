@@ -363,14 +363,14 @@
 
       &.enterprise { background: #e0f2fe; color: #0369a1; }
       &.household { background: #fef3c7; color: #b45309; }
-      &.individual { background: #f3e8ff; color: #7e22ce; }
+      &.individual { background: #f1f5f9; color: #7e22ce; }
     }
 
     .badge-adhoc {
       display: inline-flex;
       align-items: center;
       gap: 2px;
-      background: #f3e8ff;
+      background: #f1f5f9;
       color: #1e3a8a;
       border: 1px solid #d8b4fe;
       font-size: 10.5px;
@@ -535,7 +535,7 @@
     &.THUE { background: #eff6ff; color: #1e3a8a; border: 1px solid #bfdbfe; }
     &.DAT_DAI { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
     &.MOI_TRUONG { background: #eff6ff; color: #172554; border: 1px solid #bfdbfe; }
-    &.ANTT { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+    &.ANTT { background: #f1f5f9; color: #7e22ce; border: 1px solid #e9d5ff; }
     &.PCCC { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
   }
 }

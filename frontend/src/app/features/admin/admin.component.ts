@@ -486,7 +486,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
                     <span class="wf-unit-tag" style="background: #1e3a8a; color: #ffffff; font-weight: 800;">🏢 {{ wf.unitCode || 'UNIT' }} — {{ wf.unitName }}</span>
                     <span
                       style="font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 4px;"
-                      [style.background]="wf.inspectionType === 'adhoc' ? '#fef2f2' : wf.inspectionType === 'professional_request' ? '#f3e8ff' : '#eff6ff'"
+                      [style.background]="wf.inspectionType === 'adhoc' ? '#fef2f2' : wf.inspectionType === 'professional_request' ? '#f1f5f9' : '#eff6ff'"
                       [style.color]="wf.inspectionType === 'adhoc' ? '#b91c1c' : wf.inspectionType === 'professional_request' ? '#1e3a8a' : '#1e3a8a'">
                       {{ wf.inspectionType === 'adhoc' ? '⚡ Quy trình Kiểm tra Đột xuất' : wf.inspectionType === 'professional_request' ? '🎯 Quy trình Yêu cầu Nghiệp vụ' : '📅 Quy trình Kiểm tra Định kỳ / Theo kế hoạch' }}
                     </span>

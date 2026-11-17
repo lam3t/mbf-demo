@@ -497,81 +497,42 @@
         </div>
       </div>
 
-      <!-- Alert Cards Grid with Detailed Pass/Fail Criteria -->
-      <div class="alert-cards-grid">
-        <div 
-          *ngFor="let item of filteredWardAlerts.slice(0, maxAlertsToShow)" 
-          class="alert-card" 
-          [class.needs-notice]="item.needsNoticeLetter"
-          [class.notice-sent]="item.hasNotice"
-          [class.card-clean-pass]="item.failCount === 0">
-          
-          <div class="alert-card-header">
-            <div class="business-info">
-              <strong class="biz-name">{{ item.objectName }}</strong>
-              <div class="biz-meta">
-                <span>MST: <code>{{ item.objectTaxCode || 'N/A' }}</code></span> • 
-                <span>{{ item.objectAddress }}</span> • 
-                <span class="text-muted">Hoàn thành: {{ item.completedAt | date:'dd/MM/yyyy' }}</span>
-              </div>
-            </div>
-            <div class="header-badges">
-              <span class="status-badge badge-needs-action" *ngIf="item.needsNoticeLetter">
-                <mat-icon>warning</mat-icon> CẦN GỬI THÔNG BÁO
-              </span>
-              <span class="status-badge badge-sent" *ngIf="item.hasNotice">
-                <mat-icon>check_circle</mat-icon> ĐÃ GỬI VĂN BẢN ({{ item.notice?.sentAt | date:'dd/MM' }})
-              </span>
-              <span class="status-badge badge-all-pass" *ngIf="item.failCount === 0">
-                <mat-icon>verified</mat-icon> ĐẠT CHUẨN 100%
-              </span>
-            </div>
-          </div>
-
-          <div class="alert-card-body">
-            <!-- 1. Hạng mục KHÔNG ĐẠT (Vi phạm) -->
-            <div class="criteria-list-block fail-block" *ngIf="item.failItems.length > 0">
-              <div class="block-label fail-label">
-                <mat-icon>cancel</mat-icon>
-                <span>Hạng mục KHÔNG ĐẠT ({{ item.failItems.length }} lỗi):</span>
-              </div>
-              <div class="criteria-chips-wrap">
-                <span *ngFor="let f of item.failItems" class="crit-chip fail-chip" [title]="f.notes || ''">
-                  <span class="domain-tag" [style.background-color]="f.domainColor ? f.domainColor + '22' : '#fee2e2'" [style.color]="f.domainColor || '#b91c1c'">
-                    {{ f.domainCode }}
-                  </span>
-                  <span>{{ f.criteriaName }}</span>
-                </span>
-              </div>
-            </div>
-
-            <!-- 2. Hạng mục ĐẠT CHUẨN -->
-            <div class="criteria-list-block pass-block" *ngIf="item.passItems.length > 0">
-              <div class="block-label pass-label">
-                <mat-icon>check_circle</mat-icon>
-                <span>Hạng mục ĐẠT CHUẨN ({{ item.passItems.length }} tiêu chí):</span>
-              </div>
-              <div class="criteria-chips-wrap">
-                <span *ngFor="let p of item.passItems" class="crit-chip pass-chip">
-                  <span class="domain-tag-pass">✓ {{ p.domainCode }}</span>
-                  <span>{{ p.criteriaName }}</span>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div class="alert-card-footer">
-            <div class="footer-stats-left">
-              <span class="criteria-badge pass-count">✓ {{ item.passCount }} Đạt</span>
-              <span class="criteria-badge fail-count" *ngIf="item.failCount > 0">✗ {{ item.failCount }} Vi phạm</span>
-            </div>
-            <div class="footer-actions-right">
-              <button *ngIf="item.needsNoticeLetter" mat-flat-button class="btn-mark-sent" (click)="openNoticeDialog(item)">
-                <mat-icon>send</mat-icon> Gửi thông báo vi phạm
-              </button>
-            </div>
-          </div>
-        </div>
+      <!-- Compact Minimalist Table instead of Noisy Multi-Color Cards -->
+      <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <thead>
+            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; text-align: left; color: #475569;">
+              <th style="padding: 10px 12px;">Cơ sở kinh doanh</th>
+              <th style="padding: 10px 12px; width: 120px;">MST</th>
+              <th style="padding: 10px 12px; width: 150px;">Kết quả</th>
+              <th style="padding: 10px 12px; width: 180px;">Trạng thái</th>
+              <th style="padding: 10px 12px; width: 140px; text-align: right;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of filteredWardAlerts.slice(0, maxAlertsToShow)" style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 12px;">
+                <strong style="color: #1e293b;">{{ item.objectName }}</strong>
+                <div style="font-size: 12px; color: #64748b;">{{ item.objectAddress }}</div>
+              </td>
+              <td style="padding: 10px 12px; font-family: monospace;">{{ item.objectTaxCode || '—' }}</td>
+              <td style="padding: 10px 12px;">
+                <span *ngIf="item.failCount > 0" style="color: #b91c1c; font-weight: 600;">{{ item.failCount }} vi phạm</span>
+                <span *ngIf="item.failCount === 0" style="color: #1e3a8a; font-weight: 600;">Đạt {{ item.passCount }}/{{ item.passCount }}</span>
+              </td>
+              <td style="padding: 10px 12px;">
+                <span *ngIf="item.needsNoticeLetter" style="background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 600;">Cần gửi thông báo</span>
+                <span *ngIf="item.hasNotice" style="background: #f1f5f9; color: #334155; padding: 2px 8px; border-radius: 4px; font-size: 11.5px;">Đã gửi ({{ item.notice?.sentAt | date:'dd/MM' }})</span>
+                <span *ngIf="item.failCount === 0" style="background: #eff6ff; color: #1e3a8a; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 600;">Đạt chuẩn</span>
+              </td>
+              <td style="padding: 10px 12px; text-align: right;">
+                <button *ngIf="item.needsNoticeLetter" mat-stroked-button (click)="openNoticeDialog(item)" style="font-size: 12px; border-color: #cbd5e1; color: #1e3a8a;">
+                  Gửi thông báo
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -657,7 +618,7 @@
     <div class="embedded-map-section">
       <div class="section-heading">
         <div class="heading-left">
-          <div class="heading-icon-badge" style="background: #e0e7ff; color: #4338ca;">
+          <div class="heading-icon-badge" style="background: #eff6ff; color: #4338ca;">
             <mat-icon>explore</mat-icon>
           </div>
           <div>

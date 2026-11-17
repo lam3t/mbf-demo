@@ -594,7 +594,7 @@ export interface ObjectDialogData {
       background-color: #fef2f2;
       border: 1px solid #fecaca;
       border-radius: 8px;
-      color: #991b1b;
+      color: #b91c1c;
       margin-bottom: 16px;
 
       .alert-icon-box mat-icon {

@@ -208,7 +208,7 @@ import { BusinessObject } from '../../../core/models';
             background-color: #fef2f2;
             border-left: 3px solid #b91c1c;
             cursor: not-allowed;
-            &:hover { background-color: #fee2e2; }
+            &:hover { background-color: #fef2f2; }
           }
 
           .obj-info {
@@ -241,9 +241,9 @@ import { BusinessObject } from '../../../core/models';
                 align-items: center;
                 gap: 3px;
                 font-size: 10.5px;
-                background-color: #fee2e2;
+                background-color: #fef2f2;
                 color: #b91c1c;
-                border: 1px solid #fca5a5;
+                border: 1px solid #fecaca;
                 padding: 1px 6px;
                 border-radius: 4px;
                 font-weight: 600;

@@ -19,7 +19,7 @@
     border-radius: 6px;
 
     &:hover {
-      background: #fee2e2;
+      background: #fef2f2;
     }
 
     mat-icon {
@@ -522,7 +522,7 @@
         font-weight: 700;
         padding: 2px 7px;
         border-radius: 4px;
-        background: #fee2e2;
+        background: #fef2f2;
         color: #b91c1c;
       }
 
@@ -1022,7 +1022,7 @@
     font-size: 13px;
     font-weight: 700;
     color: #4338ca;
-    background: #e0e7ff;
+    background: #eff6ff;
     padding: 7px 14px;
     border-radius: 8px;
     text-decoration: none;
@@ -1498,7 +1498,7 @@
   border-radius: 4px;
 
   &.top-low {
-    background: #fee2e2;
+    background: #fef2f2;
     color: #b91c1c;
   }
 }
@@ -1913,8 +1913,8 @@
 
           mat-icon { font-size: 18px; width: 18px; height: 18px; }
 
-          &.green { background: #eff6ff; color: #15803d; }
-          &.red { background: #fee2e2; color: #b91c1c; }
+          &.green { background: #eff6ff; color: #1e3a8a; }
+          &.red { background: #fef2f2; color: #b91c1c; }
         }
 
         .table-title {
@@ -1935,8 +1935,8 @@
         font-size: 11px;
         font-weight: 700;
         background: #eff6ff;
-        color: #15803d;
-        border: 1px solid #bbf7d0;
+        color: #1e3a8a;
+        border: 1px solid #bfdbfe;
         padding: 3px 8px;
         border-radius: 12px;
         display: flex;
@@ -1948,7 +1948,7 @@
       .badge-slowest {
         font-size: 11px;
         font-weight: 700;
-        background: #fee2e2;
+        background: #fef2f2;
         color: #b91c1c;
         border: 1px solid #fecaca;
         padding: 3px 8px;
@@ -2017,7 +2017,7 @@
       border-radius: 50%;
       font-size: 11px;
       font-weight: 800;
-      background: #fee2e2;
+      background: #fef2f2;
       color: #b91c1c;
       border: 1px solid #fecaca;
     }
@@ -2433,7 +2433,7 @@
         .badge-pending-count {
           font-size: 11px;
           font-weight: 700;
-          background: #fee2e2;
+          background: #fef2f2;
           color: #b91c1c;
           border: 1px solid #fecaca;
           padding: 2px 8px;
@@ -2506,8 +2506,8 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
     border-radius: 10px;
     padding: 16px 20px;
 
@@ -2516,7 +2516,7 @@
       height: 44px;
       border-radius: 50%;
       background: #eff6ff;
-      color: #15803d;
+      color: #1e3a8a;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -2529,12 +2529,12 @@
       h4 {
         font-size: 13.5px;
         font-weight: 700;
-        color: #166534;
+        color: #1e3a8a;
         margin: 0 0 2px;
       }
       p {
         font-size: 12px;
-        color: #15803d;
+        color: #1e3a8a;
         margin: 0;
       }
     }
@@ -2586,8 +2586,8 @@
         }
 
         &.pass-btn.active {
-          color: #15803d;
-          mat-icon { color: #15803d; }
+          color: #1e3a8a;
+          mat-icon { color: #1e3a8a; }
         }
       }
     }
@@ -2679,7 +2679,7 @@
           mat-icon { font-size: 13px; width: 13px; height: 13px; }
 
           &.badge-needs-action {
-            background: #fee2e2;
+            background: #fef2f2;
             color: #b91c1c;
             border: 1px solid #fecaca;
             animation: pulseWarning 2s infinite;
@@ -2714,7 +2714,7 @@
 
         &.fail-block {
           background: #fef2f2;
-          border: 1px solid #fee2e2;
+          border: 1px solid #fef2f2;
         }
 
         &.pass-block {
@@ -2732,7 +2732,7 @@
           mat-icon { font-size: 14px; width: 14px; height: 14px; }
 
           &.fail-label { color: #b91c1c; }
-          &.pass-label { color: #166534; }
+          &.pass-label { color: #1e3a8a; }
         }
 
         .criteria-chips-wrap {
@@ -2749,9 +2749,9 @@
             border-radius: 5px;
 
             &.fail-chip {
-              background: #fee2e2;
-              color: #991b1b;
-              border: 1px solid #fca5a5;
+              background: #fef2f2;
+              color: #b91c1c;
+              border: 1px solid #fecaca;
 
               .domain-tag {
                 font-size: 9px;
@@ -2795,8 +2795,8 @@
           padding: 2px 8px;
           border-radius: 4px;
 
-          &.pass-count { background: #eff6ff; color: #15803d; }
-          &.fail-count { background: #fee2e2; color: #b91c1c; }
+          &.pass-count { background: #eff6ff; color: #1e3a8a; }
+          &.fail-count { background: #fef2f2; color: #b91c1c; }
         }
       }
 
@@ -2847,7 +2847,7 @@
     .summary-title {
       font-size: 12px;
       font-weight: 700;
-      color: #991b1b;
+      color: #b91c1c;
       display: flex;
       align-items: center;
       gap: 4px;

@@ -823,7 +823,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
                   <span style="font-family:monospace;font-size:11.5px;font-weight:700;background:#eff6ff;color:#1e3a8a;padding:2px 8px;border-radius:4px;border:1px solid #bfdbfe;">{{ team.code }}</span>
                   <strong style="font-size:15px;color:#0f172a;">{{ team.name }}</strong>
                   <span *ngIf="team.teamType === 'inter_agency'" style="background:#fef3c7;color:#b45309;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;border:1px solid #fde68a;">🤝 Đoàn Liên ngành ({{ team.participatingUnits?.length || 1 }} đơn vị)</span>
-                  <span *ngIf="team.teamType !== 'inter_agency'" style="background:#eff6ff;color:#15803d;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;">🏢 Đoàn Đơn vị</span>
+                  <span *ngIf="team.teamType !== 'inter_agency'" style="background:#eff6ff;color:#1e3a8a;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;">🏢 Đoàn Đơn vị</span>
                   <span *ngIf="team.status === 'adjusted'" style="background:#e2e8f0;color:#1e3a8a;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;">Đã điều chỉnh lịch/nhân sự</span>
                 </div>
                 <div style="font-size:12px;color:#475569;">
@@ -1199,7 +1199,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
       &.banner-above {
         background-color: #fef2f2;
         border-color: #fecaca;
-        color: #991b1b;
+        color: #b91c1c;
         mat-icon { color: #b91c1c; }
       }
     }
@@ -1216,7 +1216,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
       transition: all 0.2s;
 
       &.has-file {
-        background: #f0fdf4;
+        background: #eff6ff;
         border-color: #86efac;
         border-style: solid;
       }
@@ -1301,7 +1301,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
               margin-left: 2px;
 
               mat-icon { font-size: 16px; width: 16px; height: 16px; color: #b91c1c; }
-              &:hover { background: #fee2e2; border-radius: 4px; }
+              &:hover { background: #fef2f2; border-radius: 4px; }
             }
           }
         }
@@ -1499,7 +1499,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
       border-radius: 4px;
 
       &:hover {
-        background-color: #fee2e2;
+        background-color: #fef2f2;
       }
 
       mat-icon {
@@ -1622,7 +1622,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
         background-color: #eef2ff;
         color: #4338ca;
         border-color: #c7d2fe;
-        &:hover:not(:disabled) { background-color: #e0e7ff; color: #3730a3; }
+        &:hover:not(:disabled) { background-color: #eff6ff; color: #3730a3; }
 
         &.disabled {
           background-color: #f3f4f6;
@@ -1636,7 +1636,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
         background-color: #fef2f2;
         color: #b91c1c;
         border-color: #fecaca;
-        &:hover { background-color: #fee2e2; }
+        &:hover { background-color: #fef2f2; }
       }
     }
 

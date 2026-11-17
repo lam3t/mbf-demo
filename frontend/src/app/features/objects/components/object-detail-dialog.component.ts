@@ -543,12 +543,12 @@ export interface ObjectDetailResult {
             font-weight: 700;
             padding: 2px 7px;
             border-radius: 4px;
-            background: #e0e7ff;
+            background: #eff6ff;
             color: #1e40af;
             &.loc-type-headquarters { background: #dbeafe; color: #1e3a8a; }
             &.loc-type-branch { background: #e2e8f0; color: #1e3a8a; }
             &.loc-type-facility { background: #fef3c7; color: #b45309; }
-            &.loc-type-business_location { background: #eff6ff; color: #15803d; }
+            &.loc-type-business_location { background: #eff6ff; color: #1e3a8a; }
           }
 
           .btn-icon-xs {
@@ -585,8 +585,8 @@ export interface ObjectDetailResult {
             padding: 1px 6px;
             border-radius: 4px;
             &.insp { background: #f1f5f9; color: #334155; }
-            &.viol { background: #fee2e2; color: #b91c1c; }
-            &.clean { background: #eff6ff; color: #15803d; }
+            &.viol { background: #fef2f2; color: #b91c1c; }
+            &.clean { background: #eff6ff; color: #1e3a8a; }
           }
         }
       }
@@ -608,12 +608,11 @@ export interface ObjectDetailResult {
       gap: 8px;
 
       .violation-history-item {
-        background: #fff5f5;
-        border: 1px solid #fecaca;
-        border-left: 3px solid #b91c1c;
-        border-radius: 8px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
         padding: 10px 12px;
-        font-size: 12px;
+        font-size: 12.5px;
 
         .vh-top {
           display: flex;
@@ -626,11 +625,11 @@ export interface ObjectDetailResult {
             align-items: center;
             gap: 8px;
             flex-wrap: wrap;
-            .vh-id { font-family: monospace; font-weight: 700; color: #991b1b; background: #fee2e2; padding: 1px 6px; border-radius: 4px; }
-            .vh-loc { color: #0f172a; }
-            .vh-type-badge { font-size: 10.5px; background: #e0e7ff; color: #1e40af; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
+            .vh-id { font-family: monospace; font-weight: 600; color: #334155; background: #f1f5f9; padding: 1px 6px; border-radius: 4px; }
+            .vh-loc { color: #1e293b; }
+            .vh-type-badge { font-size: 11px; background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 1px 6px; border-radius: 4px; font-weight: 500; }
           }
-          .vh-date { font-size: 11px; color: #64748b; }
+          .vh-date { font-size: 11.5px; color: #64748b; }
         }
 
         .vh-codes {
@@ -639,11 +638,11 @@ export interface ObjectDetailResult {
           gap: 6px;
           flex-wrap: wrap;
           margin-bottom: 4px;
-          .vh-label { font-weight: 600; color: #991b1b; }
-          .chip-violation-mini { background: #fee2e2; color: #b91c1c; padding: 1px 6px; border-radius: 4px; font-weight: 600; border: 1px solid #fca5a5; font-size: 11px; }
+          .vh-label { font-weight: 600; color: #334155; }
+          .chip-violation-mini { background: #fef2f2; color: #b91c1c; padding: 1px 6px; border-radius: 4px; font-weight: 600; border: 1px solid #fecaca; font-size: 11px; }
         }
 
-        .vh-note { color: #334155; font-size: 11.5px; }
+        .vh-note { color: #475569; font-size: 12px; }
       }
     }
 
@@ -690,7 +689,7 @@ export interface ObjectDetailResult {
           }
 
           &.avatar-household {
-            background-color: #f0fdf4;
+            background-color: #eff6ff;
             color: #1e3a8a;
           }
 
@@ -801,11 +800,11 @@ export interface ObjectDetailResult {
 
           &.pill-household {
             background-color: #eff6ff;
-            color: #15803d;
+            color: #1e3a8a;
           }
 
           &.pill-individual {
-            background-color: #f3e8ff;
+            background-color: #f1f5f9;
             color: #7e22ce;
           }
         }
@@ -938,8 +937,8 @@ export interface ObjectDetailResult {
         gap: 6px;
 
         &.highlight {
-          background-color: #f0fdf4;
-          border-color: #bbf7d0;
+          background-color: #eff6ff;
+          border-color: #bfdbfe;
         }
 
         .comp-label {
@@ -1122,8 +1121,8 @@ export interface ObjectDetailResult {
             border-radius: 4px;
 
             &.sev-1 {
-              background-color: #f0fdf4;
-              color: #15803d;
+              background-color: #eff6ff;
+              color: #1e3a8a;
             }
             &.sev-2 {
               background-color: #fffbeb;
@@ -1230,9 +1229,9 @@ export interface ObjectDetailResult {
       }
 
       &.ready {
-        background-color: #f0fdf4;
-        border: 1px solid #bbf7d0;
-        color: #166534;
+        background-color: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e3a8a;
 
         .alert-icon-wrap mat-icon {
           color: #1e3a8a;
@@ -1241,7 +1240,7 @@ export interface ObjectDetailResult {
           height: 22px;
         }
 
-        strong { color: #15803d; }
+        strong { color: #1e3a8a; }
       }
 
       .alert-content {
@@ -1323,7 +1322,7 @@ export interface ObjectDetailResult {
 
         &.item-rejected .timeline-marker {
           border-color: #b91c1c;
-          background-color: #fee2e2;
+          background-color: #fef2f2;
           mat-icon { color: #b91c1c; }
         }
 
@@ -1373,7 +1372,7 @@ export interface ObjectDetailResult {
             border: 1px solid #fecaca;
             border-radius: 6px;
             padding: 6px 10px;
-            color: #991b1b;
+            color: #b91c1c;
             font-size: 11.5px;
 
             mat-icon {
@@ -1442,12 +1441,12 @@ export interface ObjectDetailResult {
               }
 
               .chip-violation-mini {
-                background-color: #fee2e2;
+                background-color: #fef2f2;
                 color: #b91c1c;
                 padding: 1px 6px;
                 border-radius: 4px;
                 font-weight: 600;
-                border: 1px solid #fca5a5;
+                border: 1px solid #fecaca;
               }
             }
 

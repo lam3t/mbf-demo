@@ -413,7 +413,7 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
       margin-bottom: 14px;
 
       .digital-cert-banner {
-        background: #f0fdf4;
+        background: #eff6ff;
         border: 1.5px solid #86efac;
         border-radius: 8px;
         padding: 14px 16px;
@@ -423,7 +423,7 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
           justify-content: space-between;
           align-items: center;
           padding-bottom: 10px;
-          border-bottom: 1px solid #bbf7d0;
+          border-bottom: 1px solid #bfdbfe;
           margin-bottom: 10px;
 
           .badge-signed-token {
@@ -446,7 +446,7 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
             align-items: center;
             gap: 4px;
             font-size: 12px;
-            color: #166534;
+            color: #1e3a8a;
             font-weight: 600;
 
             mat-icon { font-size: 15px; width: 15px; height: 15px; color: #1e3a8a; }
@@ -583,7 +583,7 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
       background-color: #fef2f2;
       border: 1px solid #fecaca;
       border-radius: 6px;
-      color: #991b1b;
+      color: #b91c1c;
       margin-bottom: 16px;
       font-size: 12.5px;
 

@@ -207,8 +207,8 @@ import { AuditLog, AuditDiffResponse, DiffItem } from '../../../core/models';
       align-items: center;
       gap: 8px;
       padding: 12px 16px;
-      background-color: #fee2e2;
-      color: #991b1b;
+      background-color: #fef2f2;
+      color: #b91c1c;
       border-radius: 6px;
       font-size: 13.5px;
     }
@@ -294,7 +294,7 @@ import { AuditLog, AuditDiffResponse, DiffItem } from '../../../core/models';
       &.banner-delete {
         background-color: #fef2f2;
         border: 1px solid #fecaca;
-        color: #991b1b;
+        color: #b91c1c;
       }
 
       .banner-icon-title {

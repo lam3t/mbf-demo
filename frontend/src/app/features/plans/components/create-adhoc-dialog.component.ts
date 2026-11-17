@@ -321,7 +321,7 @@ import { BusinessObject } from '../../../core/models';
           width: 42px;
           height: 42px;
           border-radius: 50%;
-          background-color: #f3e8ff;
+          background-color: #f1f5f9;
           color: #1e3a8a;
           display: flex;
           align-items: center;
@@ -625,7 +625,7 @@ import { BusinessObject } from '../../../core/models';
           cursor: pointer;
 
           mat-icon { font-size: 14px; width: 14px; height: 14px; }
-          &:hover { background: #f3e8ff; }
+          &:hover { background: #f1f5f9; }
         }
       }
 

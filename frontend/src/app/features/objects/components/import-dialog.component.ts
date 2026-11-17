@@ -288,9 +288,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
         gap: 12px;
         padding: 12px 16px;
         border-radius: 8px;
-        background-color: #f0fdf4;
-        border: 1px solid #bbf7d0;
-        color: #166534;
+        background-color: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e3a8a;
 
         mat-icon {
           font-size: 26px;
@@ -315,7 +315,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
         .error-table-scroll {
           max-height: 180px;
           overflow-y: auto;
-          border: 1px solid #fee2e2;
+          border: 1px solid #fef2f2;
           border-radius: 6px;
         }
 
@@ -327,7 +327,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
           th {
             background-color: #fef2f2;
             padding: 8px 10px;
-            color: #991b1b;
+            color: #b91c1c;
             font-weight: 600;
             border-bottom: 1px solid #fecaca;
           }
