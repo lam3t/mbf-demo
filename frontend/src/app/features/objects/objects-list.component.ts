@@ -189,49 +189,29 @@ export class ObjectsListComponent implements OnInit {
 
   tableColumns: TableColumn[] = [
     {
-      key: 'type',
-      label: 'Loại hình',
+      key: 'name',
+      label: 'Tổ chức, cá nhân (DN/HKD/CNKD)',
       sortable: true,
-      type: 'badge',
-      width: '12%',
-      badgeMapping: {
-        enterprise: { label: 'Doanh nghiệp', cssClass: 'badge-in_progress' },
-        household: { label: 'Hộ kinh doanh', cssClass: 'badge-approved' },
-        individual: { label: 'Cá nhân KD', cssClass: 'badge-pending' }
-      }
+      width: '32%',
+      formatter: (val, row) => row.name
     },
     {
       key: 'identifier',
-      label: 'Mã định danh (MST/CCCD)',
+      label: 'MST / CCCD',
       sortable: true,
-      width: '14%',
+      width: '16%',
       formatter: (val, row) => row.taxCode || row.idNumber || '-'
     },
     {
-      key: 'name',
-      label: 'Tên doanh nghiệp / Cơ sở & Yếu tố NN',
+      key: 'address',
+      label: 'Địa chỉ',
       sortable: true,
-      width: '32%',
-      formatter: (val, row) => {
-        const foreignTag = row.hasForeignElement ? ' [🌐 Yếu tố NN]' : '';
-        return `${row.name}${foreignTag}`;
-      }
-    },
-    {
-      key: 'locationCount',
-      label: 'Trụ sở / Chi nhánh / Cơ sở',
-      sortable: true,
-      width: '16%',
-      formatter: (val, row) => {
-        const count = row.locationCount || (row.locations ? row.locations.length : 1);
-        const inspCount = row.totalInspectionsCount || 0;
-        const violCount = row.totalViolationsCount || 0;
-        return `${count} địa điểm (${inspCount} lần KT${violCount > 0 ? ', ' + violCount + ' VP' : ''})`;
-      }
+      width: '26%',
+      formatter: (val, row) => row.address || '-'
     },
     {
       key: 'ward',
-      label: 'Phường quản lý',
+      label: 'Đơn vị quản lý',
       sortable: true,
       width: '14%'
     },

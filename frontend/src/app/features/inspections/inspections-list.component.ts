@@ -88,8 +88,8 @@ export class InspectionsListComponent implements OnInit {
   selectedInspection: Inspection | null = null;
   isDialogOpen = false;
 
-  // Table Columns - Streamlined for Progressive Disclosure (CR-12 / Prompt 16)
-  displayedColumns = ['id', 'objectName', 'ward', 'planQuarter', 'dueDate', 'status', 'actions'];
+  // Table Columns - Streamlined per Appendix 01/03
+  displayedColumns = ['objectName', 'ward', 'planQuarter', 'status', 'actions'];
   recommendationColumns = ['objectName', 'ward', 'tags', 'recommendationNote', 'completedAt', 'actions'];
 
 

@@ -158,28 +158,20 @@
           </div>
         </div>
 
-        <!-- KPI 4: Cảnh báo chưa xử lý / cần thông báo -->
+        <!-- KPI 4: Chưa kiểm tra / Tồn đọng -->
         <div class="core-kpi-card card-alert">
-          <div class="kpi-icon-wrap" style="background-color: #fffbeb; color: #b45309;">
-            <mat-icon>notification_important</mat-icon>
+          <div class="kpi-icon-wrap" style="background-color: #f1f5f9; color: #334155;">
+            <mat-icon>hourglass_empty</mat-icon>
           </div>
           <div class="kpi-info">
-            <span class="kpi-label">Cảnh báo & Nhắc việc</span>
+            <span class="kpi-label">Chưa kiểm tra (Phụ lục 03)</span>
             <div class="kpi-value-row">
-              <span class="kpi-main-num text-warning">{{ wardAlertsSummary.pendingNoticesCount || summary.overdueCount || 0 }}</span>
-              <span class="kpi-unit">cần xử lý</span>
+              <span class="kpi-main-num">{{ summary.notStartedCount || 0 }}</span>
+              <span class="kpi-unit">cơ sở</span>
             </div>
-            <span class="kpi-subtext">Đôn đốc văn bản vi phạm</span>
+            <span class="kpi-subtext">Cần hoàn thành hoặc chuyển Quý</span>
           </div>
         </div>
-      </div>
-
-      <!-- Progressive Disclosure: Nút xem thêm các chỉ số phụ -->
-      <div class="toggle-extra-kpi-bar">
-        <button type="button" class="btn-toggle-extra" (click)="toggleExtraKpis()">
-          <mat-icon>{{ showExtraKpis ? 'expand_less' : 'expand_more' }}</mat-icon>
-          <span>{{ showExtraKpis ? 'Thu gọn các chỉ số bổ sung' : 'Xem thêm chỉ số chi tiết khác (Đang làm, Chưa kiểm tra, Đình chỉ...)' }}</span>
-        </button>
       </div>
 
       <!-- Expandable Extra KPIs Grid -->

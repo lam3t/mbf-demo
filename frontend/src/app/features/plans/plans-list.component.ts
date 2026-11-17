@@ -1721,57 +1721,21 @@ export class PlansListComponent implements OnInit {
   planColumns: TableColumn[] = [
     {
       key: 'planName',
-      label: 'Tên kế hoạch',
+      label: 'Kế hoạch (Phụ lục 02)',
       sortable: true,
-      width: '22%',
+      width: '32%',
       formatter: (val, row) => `Kế hoạch ${row.quarter} - ${row.ward}`
     },
-    { key: 'ward', label: 'Địa bàn / Phường', sortable: true, width: '13%' },
-    {
-      key: 'workflowName',
-      label: 'Đơn vị & Quy trình Động áp dụng',
-      sortable: true,
-      width: '22%',
-      formatter: (val, row) => `${row.unitName ? '[' + row.unitName + '] ' : ''}${val || 'Quy trình Kiểm tra Định kỳ (PC07)'}`
-    },
-    {
-      key: 'assignedApproverName',
-      label: 'Phòng ban & Người duyệt KH',
-      sortable: true,
-      width: '21%',
-      formatter: (val, row) => `${row.approvingDept || 'Ban Chỉ huy Phòng'} — ${val || 'Lãnh đạo phê duyệt'}`
-    },
+    { key: 'ward', label: 'Đơn vị / Địa bàn', sortable: true, width: '24%' },
     {
       key: 'totalObjects',
-      label: 'Số lượng cơ sở',
+      label: 'Số cơ sở dự kiến',
       sortable: true,
       type: 'badge',
-      width: '10%',
+      width: '18%',
       formatter: (val) => `${val || 0} cơ sở`,
       badgeMapping: {
         '0': { label: '0 cơ sở', cssClass: 'badge-closed' }
-      }
-    },
-    {
-      key: 'dueDate',
-      label: 'Hạn trình duyệt',
-      sortable: true,
-      width: '13%',
-      formatter: (val, row) => {
-        if (!val) return '--';
-        const formatted = val.substring(0, 16).replace('T', ' ');
-        return row.isOverdue && row.status === 'draft' ? `⏰ ${formatted} (Quá hạn)` : formatted;
-      }
-    },
-    {
-      key: 'signedDocumentUrl',
-      label: 'Văn bản scan',
-      width: '14%',
-      formatter: (val) => val ? 'Đã đính kèm' : 'Chưa có',
-      type: 'badge',
-      badgeMapping: {
-        'Đã đính kèm': { label: 'Đã đính kèm', cssClass: 'badge-approved' },
-        'Chưa có': { label: 'Chưa có', cssClass: 'badge-closed' }
       }
     },
     {
@@ -1779,7 +1743,7 @@ export class PlansListComponent implements OnInit {
       label: 'Trạng thái',
       sortable: true,
       type: 'badge',
-      width: '16%',
+      width: '26%',
       formatter: (val, row) => {
         if (row.status === 'draft' && row.isOverdue) {
           return 'Quá hạn trình duyệt';
