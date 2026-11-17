@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import ExcelJS from 'exceljs';
 import { db } from '../db/connection';
+import { AppendixService } from '../services/appendix.service';
+import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
 export class ReportsController {
   static getRecommendations(req: Request, res: Response): void {
@@ -574,6 +576,143 @@ export class ReportsController {
 
       const buffer = await workbook.xlsx.writeBuffer();
       res.send(Buffer.from(buffer));
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  static getAppendix01(req: Request, res: Response): void {
+    try {
+      const { quarter, ward } = req.query;
+      const data = AppendixService.getAppendix01({
+        quarter: quarter ? String(quarter) : undefined,
+        ward: ward ? String(ward) : undefined
+      });
+      res.json({ success: true, data });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  static async exportAppendix01(req: Request, res: Response): Promise<void> {
+    try {
+      const { quarter, ward, format, securityIssuesNote, assessmentNote, proposalLegal, proposalSolution, proposalOther } = req.query;
+      const result = await AppendixService.exportAppendix01({
+        quarter: quarter ? String(quarter) : undefined,
+        ward: ward ? String(ward) : undefined,
+        format: format === 'excel' ? 'excel' : 'doc',
+        securityIssuesNote: securityIssuesNote ? String(securityIssuesNote) : undefined,
+        assessmentNote: assessmentNote ? String(assessmentNote) : undefined,
+        proposalLegal: proposalLegal ? String(proposalLegal) : undefined,
+        proposalSolution: proposalSolution ? String(proposalSolution) : undefined,
+        proposalOther: proposalOther ? String(proposalOther) : undefined
+      });
+      res.setHeader('Content-Type', result.contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+      res.send(result.buffer);
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  static getAppendix02(req: Request, res: Response): void {
+    try {
+      const { quarter, ward, deduplicate, excludeOutOfScope } = req.query;
+      const data = AppendixService.getAppendix02({
+        quarter: quarter ? String(quarter) : undefined,
+        ward: ward ? String(ward) : undefined,
+        deduplicate: deduplicate !== 'false',
+        excludeOutOfScope: excludeOutOfScope !== 'false'
+      });
+      res.json({ success: true, data });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  static async exportAppendix02(req: Request, res: Response): Promise<void> {
+    try {
+      const { quarter, ward, deduplicate, excludeOutOfScope, format } = req.query;
+      const result = await AppendixService.exportAppendix02({
+        quarter: quarter ? String(quarter) : undefined,
+        ward: ward ? String(ward) : undefined,
+        deduplicate: deduplicate !== 'false',
+        excludeOutOfScope: excludeOutOfScope !== 'false',
+        format: format === 'doc' ? 'doc' : 'excel'
+      });
+      res.setHeader('Content-Type', result.contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+      res.send(result.buffer);
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  static importAppendix02(req: AuthenticatedRequest, res: Response): void {
+    try {
+      const quarter = String(req.body?.quarter || req.query?.quarter || 'Q2/2026');
+      const ward = String(req.body?.ward || req.query?.ward || req.user?.unit || 'Phường Hoàn Kiếm');
+      const userId = req.user?.id || 1;
+      const fileBuffer = req.file?.buffer;
+      const rows = req.body?.rows ? (typeof req.body.rows === 'string' ? JSON.parse(req.body.rows) : req.body.rows) : undefined;
+
+      const result = AppendixService.importAppendix02({
+        fileBuffer,
+        rows,
+        quarter,
+        ward,
+        userId
+      });
+      res.json({ success: true, data: result });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  static getAppendix03(req: Request, res: Response): void {
+    try {
+      const { quarter, ward } = req.query;
+      const data = AppendixService.getAppendix03({
+        quarter: quarter ? String(quarter) : undefined,
+        ward: ward ? String(ward) : undefined
+      });
+      res.json({ success: true, data });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  static async exportAppendix03(req: Request, res: Response): Promise<void> {
+    try {
+      const { quarter, ward, format } = req.query;
+      const result = await AppendixService.exportAppendix03({
+        quarter: quarter ? String(quarter) : undefined,
+        ward: ward ? String(ward) : undefined,
+        format: format === 'doc' ? 'doc' : 'excel'
+      });
+      res.setHeader('Content-Type', result.contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+      res.send(result.buffer);
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  static carryOverAppendix03(req: AuthenticatedRequest, res: Response): void {
+    try {
+      const { fromQuarter, toQuarter, ward, inspectionIds } = req.body || {};
+      if (!fromQuarter || !toQuarter) {
+        res.status(400).json({ success: false, message: 'Thiếu thông tin Quý nguồn hoặc Quý đích' });
+        return;
+      }
+      const result = AppendixService.carryOverToNextQuarter({
+        fromQuarter: String(fromQuarter),
+        toQuarter: String(toQuarter),
+        ward: ward ? String(ward) : undefined,
+        inspectionIds: Array.isArray(inspectionIds) ? inspectionIds : undefined,
+        userId: req.user?.id || 1
+      });
+      res.json({ success: true, data: result });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
     }

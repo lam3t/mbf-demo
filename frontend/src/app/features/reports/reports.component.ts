@@ -6,9 +6,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ApiService } from '../../core/services/api.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
@@ -25,9 +23,7 @@ import { RecommendationTagCatalog } from '../../core/models';
     MatButtonModule,
     MatIconModule,
     MatSelectModule,
-    MatTabsModule,
     MatTooltipModule,
-    MatProgressBarModule,
     MatSnackBarModule,
     PageHeaderComponent
   ],
@@ -35,57 +31,10 @@ import { RecommendationTagCatalog } from '../../core/models';
   styleUrls: ['./reports.component.scss']
 })
 export class ReportsComponent implements OnInit {
-  activeTab = 0; // 0: Recommendations, 1: Quarterly Summary, 2: Uninspected & Explanations
+  // 0: Phụ lục 02 (Đầu quý & Lọc trùng), 1: Phụ lục 01 (Kết quả cuối quý), 2: Phụ lục 03 (Chuyển quý sau), 3: Kiến nghị
+  activeTab = 0;
 
-  // Tab 1 Data & Filters
-  recommendations: any[] = [];
-  selectedRecQuarter = '';
-  selectedRecWard = '';
-  selectedRecTag = '';
-  isExportingRec = false;
-
-  // Tab 2 Data & Filters
-  quarterlySummaries: any[] = [];
-  selectedQuarter = 'Q2/2026';
-  isExportingQuarterly = false;
-
-  // Tab 3 Data & Filters (Requirement 6: Quản lý báo cáo, giải trình cơ sở chưa kiểm tra)
-  uninspectedSummary = {
-    totalPlanned: 0,
-    completedCount: 0,
-    uninspectedCount: 0,
-    explainedCount: 0,
-    unexplainedCount: 0,
-    completionRate: 0
-  };
-  uninspectedItems: any[] = [];
-  selectedUninspectedQuarter = '';
-  selectedUninspectedWard = '';
-  selectedExplanationStatus = '';
-  selectedUninspectedType = '';
-  isExportingUninspected = false;
-
-  // Inline / Modal Form for submitting or reviewing Explanation
-  editingExplanationItem: any = null;
-  explanationForm = {
-    uninspectedReason: '',
-    explanationContent: '',
-    explanationStatus: 'pending_review',
-    explanationReviewNote: ''
-  };
-  isSubmittingExplanation = false;
-
-  readonly UNINSPECTED_REASONS = [
-    'Cơ sở tạm ngừng hoạt động / đóng cửa tại thời điểm kiểm tra',
-    'Chưa liên hệ được đại diện pháp luật / chủ cơ sở vắng mặt',
-    'Đang chờ phối hợp Đoàn kiểm tra liên ngành',
-    'Điều chỉnh lịch kiểm tra do nhiệm vụ đột xuất ưu tiên',
-    'Cơ sở đã chuyển địa điểm kinh doanh sang địa bàn khác',
-    'Nguyên nhân khách quan khác'
-  ];
-
-  // Catalogs
-  tagCatalog: RecommendationTagCatalog[] = [];
+  readonly QUARTERS = ['Q1/2026', 'Q2/2026', 'Q3/2026', 'Q4/2026'];
   readonly WARDS = [
     'Phường Hoàn Kiếm',
     'Phường Ba Đình',
@@ -94,21 +43,61 @@ export class ReportsComponent implements OnInit {
     'Phường Cầu Giấy'
   ];
 
-  readonly QUARTERS = ['Q1/2026', 'Q2/2026', 'Q3/2026', 'Q4/2026'];
-
-  // Table Columns
-  recColumns = ['id', 'objectName', 'ward', 'tags', 'recommendationNote', 'completedAt'];
-  quarterlyColumns = ['quarter', 'ward', 'total', 'completed', 'inProgress', 'notStarted', 'violations', 'rate'];
-  uninspectedColumns = [
-    'id',
+  // --- PHỤ LỤC 02 ---
+  app02Quarter = 'Q2/2026';
+  app02Ward = '';
+  app02Deduplicate = true;
+  app02ExcludeOutOfScope = true;
+  app02Items: any[] = [];
+  app02FilteredOut: any[] = [];
+  app02Stats = { totalRaw: 0, duplicateRemoved: 0, outOfScopeRemoved: 0, totalValid: 0 };
+  showFilteredOut = false;
+  isExporting02 = false;
+  isImporting02 = false;
+  importWard = 'Phường Hoàn Kiếm';
+  app02Columns = [
+    'stt',
     'objectName',
-    'ward',
-    'inspectionType',
-    'uninspectedReason',
-    'explanationContent',
-    'explanationStatus',
-    'actions'
+    'taxCode',
+    'address',
+    'inspectionContent',
+    'inspectionMethod',
+    'leadUnit',
+    'coordinatingUnit',
+    'note'
   ];
+
+  // --- PHỤ LỤC 01 ---
+  app01Quarter = 'Q2/2026';
+  app01Ward = '';
+  app01Data: any = null;
+  isExporting01 = false;
+
+  // --- PHỤ LỤC 03 ---
+  app03Quarter = 'Q2/2026';
+  app03Ward = '';
+  app03TargetQuarter = 'Q3/2026';
+  app03Items: any[] = [];
+  isExporting03 = false;
+  isCarryingOver = false;
+  app03Columns = [
+    'stt',
+    'objectName',
+    'taxCode',
+    'address',
+    'inspectionContent',
+    'leadUnit',
+    'uninspectedReason'
+  ];
+
+  // --- KIẾN NGHỊ ---
+  recommendations: any[] = [];
+  selectedRecQuarter = '';
+  selectedRecWard = '';
+  selectedRecTag = '';
+  tagCatalog: RecommendationTagCatalog[] = [];
+  isExportingRec = false;
+  recColumns = ['id', 'objectName', 'ward', 'tags', 'recommendationNote', 'completedAt'];
 
   constructor(
     private api: ApiService,
@@ -116,12 +105,203 @@ export class ReportsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadAppendix02();
+    this.loadAppendix01();
+    this.loadAppendix03();
     this.loadTagCatalog();
     this.loadRecommendations();
-    this.loadQuarterlySummary();
-    this.loadUninspectedReport();
   }
 
+  // ==================== PHỤ LỤC 02 ====================
+  loadAppendix02(): void {
+    this.api
+      .get<any>('/reports/appendix-02', {
+        quarter: this.app02Quarter,
+        ward: this.app02Ward,
+        deduplicate: String(this.app02Deduplicate),
+        excludeOutOfScope: String(this.app02ExcludeOutOfScope)
+      })
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.app02Items = res.data.items || [];
+            this.app02FilteredOut = res.data.filteredOutItems || [];
+            this.app02Stats = res.data.stats || {
+              totalRaw: 0,
+              duplicateRemoved: 0,
+              outOfScopeRemoved: 0,
+              totalValid: 0
+            };
+          }
+        }
+      });
+  }
+
+  exportAppendix02(format: 'excel' | 'doc'): void {
+    this.isExporting02 = true;
+    this.api
+      .getBlob('/reports/appendix-02/export', {
+        quarter: this.app02Quarter,
+        ward: this.app02Ward,
+        deduplicate: String(this.app02Deduplicate),
+        excludeOutOfScope: String(this.app02ExcludeOutOfScope),
+        format
+      })
+      .subscribe({
+        next: (blob) => {
+          const ext = format === 'doc' ? 'doc' : 'xlsx';
+          this.saveBlob(blob, `Phu_luc_02_${this.app02Quarter.replace('/', '_')}.${ext}`);
+          this.isExporting02 = false;
+        },
+        error: () => {
+          this.isExporting02 = false;
+          this.notify('Lỗi khi xuất Phụ lục 02');
+        }
+      });
+  }
+
+  onImportAppendix02File(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.isImporting02 = true;
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('quarter', this.app02Quarter);
+    formData.append('ward', this.app02Ward || this.importWard);
+
+    this.api.post<any>('/reports/appendix-02/import', formData).subscribe({
+      next: (res) => {
+        this.isImporting02 = false;
+        input.value = '';
+        if (res.success) {
+          const d = res.data;
+          this.notify(`Đã nhập ${d.importedCount} cơ sở vào Phụ lục 02 (bỏ qua ${d.skippedDuplicates} trùng).`);
+          this.loadAppendix02();
+        }
+      },
+      error: () => {
+        this.isImporting02 = false;
+        input.value = '';
+        this.notify('Lỗi khi đọc file Excel Phụ lục 02');
+      }
+    });
+  }
+
+  // ==================== PHỤ LỤC 01 ====================
+  loadAppendix01(): void {
+    this.api
+      .get<any>('/reports/appendix-01', {
+        quarter: this.app01Quarter,
+        ward: this.app01Ward
+      })
+      .subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.app01Data = res.data;
+          }
+        }
+      });
+  }
+
+  exportAppendix01(format: 'doc' | 'excel'): void {
+    if (!this.app01Data) return;
+    this.isExporting01 = true;
+    this.api
+      .getBlob('/reports/appendix-01/export', {
+        quarter: this.app01Quarter,
+        ward: this.app01Ward,
+        format,
+        securityIssuesNote: this.app01Data.securityIssuesNote || '',
+        assessmentNote: this.app01Data.assessmentNote || '',
+        proposalLegal: this.app01Data.proposalLegal || '',
+        proposalSolution: this.app01Data.proposalSolution || '',
+        proposalOther: this.app01Data.proposalOther || ''
+      })
+      .subscribe({
+        next: (blob) => {
+          const ext = format === 'doc' ? 'doc' : 'xlsx';
+          this.saveBlob(blob, `Phu_luc_01_${this.app01Quarter.replace('/', '_')}.${ext}`);
+          this.isExporting01 = false;
+        },
+        error: () => {
+          this.isExporting01 = false;
+          this.notify('Lỗi khi xuất Phụ lục 01');
+        }
+      });
+  }
+
+  // ==================== PHỤ LỤC 03 ====================
+  loadAppendix03(): void {
+    this.api
+      .get<any>('/reports/appendix-03', {
+        quarter: this.app03Quarter,
+        ward: this.app03Ward
+      })
+      .subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.app03Items = res.data || [];
+          }
+        }
+      });
+  }
+
+  exportAppendix03(format: 'doc' | 'excel'): void {
+    this.isExporting03 = true;
+    this.api
+      .getBlob('/reports/appendix-03/export', {
+        quarter: this.app03Quarter,
+        ward: this.app03Ward,
+        format
+      })
+      .subscribe({
+        next: (blob) => {
+          const ext = format === 'doc' ? 'doc' : 'xlsx';
+          this.saveBlob(blob, `Phu_luc_03_${this.app03Quarter.replace('/', '_')}.${ext}`);
+          this.isExporting03 = false;
+        },
+        error: () => {
+          this.isExporting03 = false;
+          this.notify('Lỗi khi xuất Phụ lục 03');
+        }
+      });
+  }
+
+  carryOverToNextQuarter(): void {
+    if (this.app03Items.length === 0) return;
+    if (this.app03Quarter === this.app03TargetQuarter) {
+      this.notify('Quý đích phải khác Quý hiện tại');
+      return;
+    }
+    this.isCarryingOver = true;
+    this.api
+      .post<any>('/reports/appendix-03/carry-over', {
+        fromQuarter: this.app03Quarter,
+        toQuarter: this.app03TargetQuarter,
+        ward: this.app03Ward || undefined
+      })
+      .subscribe({
+        next: (res) => {
+          this.isCarryingOver = false;
+          if (res.success) {
+            this.notify(
+              `Đã chuyển ${res.data.carriedCount} cơ sở chưa kiểm tra từ ${this.app03Quarter} sang ${this.app03TargetQuarter}`
+            );
+            this.app02Quarter = this.app03TargetQuarter;
+            this.loadAppendix02();
+            this.loadAppendix03();
+          }
+        },
+        error: () => {
+          this.isCarryingOver = false;
+          this.notify('Lỗi khi chuyển danh sách sang Quý sau');
+        }
+      });
+  }
+
+  // ==================== KIẾN NGHỊ ====================
   loadTagCatalog(): void {
     this.api.get<any>('/recommendation-tag-catalog').subscribe({
       next: (res) => {
@@ -131,217 +311,43 @@ export class ReportsComponent implements OnInit {
   }
 
   loadRecommendations(): void {
-    const params: any = {};
-    if (this.selectedRecQuarter) params.quarter = this.selectedRecQuarter;
-    if (this.selectedRecWard) params.ward = this.selectedRecWard;
-    if (this.selectedRecTag) params.tag = this.selectedRecTag;
-
-    this.api.get<any>('/reports/recommendations', params).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.recommendations = res.data;
+    this.api
+      .get<any>('/reports/recommendations', {
+        quarter: this.selectedRecQuarter,
+        ward: this.selectedRecWard,
+        tag: this.selectedRecTag
+      })
+      .subscribe({
+        next: (res) => {
+          if (res.success) this.recommendations = res.data || [];
         }
-      }
-    });
-  }
-
-  loadQuarterlySummary(): void {
-    const params: any = {};
-    if (this.selectedQuarter) params.quarter = this.selectedQuarter;
-
-    this.api.get<any>('/reports/quarterly', params).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.quarterlySummaries = res.data;
-        }
-      }
-    });
-  }
-
-  loadUninspectedReport(): void {
-    const params: any = {};
-    if (this.selectedUninspectedQuarter) params.quarter = this.selectedUninspectedQuarter;
-    if (this.selectedUninspectedWard) params.ward = this.selectedUninspectedWard;
-    if (this.selectedExplanationStatus) params.explanationStatus = this.selectedExplanationStatus;
-    if (this.selectedUninspectedType) params.inspectionType = this.selectedUninspectedType;
-
-    this.api.get<any>('/reports/uninspected', params).subscribe({
-      next: (res) => {
-        if (res.success && res.data) {
-          this.uninspectedSummary = res.data.summary || this.uninspectedSummary;
-          this.uninspectedItems = res.data.items || [];
-        }
-      }
-    });
-  }
-
-  onRecFilterChange(): void {
-    this.loadRecommendations();
-  }
-
-  onQuarterlyFilterChange(): void {
-    this.loadQuarterlySummary();
-  }
-
-  onUninspectedFilterChange(): void {
-    this.loadUninspectedReport();
-  }
-
-  openExplanationModal(item: any): void {
-    this.editingExplanationItem = item;
-    this.explanationForm = {
-      uninspectedReason: item.uninspectedReason || this.UNINSPECTED_REASONS[0],
-      explanationContent: item.explanationContent || '',
-      explanationStatus: item.explanationStatus && item.explanationStatus !== 'none' ? item.explanationStatus : 'pending_review',
-      explanationReviewNote: item.explanationReviewNote || ''
-    };
-  }
-
-  closeExplanationModal(): void {
-    this.editingExplanationItem = null;
-  }
-
-  saveExplanation(): void {
-    if (!this.editingExplanationItem) return;
-    if (!this.explanationForm.uninspectedReason || !this.explanationForm.explanationContent.trim()) {
-      this.snackBar.open('Vui lòng chọn nguyên nhân và nhập nội dung giải trình chi tiết!', 'Đóng', { duration: 3000 });
-      return;
-    }
-
-    this.isSubmittingExplanation = true;
-    this.api.post<any>(`/inspections/${this.editingExplanationItem.id}/explanation`, this.explanationForm).subscribe({
-      next: (res) => {
-        this.isSubmittingExplanation = false;
-        if (res.success) {
-          this.snackBar.open('Đã lưu báo cáo giải trình trường hợp chưa kiểm tra!', 'Đóng', { duration: 2500 });
-          this.editingExplanationItem = null;
-          this.loadUninspectedReport();
-        }
-      },
-      error: (err) => {
-        this.isSubmittingExplanation = false;
-        this.snackBar.open(err.error?.message || 'Lỗi khi lưu giải trình', 'Đóng', { duration: 3000 });
-      }
-    });
-  }
-
-  getInspectionTypeLabel(type: string): string {
-    if (type === 'adhoc') return 'Đột xuất';
-    if (type === 'professional_request') return 'Yêu cầu nghiệp vụ';
-    return 'Theo kế hoạch/định kỳ';
-  }
-
-  getExplanationStatusLabel(status: string): string {
-    switch (status) {
-      case 'pending_review': return 'Chờ lãnh đạo duyệt';
-      case 'accepted': return 'Đã chấp thuận giải trình';
-      case 'rescheduled': return 'Đã chuyển lịch kiểm tra bù';
-      default: return 'Chưa có giải trình';
-    }
+      });
   }
 
   exportRecommendationsExcel(): void {
     this.isExportingRec = true;
-    const params: any = {};
-    if (this.selectedRecQuarter) params.quarter = this.selectedRecQuarter;
-    if (this.selectedRecWard) params.ward = this.selectedRecWard;
-    if (this.selectedRecTag) params.tag = this.selectedRecTag;
-
-    this.snackBar.open('Đang tạo và tải file Báo cáo Kiến nghị...', '', { duration: 2000 });
-
-    this.api.getBlob('/reports/recommendations/export', params).subscribe({
-      next: (blob) => {
-        this.isExportingRec = false;
-        const qStr = (this.selectedRecQuarter || 'Tat_ca').replace(/[/\\?%*:|"<>]/g, '_');
-        const filename = `Bao_cao_Kien_nghi_${qStr}_${Date.now()}.xlsx`;
-        this.saveBlob(blob, filename);
-        this.snackBar.open('Xuất Báo cáo Excel thành công!', 'Đóng', { duration: 3000 });
-      },
-      error: (err) => {
-        this.isExportingRec = false;
-        console.error('Export recommendations error:', err);
-        this.snackBar.open('Lỗi khi xuất file Excel. Vui lòng thử lại!', 'Đóng', { duration: 3000 });
-      }
-    });
-  }
-
-  exportQuarterlySummaryExcel(): void {
-    this.isExportingQuarterly = true;
-    const params: any = {};
-    if (this.selectedQuarter) params.quarter = this.selectedQuarter;
-
-    this.snackBar.open('Đang tạo và tải file Báo cáo Tổng kết Quý...', '', { duration: 2000 });
-
-    this.api.getBlob('/reports/quarterly/export', params).subscribe({
-      next: (blob) => {
-        this.isExportingQuarterly = false;
-        const qStr = (this.selectedQuarter || 'Tat_ca').replace(/[/\\?%*:|"<>]/g, '_');
-        const filename = `Bao_cao_Tong_ket_${qStr}_${Date.now()}.xlsx`;
-        this.saveBlob(blob, filename);
-        this.snackBar.open('Xuất Báo cáo Tổng kết Excel thành công!', 'Đóng', { duration: 3000 });
-      },
-      error: (err) => {
-        this.isExportingQuarterly = false;
-        console.error('Export quarterly summary error:', err);
-        this.snackBar.open('Lỗi khi xuất file Excel. Vui lòng thử lại!', 'Đóng', { duration: 3000 });
-      }
-    });
-  }
-
-  exportUninspectedExcel(): void {
-    this.isExportingUninspected = true;
-    const params: any = {};
-    if (this.selectedUninspectedQuarter) params.quarter = this.selectedUninspectedQuarter;
-    if (this.selectedUninspectedWard) params.ward = this.selectedUninspectedWard;
-    if (this.selectedExplanationStatus) params.explanationStatus = this.selectedExplanationStatus;
-
-    this.snackBar.open('Đang tạo và tải file Báo cáo Giải trình Chưa kiểm tra...', '', { duration: 2000 });
-
-    this.api.getBlob('/reports/uninspected/export', params).subscribe({
-      next: (blob) => {
-        this.isExportingUninspected = false;
-        const qStr = (this.selectedUninspectedQuarter || 'Tat_ca').replace(/[/\\?%*:|"<>]/g, '_');
-        const filename = `Bao_cao_Giai_trinh_Chua_Kiem_tra_${qStr}_${Date.now()}.xlsx`;
-        this.saveBlob(blob, filename);
-        this.snackBar.open('Xuất Báo cáo Giải trình Excel thành công!', 'Đóng', { duration: 3000 });
-      },
-      error: (err) => {
-        this.isExportingUninspected = false;
-        console.error('Export uninspected error:', err);
-        this.snackBar.open('Lỗi khi xuất file Excel. Vui lòng thử lại!', 'Đóng', { duration: 3000 });
-      }
-    });
-  }
-
-  private saveBlob(blob: Blob, filename: string): void {
-    const cleanFilename = filename.replace(/[/\\?%*:|"<>]/g, '_');
-    const excelBlob = new Blob([blob], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    });
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const dataUrl = reader.result as string;
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = dataUrl;
-      a.setAttribute('download', cleanFilename);
-      a.download = cleanFilename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        if (a.parentNode) {
-          document.body.removeChild(a);
+    this.api
+      .getBlob('/reports/recommendations/export', {
+        quarter: this.selectedRecQuarter,
+        ward: this.selectedRecWard,
+        tag: this.selectedRecTag
+      })
+      .subscribe({
+        next: (blob) => {
+          this.saveBlob(blob, `Bao_cao_Kien_nghi_${Date.now()}.xlsx`);
+          this.isExportingRec = false;
+        },
+        error: () => {
+          this.isExportingRec = false;
+          this.notify('Lỗi khi xuất báo cáo kiến nghị');
         }
-      }, 500);
-    };
-    reader.readAsDataURL(excelBlob);
+      });
   }
 
-  parseTags(tags: any): string[] {
-    if (!tags) return [];
+  parseTags(tagsStr: string): string[] {
+    if (!tagsStr) return [];
     try {
-      const parsed = typeof tags === 'string' ? JSON.parse(tags) : tags;
+      const parsed = JSON.parse(tagsStr);
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
@@ -349,7 +355,19 @@ export class ReportsComponent implements OnInit {
   }
 
   getTagLabel(code: string): string {
-    const found = this.tagCatalog.find(t => t.code === code);
-    return found ? found.name : code;
+    return this.tagCatalog.find((t) => t.code === code)?.name || code;
+  }
+
+  private saveBlob(blob: Blob, filename: string): void {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  private notify(msg: string): void {
+    this.snackBar.open(msg, 'Đóng', { duration: 3500 });
   }
 }

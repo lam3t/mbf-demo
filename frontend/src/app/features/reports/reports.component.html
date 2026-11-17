@@ -1,531 +1,504 @@
 <div class="reports-page-container">
-  <!-- Page Header -->
   <app-page-header
-    title="Trung tâm Báo cáo, Thống kê Tiến độ & Giải trình Kiểm tra"
-    subtitle="Tổng hợp báo cáo kiến nghị, thống kê tiến độ thực hiện kế hoạch và quản lý giải trình các cơ sở chưa được kiểm tra">
+    title="Báo cáo & Tổng hợp theo Phụ lục (KH 83/KH-CATP-PA04)"
+    subtitle="Quy trình 4 bước theo Quý: Nhập dự kiến Phụ lục 02 → Tập hợp, lọc trùng CATP → Kết quả Phụ lục 01 → Chuyển quý Phụ lục 03">
   </app-page-header>
 
-  <!-- Navigation Tab Buttons -->
+  <!-- 4-Step Minimalist Workflow Tabs -->
   <div class="reports-nav-tabs">
-    <button 
-      class="tab-btn" 
-      [class.active]="activeTab === 0" 
-      (click)="activeTab = 0">
-      <mat-icon>lightbulb</mat-icon>
-      <span>Kiến nghị theo Lĩnh vực chuyên môn</span>
+    <button class="tab-btn" [class.active]="activeTab === 0" (click)="activeTab = 0">
+      <span class="step-num">1-2</span>
+      <span>Phụ lục 02: Dự kiến &amp; Lọc trùng</span>
+      <span class="counter-badge">{{ app02Stats.totalValid }}</span>
+    </button>
+
+    <button class="tab-btn" [class.active]="activeTab === 1" (click)="activeTab = 1">
+      <span class="step-num">3</span>
+      <span>Phụ lục 01: Kết quả kiểm tra</span>
+    </button>
+
+    <button class="tab-btn" [class.active]="activeTab === 2" (click)="activeTab = 2">
+      <span class="step-num">4</span>
+      <span>Phụ lục 03: Chuyển Quý sau</span>
+      <span class="counter-badge" [class.badge-warn]="app03Items.length > 0">{{ app03Items.length }}</span>
+    </button>
+
+    <button class="tab-btn" [class.active]="activeTab === 3" (click)="activeTab = 3">
+      <span>Kiến nghị chuyên môn</span>
       <span class="counter-badge">{{ recommendations.length }}</span>
-    </button>
-
-    <button 
-      class="tab-btn" 
-      [class.active]="activeTab === 1" 
-      (click)="activeTab = 1">
-      <mat-icon>assessment</mat-icon>
-      <span>Báo cáo Tiến độ & Tổng kết Quý</span>
-      <span class="counter-badge">{{ quarterlySummaries.length }}</span>
-    </button>
-
-    <button 
-      class="tab-btn" 
-      [class.active]="activeTab === 2" 
-      (click)="activeTab = 2">
-      <mat-icon>assignment_late</mat-icon>
-      <span>Báo cáo & Giải trình Cơ sở Chưa kiểm tra</span>
-      <span class="counter-badge badge-warn">{{ uninspectedItems.length }}</span>
     </button>
   </div>
 
-  <!-- TAB 1: KIẾN NGHỊ THEO LĨNH VỰC -->
+  <!-- ==================== TAB 0: PHỤ LỤC 02 ==================== -->
   <div *ngIf="activeTab === 0" class="tab-pane">
-    <!-- Filter Control Card -->
     <div class="filter-card">
       <div class="filters-row">
         <div class="filter-group">
-          <label class="filter-label">Kỳ Kế hoạch:</label>
-          <select [(ngModel)]="selectedRecQuarter" (change)="onRecFilterChange()" class="custom-select">
+          <label class="filter-label">Kỳ Quý</label>
+          <select [(ngModel)]="app02Quarter" (change)="loadAppendix02()" class="custom-select">
+            <option *ngFor="let q of QUARTERS" [value]="q">{{ q }}</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Phạm vi đơn vị</label>
+          <select [(ngModel)]="app02Ward" (change)="loadAppendix02()" class="custom-select">
+            <option value="">Toàn CATP (Tổng hợp báo cáo A04 &amp; Công khai)</option>
+            <option *ngFor="let w of WARDS" [value]="w">{{ w }}</option>
+          </select>
+        </div>
+
+        <div class="filter-group checkbox-group">
+          <label class="check-label">
+            <input type="checkbox" [(ngModel)]="app02Deduplicate" (change)="loadAppendix02()" />
+            <span>Tự động lọc trùng MST/CCCD</span>
+          </label>
+          <label class="check-label">
+            <input type="checkbox" [(ngModel)]="app02ExcludeOutOfScope" (change)="loadAppendix02()" />
+            <span>Lọc sai diện (ngừng HĐ / thiếu mã)</span>
+          </label>
+        </div>
+
+        <div class="filter-actions">
+          <input
+            #importInput02
+            type="file"
+            accept=".xlsx,.xls"
+            style="display: none"
+            (change)="onImportAppendix02File($event)"
+          />
+          <button mat-stroked-button class="btn-outline" [disabled]="isImporting02" (click)="importInput02.click()">
+            <mat-icon>upload_file</mat-icon>
+            <span>{{ isImporting02 ? 'Đang nhập...' : 'Nhập Excel Phụ lục 02' }}</span>
+          </button>
+
+          <button mat-stroked-button class="btn-outline" [disabled]="isExporting02" (click)="exportAppendix02('doc')">
+            <mat-icon>article</mat-icon>
+            <span>Xuất Word (.doc)</span>
+          </button>
+
+          <button mat-flat-button class="btn-primary" [disabled]="isExporting02" (click)="exportAppendix02('excel')">
+            <mat-icon>download</mat-icon>
+            <span>Xuất Excel Phụ lục 02</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Minimalist Stats Strip -->
+    <div class="stats-strip">
+      <div class="stat-box">
+        <span class="stat-label">Tổng đề xuất đầu vào</span>
+        <strong class="stat-val">{{ app02Stats.totalRaw }}</strong>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Đã lọc trùng</span>
+        <strong class="stat-val warn">{{ app02Stats.duplicateRemoved }}</strong>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Đã lọc sai diện</span>
+        <strong class="stat-val warn">{{ app02Stats.outOfScopeRemoved }}</strong>
+      </div>
+      <div class="stat-box primary">
+        <span class="stat-label">Danh sách hợp lệ (Báo cáo A04)</span>
+        <strong class="stat-val">{{ app02Stats.totalValid }}</strong>
+      </div>
+    </div>
+
+    <div *ngIf="app02FilteredOut.length > 0" class="filtered-notice">
+      <span>Đã loại <strong>{{ app02FilteredOut.length }}</strong> dòng trùng lặp / sai diện khỏi bản tổng hợp.</span>
+      <button type="button" class="link-btn" (click)="showFilteredOut = !showFilteredOut">
+        {{ showFilteredOut ? 'Ẩn chi tiết' : 'Xem danh sách đã lọc' }}
+      </button>
+    </div>
+
+    <mat-card *ngIf="showFilteredOut && app02FilteredOut.length > 0" class="table-card filtered-card">
+      <div class="card-subheader">Danh sách đã lọc (Trùng lặp / Sai diện)</div>
+      <div class="table-responsive">
+        <table class="simple-table">
+          <thead>
+            <tr>
+              <th>Tổ chức, cá nhân</th>
+              <th>MST</th>
+              <th>Đơn vị đề xuất</th>
+              <th>Lý do loại</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of app02FilteredOut">
+              <td>{{ item.objectName }}</td>
+              <td>{{ item.taxCode }}</td>
+              <td>{{ item.leadUnit }}</td>
+              <td class="text-warn">{{ item.filterReason }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </mat-card>
+
+    <!-- Main Phụ lục 02 Table -->
+    <mat-card class="table-card">
+      <div class="table-responsive">
+        <table mat-table [dataSource]="app02Items" class="custom-table w-100">
+          <ng-container matColumnDef="stt">
+            <th mat-header-cell *matHeaderCellDef style="width: 56px; text-align: center;">STT</th>
+            <td mat-cell *matCellDef="let r" style="text-align: center;">{{ r.stt }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="objectName">
+            <th mat-header-cell *matHeaderCellDef>Tổ chức, cá nhân (DN/HKD/CNKD)</th>
+            <td mat-cell *matCellDef="let r"><strong>{{ r.objectName }}</strong></td>
+          </ng-container>
+
+          <ng-container matColumnDef="taxCode">
+            <th mat-header-cell *matHeaderCellDef style="width: 120px;">MST</th>
+            <td mat-cell *matCellDef="let r"><span class="mono">{{ r.taxCode }}</span></td>
+          </ng-container>
+
+          <ng-container matColumnDef="address">
+            <th mat-header-cell *matHeaderCellDef>Địa chỉ</th>
+            <td mat-cell *matCellDef="let r">{{ r.address }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="inspectionContent">
+            <th mat-header-cell *matHeaderCellDef>Nội dung kiểm tra</th>
+            <td mat-cell *matCellDef="let r">{{ r.inspectionContent }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="inspectionMethod">
+            <th mat-header-cell *matHeaderCellDef style="width: 140px;">Hình thức</th>
+            <td mat-cell *matCellDef="let r">{{ r.inspectionMethod }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="leadUnit">
+            <th mat-header-cell *matHeaderCellDef>Đơn vị chủ trì</th>
+            <td mat-cell *matCellDef="let r">{{ r.leadUnit }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="coordinatingUnit">
+            <th mat-header-cell *matHeaderCellDef>Đơn vị phối hợp</th>
+            <td mat-cell *matCellDef="let r">{{ r.coordinatingUnit }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="note">
+            <th mat-header-cell *matHeaderCellDef style="width: 120px;">Ghi chú</th>
+            <td mat-cell *matCellDef="let r">{{ r.note || '—' }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="app02Columns"></tr>
+          <tr mat-row *matRowDef="let row; columns: app02Columns;"></tr>
+          <tr class="mat-row" *matNoDataRow>
+            <td class="empty-cell" [attr.colspan]="app02Columns.length">Chưa có danh sách dự kiến kiểm tra trong kỳ này</td>
+          </tr>
+        </table>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- ==================== TAB 1: PHỤ LỤC 01 ==================== -->
+  <div *ngIf="activeTab === 1" class="tab-pane">
+    <div class="filter-card">
+      <div class="filters-row">
+        <div class="filter-group">
+          <label class="filter-label">Kỳ Báo cáo</label>
+          <select [(ngModel)]="app01Quarter" (change)="loadAppendix01()" class="custom-select">
+            <option *ngFor="let q of QUARTERS" [value]="q">{{ q }}</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Đơn vị báo cáo</label>
+          <select [(ngModel)]="app01Ward" (change)="loadAppendix01()" class="custom-select">
+            <option value="">Toàn CATP (Tổng hợp báo cáo A04)</option>
+            <option *ngFor="let w of WARDS" [value]="w">{{ w }}</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button mat-stroked-button class="btn-outline" [disabled]="isExporting01" (click)="exportAppendix01('excel')">
+            <mat-icon>table_chart</mat-icon>
+            <span>Xuất Excel (.xlsx)</span>
+          </button>
+
+          <button mat-flat-button class="btn-primary" [disabled]="isExporting01" (click)="exportAppendix01('doc')">
+            <mat-icon>description</mat-icon>
+            <span>Xuất Word Phụ lục 01 (.doc)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <mat-card *ngIf="app01Data" class="doc-preview-card">
+      <div class="doc-preview-header">
+        <div>
+          <div class="doc-tag">PHỤ LỤC 01 — MẪU BÁO CÁO ĐỊNH KỲ KẾT QUẢ KIỂM TRA</div>
+          <h3>BÁO CÁO KẾT QUẢ KIỂM TRA {{ app01Data.quarter }} — {{ app01Data.ward }}</h3>
+        </div>
+      </div>
+
+      <div class="doc-section">
+        <h4>1. Việc triển khai các mặt công tác kiểm tra</h4>
+        <div class="kpi-line">
+          <span>Đoàn theo lịch dự kiến: <strong>{{ app01Data.plannedCompleted }}/{{ app01Data.plannedTotal }}</strong></span>
+          <span>Chuyển từ Quý trước: <strong>{{ app01Data.carriedOverCompleted }}/{{ app01Data.carriedOverTotal }}</strong></span>
+          <span>Trực tiếp: <strong>{{ app01Data.directCount }}</strong></span>
+          <span>Trực tuyến: <strong>{{ app01Data.remoteCount }}</strong></span>
+        </div>
+
+        <table class="simple-table">
+          <thead>
+            <tr>
+              <th>Phân loại đoàn kiểm tra</th>
+              <th style="text-align: center;">Số đoàn</th>
+              <th style="text-align: center;">Vụ vi phạm</th>
+              <th style="text-align: center;">Hình sự</th>
+              <th style="text-align: center;">Xử phạt HC</th>
+              <th style="text-align: right;">Tổng tiền phạt (đ)</th>
+              <th style="text-align: center;">Nhắc nhở</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Phòng nghiệp vụ chủ trì</td>
+              <td class="center">{{ app01Data.deptLed.completed }}</td>
+              <td class="center">{{ app01Data.deptLed.violationsCount }}</td>
+              <td class="center">{{ app01Data.deptLed.criminalCount }}</td>
+              <td class="center">{{ app01Data.deptLed.adminCount }}</td>
+              <td class="right">{{ app01Data.deptLed.fineAmount | number }}</td>
+              <td class="center">{{ app01Data.deptLed.warningCount }}</td>
+            </tr>
+            <tr>
+              <td>Công an cấp xã/phường chủ trì</td>
+              <td class="center">{{ app01Data.wardLed.completed }}</td>
+              <td class="center">{{ app01Data.wardLed.violationsCount }}</td>
+              <td class="center">{{ app01Data.wardLed.criminalCount }}</td>
+              <td class="center">{{ app01Data.wardLed.adminCount }}</td>
+              <td class="right">{{ app01Data.wardLed.fineAmount | number }}</td>
+              <td class="center">{{ app01Data.wardLed.warningCount }}</td>
+            </tr>
+            <tr>
+              <td>Đoàn kiểm tra liên ngành tham gia</td>
+              <td class="center">{{ app01Data.interAgency.completed }}/{{ app01Data.interAgency.total }}</td>
+              <td class="center">{{ app01Data.interAgency.violationsCount }}</td>
+              <td class="center">{{ app01Data.interAgency.criminalCount }}</td>
+              <td class="center">{{ app01Data.interAgency.adminCount }}</td>
+              <td class="right">{{ app01Data.interAgency.fineAmount | number }}</td>
+              <td class="center">{{ app01Data.interAgency.warningCount }}</td>
+            </tr>
+            <tr>
+              <td>1.3. Đoàn kiểm tra đột xuất</td>
+              <td class="center">{{ app01Data.adhoc.completed }}</td>
+              <td class="center">{{ app01Data.adhoc.violationsCount }}</td>
+              <td class="center">{{ app01Data.adhoc.criminalCount }}</td>
+              <td class="center">{{ app01Data.adhoc.adminCount }}</td>
+              <td class="right">{{ app01Data.adhoc.fineAmount | number }}</td>
+              <td class="center">{{ app01Data.adhoc.warningCount }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="doc-section">
+        <h4>2. Tình hình, vấn đề đáng chú ý liên quan an ninh kinh tế</h4>
+        <textarea [(ngModel)]="app01Data.securityIssuesNote" rows="3" class="doc-textarea"></textarea>
+      </div>
+
+      <div class="doc-section">
+        <h4>3. Nhận xét, đánh giá chung &amp; Đề xuất</h4>
+        <label class="sub-label">Nhận xét, đánh giá chung</label>
+        <textarea [(ngModel)]="app01Data.assessmentNote" rows="2" class="doc-textarea"></textarea>
+
+        <div class="proposal-grid">
+          <div>
+            <label class="sub-label">Vướng mắc chính sách, pháp luật</label>
+            <textarea [(ngModel)]="app01Data.proposalLegal" rows="2" class="doc-textarea"></textarea>
+          </div>
+          <div>
+            <label class="sub-label">Giải pháp nâng cao hiệu quả KH 83</label>
+            <textarea [(ngModel)]="app01Data.proposalSolution" rows="2" class="doc-textarea"></textarea>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- ==================== TAB 2: PHỤ LỤC 03 ==================== -->
+  <div *ngIf="activeTab === 2" class="tab-pane">
+    <div class="filter-card">
+      <div class="filters-row">
+        <div class="filter-group">
+          <label class="filter-label">Kỳ hiện tại</label>
+          <select [(ngModel)]="app03Quarter" (change)="loadAppendix03()" class="custom-select">
+            <option *ngFor="let q of QUARTERS" [value]="q">{{ q }}</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Đơn vị</label>
+          <select [(ngModel)]="app03Ward" (change)="loadAppendix03()" class="custom-select">
+            <option value="">Toàn CATP (Tổng hợp báo cáo A04)</option>
+            <option *ngFor="let w of WARDS" [value]="w">{{ w }}</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Đẩy sang Quý tiếp theo</label>
+          <select [(ngModel)]="app03TargetQuarter" class="custom-select">
+            <option *ngFor="let q of QUARTERS" [value]="q">{{ q }}</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button
+            mat-stroked-button
+            class="btn-outline"
+            [disabled]="isCarryingOver || app03Items.length === 0"
+            (click)="carryOverToNextQuarter()">
+            <mat-icon>forward</mat-icon>
+            <span>{{ isCarryingOver ? 'Đang chuyển...' : 'Đẩy sang ' + app03TargetQuarter }}</span>
+          </button>
+
+          <button mat-stroked-button class="btn-outline" [disabled]="isExporting03" (click)="exportAppendix03('doc')">
+            <mat-icon>article</mat-icon>
+            <span>Xuất Word (.doc)</span>
+          </button>
+
+          <button mat-flat-button class="btn-primary" [disabled]="isExporting03" (click)="exportAppendix03('excel')">
+            <mat-icon>download</mat-icon>
+            <span>Xuất Excel Phụ lục 03</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <mat-card class="table-card">
+      <div class="table-responsive">
+        <table mat-table [dataSource]="app03Items" class="custom-table w-100">
+          <ng-container matColumnDef="stt">
+            <th mat-header-cell *matHeaderCellDef style="width: 56px; text-align: center;">STT</th>
+            <td mat-cell *matCellDef="let r" style="text-align: center;">{{ r.stt }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="objectName">
+            <th mat-header-cell *matHeaderCellDef>Tổ chức, cá nhân (DN/HKD/CNKD)</th>
+            <td mat-cell *matCellDef="let r"><strong>{{ r.objectName }}</strong></td>
+          </ng-container>
+
+          <ng-container matColumnDef="taxCode">
+            <th mat-header-cell *matHeaderCellDef style="width: 120px;">MST</th>
+            <td mat-cell *matCellDef="let r"><span class="mono">{{ r.taxCode }}</span></td>
+          </ng-container>
+
+          <ng-container matColumnDef="address">
+            <th mat-header-cell *matHeaderCellDef>Địa chỉ</th>
+            <td mat-cell *matCellDef="let r">{{ r.address }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="inspectionContent">
+            <th mat-header-cell *matHeaderCellDef>Nội dung kiểm tra</th>
+            <td mat-cell *matCellDef="let r">{{ r.inspectionContent }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="leadUnit">
+            <th mat-header-cell *matHeaderCellDef>Đơn vị chủ trì</th>
+            <td mat-cell *matCellDef="let r">{{ r.leadUnit }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="uninspectedReason">
+            <th mat-header-cell *matHeaderCellDef>Lí do chưa kiểm tra</th>
+            <td mat-cell *matCellDef="let r"><span class="text-warn">{{ r.uninspectedReason }}</span></td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="app03Columns"></tr>
+          <tr mat-row *matRowDef="let row; columns: app03Columns;"></tr>
+          <tr class="mat-row" *matNoDataRow>
+            <td class="empty-cell" [attr.colspan]="app03Columns.length">Tất cả cơ sở trong kỳ đã hoàn thành kiểm tra</td>
+          </tr>
+        </table>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- ==================== TAB 3: KIẾN NGHỊ ==================== -->
+  <div *ngIf="activeTab === 3" class="tab-pane">
+    <div class="filter-card">
+      <div class="filters-row">
+        <div class="filter-group">
+          <label class="filter-label">Kỳ Quý</label>
+          <select [(ngModel)]="selectedRecQuarter" (change)="loadRecommendations()" class="custom-select">
             <option value="">Tất cả các Quý</option>
             <option *ngFor="let q of QUARTERS" [value]="q">{{ q }}</option>
           </select>
         </div>
 
         <div class="filter-group">
-          <label class="filter-label">Địa bàn Phường:</label>
-          <select [(ngModel)]="selectedRecWard" (change)="onRecFilterChange()" class="custom-select">
-            <option value="">Tất cả các Phường</option>
+          <label class="filter-label">Đơn vị</label>
+          <select [(ngModel)]="selectedRecWard" (change)="loadRecommendations()" class="custom-select">
+            <option value="">Tất cả đơn vị</option>
             <option *ngFor="let w of WARDS" [value]="w">{{ w }}</option>
           </select>
         </div>
 
         <div class="filter-group">
-          <label class="filter-label">Lĩnh vực kiến nghị:</label>
-          <select [(ngModel)]="selectedRecTag" (change)="onRecFilterChange()" class="custom-select">
-            <option value="">Tất cả các Lĩnh vực</option>
+          <label class="filter-label">Lĩnh vực</label>
+          <select [(ngModel)]="selectedRecTag" (change)="loadRecommendations()" class="custom-select">
+            <option value="">Tất cả lĩnh vực</option>
             <option *ngFor="let t of tagCatalog" [value]="t.code">{{ t.name }}</option>
           </select>
         </div>
 
         <div class="filter-actions">
-          <button 
-            mat-flat-button 
-            color="primary" 
-            class="btn-export-excel"
-            [disabled]="isExportingRec"
-            (click)="exportRecommendationsExcel()">
-            <mat-icon>description</mat-icon>
-            <span>{{ isExportingRec ? 'Đang xuất file...' : 'Xuất Báo cáo Excel (.xlsx)' }}</span>
+          <button mat-flat-button class="btn-primary" [disabled]="isExportingRec" (click)="exportRecommendationsExcel()">
+            <mat-icon>download</mat-icon>
+            <span>Xuất Excel Kiến nghị</span>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Recommendations Data Table -->
     <mat-card class="table-card">
       <div class="table-responsive">
         <table mat-table [dataSource]="recommendations" class="custom-table w-100">
           <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef style="width: 70px;">Mã HS</th>
-            <td mat-cell *matCellDef="let row">
-              <span class="id-tag">#{{ row.id }}</span>
-            </td>
+            <th mat-header-cell *matHeaderCellDef style="width: 72px;">Mã HS</th>
+            <td mat-cell *matCellDef="let r">#{{ r.id }}</td>
           </ng-container>
 
           <ng-container matColumnDef="objectName">
             <th mat-header-cell *matHeaderCellDef>Cơ sở kinh doanh</th>
-            <td mat-cell *matCellDef="let row">
-              <div class="object-cell">
-                <strong class="object-name">{{ row.objectName }}</strong>
-                <span class="meta-address">{{ row.objectAddress }}</span>
-              </div>
+            <td mat-cell *matCellDef="let r">
+              <strong>{{ r.objectName }}</strong>
+              <div class="meta-address">{{ r.objectAddress }}</div>
             </td>
           </ng-container>
 
           <ng-container matColumnDef="ward">
-            <th mat-header-cell *matHeaderCellDef>Đơn vị Phường</th>
-            <td mat-cell *matCellDef="let row">
-              <span class="ward-text">{{ row.ward }}</span>
-            </td>
+            <th mat-header-cell *matHeaderCellDef>Đơn vị</th>
+            <td mat-cell *matCellDef="let r">{{ r.ward }}</td>
           </ng-container>
 
           <ng-container matColumnDef="tags">
-            <th mat-header-cell *matHeaderCellDef>Lĩnh vực kiến nghị</th>
-            <td mat-cell *matCellDef="let row">
-              <div class="tags-wrap">
-                <span *ngFor="let tag of parseTags(row.recommendationTags)" class="rec-tag-badge" [ngClass]="tag">
-                  {{ getTagLabel(tag) }}
-                </span>
-                <span *ngIf="parseTags(row.recommendationTags).length === 0" class="text-muted text-xs">Chung</span>
-              </div>
+            <th mat-header-cell *matHeaderCellDef>Lĩnh vực</th>
+            <td mat-cell *matCellDef="let r">
+              <span *ngFor="let tag of parseTags(r.recommendationTags)" class="neutral-tag">{{ getTagLabel(tag) }}</span>
+              <span *ngIf="parseTags(r.recommendationTags).length === 0" class="muted">Chung</span>
             </td>
           </ng-container>
 
           <ng-container matColumnDef="recommendationNote">
-            <th mat-header-cell *matHeaderCellDef>Nội dung kiến nghị / Biện pháp đề xuất</th>
-            <td mat-cell *matCellDef="let row">
-              <div class="note-text">{{ row.recommendationNote }}</div>
-            </td>
+            <th mat-header-cell *matHeaderCellDef>Nội dung kiến nghị</th>
+            <td mat-cell *matCellDef="let r">{{ r.recommendationNote }}</td>
           </ng-container>
 
           <ng-container matColumnDef="completedAt">
-            <th mat-header-cell *matHeaderCellDef style="width: 160px;">Thời gian ghi nhận</th>
-            <td mat-cell *matCellDef="let row">
-              <span class="date-text">{{ row.completedAt ? (row.completedAt | date:'dd/MM/yyyy HH:mm') : '—' }}</span>
-            </td>
+            <th mat-header-cell *matHeaderCellDef style="width: 150px;">Thời gian</th>
+            <td mat-cell *matCellDef="let r">{{ r.completedAt ? (r.completedAt | date:'dd/MM/yyyy') : '—' }}</td>
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="recColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: recColumns;"></tr>
-
           <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell empty-cell" [attr.colspan]="recColumns.length">
-              <div class="empty-state">
-                <mat-icon class="empty-icon">search_off</mat-icon>
-                <p class="empty-title">Không tìm thấy kiến nghị nào phù hợp với bộ lọc</p>
-              </div>
-            </td>
-          </tr>
-        </table>
-      </div>
-    </mat-card>
-  </div>
-
-  <!-- TAB 2: TỔNG KẾT QUÝ THEO ĐỊA BÀN -->
-  <div *ngIf="activeTab === 1" class="tab-pane">
-    <!-- Filter Control Card -->
-    <div class="filter-card">
-      <div class="filters-row">
-        <div class="filter-group">
-          <label class="filter-label">Kỳ Báo cáo Quý:</label>
-          <select [(ngModel)]="selectedQuarter" (change)="onQuarterlyFilterChange()" class="custom-select">
-            <option value="">Tất cả các Quý</option>
-            <option *ngFor="let q of QUARTERS" [value]="q">{{ q }}</option>
-          </select>
-        </div>
-
-        <div class="filter-actions">
-          <button 
-            mat-flat-button 
-            color="primary" 
-            class="btn-export-excel"
-            [disabled]="isExportingQuarterly"
-            (click)="exportQuarterlySummaryExcel()">
-            <mat-icon>description</mat-icon>
-            <span>{{ isExportingQuarterly ? 'Đang xuất file...' : 'Xuất Báo cáo Tổng kết (.xlsx)' }}</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Quarterly Summary Data Table -->
-    <mat-card class="table-card">
-      <div class="table-responsive">
-        <table mat-table [dataSource]="quarterlySummaries" class="custom-table w-100">
-          <ng-container matColumnDef="quarter">
-            <th mat-header-cell *matHeaderCellDef style="width: 120px;">Kỳ Kế hoạch</th>
-            <td mat-cell *matCellDef="let row">
-              <span class="quarter-badge">{{ row.quarter }}</span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="ward">
-            <th mat-header-cell *matHeaderCellDef>Đơn vị Phường / Xã</th>
-            <td mat-cell *matCellDef="let row">
-              <strong class="ward-title">{{ row.ward }}</strong>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="total">
-            <th mat-header-cell *matHeaderCellDef style="text-align: center;">Tổng nhiệm vụ</th>
-            <td mat-cell *matCellDef="let row" style="text-align: center;">
-              <strong>{{ row.totalInspections }}</strong>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="completed">
-            <th mat-header-cell *matHeaderCellDef style="text-align: center;">Đã hoàn thành</th>
-            <td mat-cell *matCellDef="let row" style="text-align: center;">
-              <span class="text-success font-bold">{{ row.completedCount }}</span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="inProgress">
-            <th mat-header-cell *matHeaderCellDef style="text-align: center;">Đang kiểm tra</th>
-            <td mat-cell *matCellDef="let row" style="text-align: center;">
-              <span class="text-warning">{{ row.inProgressCount }}</span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="notStarted">
-            <th mat-header-cell *matHeaderCellDef style="text-align: center;">Chưa thực hiện</th>
-            <td mat-cell *matCellDef="let row" style="text-align: center;">
-              <span class="text-muted">{{ row.notStartedCount }}</span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="violations">
-            <th mat-header-cell *matHeaderCellDef style="text-align: center;">Số vụ vi phạm</th>
-            <td mat-cell *matCellDef="let row" style="text-align: center;">
-              <span class="violation-count-badge" [class.has-violation]="row.violationCount > 0">
-                {{ row.violationCount }} vụ
-              </span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="rate">
-            <th mat-header-cell *matHeaderCellDef style="width: 200px;">Tỷ lệ hoàn thành</th>
-            <td mat-cell *matCellDef="let row">
-              <div class="progress-cell">
-                <span class="progress-val">{{ row.completionRate || 0 }}%</span>
-                <div class="progress-track">
-                  <div 
-                    class="progress-bar" 
-                    [style.width.%]="row.completionRate || 0"
-                    [ngClass]="{
-                      'bar-danger': (row.completionRate || 0) < 40,
-                      'bar-warning': (row.completionRate || 0) >= 40 && (row.completionRate || 0) < 75,
-                      'bar-success': (row.completionRate || 0) >= 75
-                    }">
-                  </div>
-                </div>
-              </div>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="quarterlyColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: quarterlyColumns;"></tr>
-
-          <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell empty-cell" [attr.colspan]="quarterlyColumns.length">
-              <div class="empty-state">
-                <mat-icon class="empty-icon">assessment</mat-icon>
-                <p class="empty-title">Không có dữ liệu tổng kết cho kỳ đã chọn</p>
-              </div>
-            </td>
-          </tr>
-        </table>
-      </div>
-    </mat-card>
-  </div>
-
-  <!-- TAB 3: BÁO CÁO & GIẢI TRÌNH CÁC CƠ SỞ CHƯA ĐƯỢC KIỂM TRA THEO KẾ HOẠCH (Requirement 6) -->
-  <div *ngIf="activeTab === 2" class="tab-pane">
-    <!-- KPI Progress Cards -->
-    <div class="uninspected-kpi-grid">
-      <div class="kpi-card kpi-blue">
-        <div class="kpi-label">Tổng nhiệm vụ theo kế hoạch</div>
-        <div class="kpi-value">{{ uninspectedSummary.totalPlanned }}</div>
-        <div class="kpi-sub">Toàn bộ cơ sở trong danh sách kiểm tra</div>
-      </div>
-
-      <div class="kpi-card kpi-green">
-        <div class="kpi-label">Đã hoàn thành kiểm tra</div>
-        <div class="kpi-value">{{ uninspectedSummary.completedCount }} <small>({{ uninspectedSummary.completionRate }}%)</small></div>
-        <div class="kpi-sub">Đã lập biên bản & kết luận</div>
-      </div>
-
-      <div class="kpi-card kpi-amber">
-        <div class="kpi-label">Chưa thực hiện kiểm tra</div>
-        <div class="kpi-value">{{ uninspectedSummary.uninspectedCount }}</div>
-        <div class="kpi-sub">Cần tổng hợp & báo cáo giải trình</div>
-      </div>
-
-      <div class="kpi-card kpi-purple">
-        <div class="kpi-label">Đã nhập báo cáo giải trình</div>
-        <div class="kpi-value">{{ uninspectedSummary.explainedCount }} / {{ uninspectedSummary.uninspectedCount }}</div>
-        <div class="kpi-sub">Còn {{ uninspectedSummary.unexplainedCount }} cơ sở chưa giải trình</div>
-      </div>
-    </div>
-
-    <!-- Filter Control Card -->
-    <div class="filter-card">
-      <div class="filters-row">
-        <div class="filter-group">
-          <label class="filter-label">Kỳ Kế hoạch:</label>
-          <select [(ngModel)]="selectedUninspectedQuarter" (change)="onUninspectedFilterChange()" class="custom-select">
-            <option value="">Tất cả các Quý</option>
-            <option *ngFor="let q of QUARTERS" [value]="q">{{ q }}</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label class="filter-label">Đơn vị / Phường:</label>
-          <select [(ngModel)]="selectedUninspectedWard" (change)="onUninspectedFilterChange()" class="custom-select">
-            <option value="">Tất cả các Phường</option>
-            <option *ngFor="let w of WARDS" [value]="w">{{ w }}</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label class="filter-label">Loại hình kiểm tra:</label>
-          <select [(ngModel)]="selectedUninspectedType" (change)="onUninspectedFilterChange()" class="custom-select">
-            <option value="">Tất cả loại hình</option>
-            <option value="planned">Kiểm tra theo kế hoạch/định kỳ</option>
-            <option value="adhoc">Kiểm tra đột xuất</option>
-            <option value="professional_request">Kiểm tra theo yêu cầu nghiệp vụ</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label class="filter-label">Tình trạng giải trình:</label>
-          <select [(ngModel)]="selectedExplanationStatus" (change)="onUninspectedFilterChange()" class="custom-select">
-            <option value="">Tất cả trạng thái</option>
-            <option value="none">Chưa có giải trình</option>
-            <option value="pending_review">Chờ lãnh đạo duyệt</option>
-            <option value="accepted">Đã chấp thuận giải trình</option>
-            <option value="rescheduled">Đã chuyển lịch kiểm tra bù</option>
-          </select>
-        </div>
-
-        <div class="filter-actions">
-          <button 
-            mat-flat-button 
-            color="primary" 
-            class="btn-export-excel"
-            [disabled]="isExportingUninspected"
-            (click)="exportUninspectedExcel()">
-            <mat-icon>description</mat-icon>
-            <span>{{ isExportingUninspected ? 'Đang xuất file...' : 'Xuất DS Chưa kiểm tra & Giải trình (.xlsx)' }}</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Inline Explanation Modal / Editor -->
-    <div *ngIf="editingExplanationItem" class="explanation-editor-card">
-      <div class="editor-header">
-        <div>
-          <h4>
-            <mat-icon>edit_note</mat-icon>
-            Nhập / Cập nhật Báo cáo Giải trình Cơ sở Chưa kiểm tra (#{{ editingExplanationItem.id }})
-          </h4>
-          <p class="editor-sub">
-            Doanh nghiệp: <strong>{{ editingExplanationItem.objectName }}</strong>
-            <span *ngIf="editingExplanationItem.locationName"> — Cơ sở: <strong>{{ editingExplanationItem.locationName }}</strong></span>
-            | Đơn vị: <strong>{{ editingExplanationItem.ward }}</strong>
-          </p>
-        </div>
-        <button mat-icon-button (click)="closeExplanationModal()">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-
-      <div class="editor-body">
-        <div class="form-row-2">
-          <div class="form-field-box">
-            <label>Nguyên nhân chưa thực hiện kiểm tra (*)</label>
-            <select [(ngModel)]="explanationForm.uninspectedReason" class="custom-input">
-              <option *ngFor="let r of UNINSPECTED_REASONS" [value]="r">{{ r }}</option>
-            </select>
-          </div>
-
-          <div class="form-field-box">
-            <label>Tình trạng xử lý giải trình (*)</label>
-            <select [(ngModel)]="explanationForm.explanationStatus" class="custom-input">
-              <option value="pending_review">Đã giải trình - Chờ lãnh đạo xem xét</option>
-              <option value="accepted">Chấp thuận giải trình (Tạm hoãn hợp lệ)</option>
-              <option value="rescheduled">Chuyển lịch kiểm tra bù trong kỳ tiếp theo</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-field-box">
-          <label>Nội dung giải trình chi tiết của đơn vị & đề xuất hướng xử lý (*)</label>
-          <textarea
-            rows="3"
-            [(ngModel)]="explanationForm.explanationContent"
-            class="custom-textarea"
-            placeholder="Nhập rõ lý do chưa kiểm tra theo kế hoạch, biên bản xác minh tại địa bàn (nếu có) và thời gian dự kiến kiểm tra bù...">
-          </textarea>
-        </div>
-
-        <div class="form-field-box">
-          <label>Ý kiến phê duyệt / chỉ đạo của Lãnh đạo đơn vị (nếu có)</label>
-          <input
-            type="text"
-            [(ngModel)]="explanationForm.explanationReviewNote"
-            class="custom-input"
-            placeholder="VD: Đồng ý gia hạn kiểm tra sang đầu tháng sau, yêu cầu đoàn liên ngành phối hợp..." />
-        </div>
-
-        <div class="editor-actions">
-          <button mat-stroked-button type="button" (click)="closeExplanationModal()">Hủy bỏ</button>
-          <button
-            mat-flat-button
-            color="primary"
-            type="button"
-            [disabled]="isSubmittingExplanation"
-            (click)="saveExplanation()">
-            <mat-icon>save</mat-icon>
-            <span>{{ isSubmittingExplanation ? 'Đang lưu...' : 'Lưu Báo cáo Giải trình' }}</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Uninspected Cases Data Table -->
-    <mat-card class="table-card">
-      <div class="table-responsive">
-        <table mat-table [dataSource]="uninspectedItems" class="custom-table w-100">
-          <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef style="width: 85px;">Mã HS</th>
-            <td mat-cell *matCellDef="let row">
-              <span class="id-tag">#{{ row.id }}</span>
-              <div class="text-xs text-muted" style="margin-top: 3px;">{{ row.planQuarter }}</div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="objectName">
-            <th mat-header-cell *matHeaderCellDef>Doanh nghiệp & Cơ sở / Địa điểm</th>
-            <td mat-cell *matCellDef="let row">
-              <div class="object-cell">
-                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                  <strong class="object-name">{{ row.objectName }}</strong>
-                  <span *ngIf="row.hasForeignElement" class="foreign-pill">🌐 Yếu tố nước ngoài</span>
-                </div>
-                <span *ngIf="row.locationName" class="loc-sub-badge">
-                  📍 {{ row.locationName }} — {{ row.locationAddress || row.objectAddress }}
-                </span>
-                <span *ngIf="!row.locationName" class="meta-address">{{ row.objectAddress }}</span>
-              </div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="ward">
-            <th mat-header-cell *matHeaderCellDef>Đơn vị / Đoàn KT</th>
-            <td mat-cell *matCellDef="let row">
-              <div class="ward-text">{{ row.ward }}</div>
-              <div *ngIf="row.teamName" class="text-xs text-muted">{{ row.teamName }}</div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="inspectionType">
-            <th mat-header-cell *matHeaderCellDef>Loại hình KT</th>
-            <td mat-cell *matCellDef="let row">
-              <span class="type-pill" [ngClass]="row.inspectionType || 'planned'">
-                {{ getInspectionTypeLabel(row.inspectionType) }}
-              </span>
-              <div class="text-xs text-muted" style="margin-top: 3px;">
-                {{ row.status === 'in_progress' ? 'Đang triển khai' : 'Chưa bắt đầu' }}
-              </div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="uninspectedReason">
-            <th mat-header-cell *matHeaderCellDef>Nguyên nhân chưa kiểm tra</th>
-            <td mat-cell *matCellDef="let row">
-              <span *ngIf="row.uninspectedReason" class="reason-text">{{ row.uninspectedReason }}</span>
-              <span *ngIf="!row.uninspectedReason" class="text-muted italic">Chưa cập nhật nguyên nhân</span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="explanationContent">
-            <th mat-header-cell *matHeaderCellDef>Nội dung giải trình & Chỉ đạo</th>
-            <td mat-cell *matCellDef="let row">
-              <div *ngIf="row.explanationContent" class="note-text">
-                {{ row.explanationContent }}
-                <div *ngIf="row.explainedByName" class="text-xs text-muted" style="margin-top: 4px;">
-                  👤 {{ row.explainedByName }} ({{ row.explainedAt | date:'dd/MM/yyyy HH:mm' }})
-                </div>
-                <div *ngIf="row.explanationReviewNote" class="review-note-box">
-                  <strong>Ý kiến LĐ:</strong> {{ row.explanationReviewNote }}
-                </div>
-              </div>
-              <span *ngIf="!row.explanationContent" class="text-muted italic">Đơn vị chưa nhập giải trình</span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="explanationStatus">
-            <th mat-header-cell *matHeaderCellDef style="width: 150px;">Tình trạng xử lý</th>
-            <td mat-cell *matCellDef="let row">
-              <span class="exp-status-badge" [ngClass]="row.explanationStatus || 'none'">
-                {{ getExplanationStatusLabel(row.explanationStatus) }}
-              </span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef style="width: 145px; text-align: center;">Thao tác</th>
-            <td mat-cell *matCellDef="let row" style="text-align: center;">
-              <button
-                mat-stroked-button
-                color="primary"
-                class="btn-explain-action"
-                (click)="openExplanationModal(row)">
-                <mat-icon>edit_note</mat-icon>
-                <span>{{ row.explanationContent ? 'Cập nhật' : 'Nhập giải trình' }}</span>
-              </button>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="uninspectedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: uninspectedColumns;"></tr>
-
-          <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell empty-cell" [attr.colspan]="uninspectedColumns.length">
-              <div class="empty-state">
-                <mat-icon class="empty-icon">task_alt</mat-icon>
-                <p class="empty-title">Không có cơ sở nào chưa thực hiện kiểm tra theo bộ lọc hiện tại</p>
-              </div>
-            </td>
+            <td class="empty-cell" [attr.colspan]="recColumns.length">Không có kiến nghị nào phù hợp</td>
           </tr>
         </table>
       </div>
