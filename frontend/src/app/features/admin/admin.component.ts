@@ -223,223 +223,107 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
             <div>
               <h3 class="sec-title">
                 <mat-icon>account_tree</mat-icon>
-                Cấu hình Quy trình Động theo Đơn vị Nghiệp vụ (PC07, PC04, PC06, Phường...) & Loại hình Kế hoạch ({{ filteredWorkflows.length }}/{{ unitWorkflows.length }} quy trình)
+                Quy trình riêng theo từng Đơn vị ({{ filteredWorkflows.length }})
               </h3>
-              <p class="sec-sub">
-                Mỗi đơn vị (PC07, PC04/PA04, PC06, Công an Phường...) có nhiều quy trình riêng cho Kế hoạch Định kỳ, Kiểm tra Đột xuất, Yêu cầu Nghiệp vụ — Cấu hình rõ <strong>Phòng ban nào duyệt</strong> và <strong>Người duyệt cụ thể</strong> ở từng bước
-              </p>
+              <p class="sec-sub">Mỗi đơn vị tự cấu hình quy trình và các bước thực hiện phù hợp</p>
             </div>
             <button mat-flat-button class="btn-cids-primary" (click)="openWorkflowEditor()">
-              <mat-icon>add_circle</mat-icon>
-              <span>+ Thêm Quy trình Động cho Đơn vị</span>
+              <mat-icon>add</mat-icon>
+              <span>Thêm Quy trình</span>
             </button>
           </div>
 
-          <!-- Filter Bar by Unit (PC07, PC04, PC06, CAP, Liên ngành) & Inspection Type (Định kỳ, Đột xuất, Yêu cầu nghiệp vụ) -->
-          <div class="wf-filter-bar" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <span style="font-size: 12px; font-weight: 700; color: #334155;">Đơn vị nghiệp vụ:</span>
-            <button
-              type="button"
-              *ngFor="let u of unitFilterOptions"
-              (click)="selectedWfUnitCode = u.code; applyWorkflowFilter()"
-              [style.background]="selectedWfUnitCode === u.code ? '#1e3a8a' : '#ffffff'"
-              [style.color]="selectedWfUnitCode === u.code ? '#ffffff' : '#334155'"
-              style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 11px; font-size: 12px; font-weight: 600; cursor: pointer;">
-              {{ u.label }}
-            </button>
-
-            <span style="font-size: 12px; font-weight: 700; color: #334155; margin-left: auto;">Loại kế hoạch / kiểm tra:</span>
+          <!-- Simple 2-Filter Bar -->
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 14px;">
             <select
               class="cids-select"
-              style="height: 32px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px;"
+              style="height: 34px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #fff;"
+              [(ngModel)]="selectedWfUnitCode"
+              (change)="applyWorkflowFilter()">
+              <option *ngFor="let u of unitFilterOptions" [value]="u.code">{{ u.label }}</option>
+            </select>
+
+            <select
+              class="cids-select"
+              style="height: 34px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #fff;"
               [(ngModel)]="selectedWfInspectionType"
               (change)="applyWorkflowFilter()">
-              <option value="all">Tất cả loại quy trình (Định kỳ, Đột xuất, Nghiệp vụ)</option>
-              <option value="planned">📅 Quy trình Kiểm tra Định kỳ / Theo kế hoạch</option>
-              <option value="adhoc">⚡ Quy trình Kiểm tra Đột xuất</option>
-              <option value="professional_request">🎯 Quy trình Kiểm tra Yêu cầu Nghiệp vụ</option>
+              <option value="all">Tất cả loại hình</option>
+              <option value="planned">Định kỳ / Theo kế hoạch</option>
+              <option value="adhoc">Kiểm tra đột xuất</option>
+              <option value="professional_request">Yêu cầu nghiệp vụ</option>
             </select>
           </div>
 
-          <!-- Inline Dynamic Workflow Form Editor -->
-          <div class="workflow-editor-panel" *ngIf="showWorkflowForm">
+          <!-- Simple Workflow Form Editor -->
+          <div class="workflow-editor-panel" *ngIf="showWorkflowForm" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
             <div class="wf-editor-header">
-              <h4>
-                <mat-icon>settings_suggest</mat-icon>
-                {{ workflowForm.id ? 'Cấu hình / Điều chỉnh Quy trình Động của Đơn vị' : 'Thiết lập Quy trình Động Mới (Cấu hình Phòng ban duyệt & Người duyệt)' }}
-              </h4>
+              <h4>{{ workflowForm.id ? 'Chỉnh sửa Quy trình' : 'Thêm Quy trình cho Đơn vị' }}</h4>
               <button mat-icon-button (click)="closeWorkflowEditor()">
                 <mat-icon>close</mat-icon>
               </button>
             </div>
 
-            <!-- Quick Preset Unit Picker -->
-            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
-              <span style="font-size: 12px; font-weight: 600; color: #475569;">Chọn nhanh Đơn vị mẫu:</span>
-              <button
-                type="button"
-                *ngFor="let preset of unitPresets"
-                (click)="selectUnitPreset(preset)"
-                style="border: 1px solid #cbd5e1; background: #eff6ff; color: #1e3a8a; border-radius: 5px; padding: 3px 10px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
-                {{ preset.unitCode }} — {{ preset.unitName }}
-              </button>
-            </div>
-
-            <div class="wf-form-grid">
+            <div style="display: grid; grid-template-columns: 1fr 1.4fr 220px; gap: 10px; margin-bottom: 12px;">
               <div class="wf-field">
-                <label>Mã Đơn vị & Mã Quy trình (*)</label>
-                <div style="display: flex; gap: 6px;">
-                  <input type="text" class="cids-input" style="width: 90px; font-weight: 700;" [(ngModel)]="workflowForm.unitCode" placeholder="PC07" />
-                  <input type="text" class="cids-input" style="flex: 1;" [(ngModel)]="workflowForm.code" placeholder="VD: WF_PC07_PLANNED" />
-                </div>
+                <label>Đơn vị áp dụng *</label>
+                <input type="text" class="cids-input" [(ngModel)]="workflowForm.unitName" list="unitNameSuggestions" placeholder="VD: Công an Phường / PC07..." />
               </div>
               <div class="wf-field">
-                <label>Đơn vị nghiệp vụ sở hữu quy trình (*)</label>
-                <input type="text" class="cids-input" [(ngModel)]="workflowForm.unitName" list="unitNameSuggestions" placeholder="VD: Phòng Cảnh sát PCCC & CNCH (PC07)" />
+                <label>Tên quy trình *</label>
+                <input type="text" class="cids-input" [(ngModel)]="workflowForm.name" placeholder="VD: Quy trình kiểm tra định kỳ..." />
               </div>
               <div class="wf-field">
-                <label>Loại Kế hoạch / Loại hình Kiểm tra áp dụng (*)</label>
+                <label>Loại hình</label>
                 <select class="cids-select" [(ngModel)]="workflowForm.inspectionType">
-                  <option value="planned">📅 Quy trình Kiểm tra Định kỳ / Theo kế hoạch</option>
-                  <option value="adhoc">⚡ Quy trình Kiểm tra Đột xuất</option>
-                  <option value="professional_request">🎯 Quy trình Kiểm tra Theo yêu cầu nghiệp vụ</option>
+                  <option value="planned">Định kỳ / Kế hoạch</option>
+                  <option value="adhoc">Đột xuất</option>
+                  <option value="professional_request">Yêu cầu nghiệp vụ</option>
                 </select>
               </div>
-              <div class="wf-field">
-                <label>Tên Quy trình Động (*)</label>
-                <input type="text" class="cids-input" [(ngModel)]="workflowForm.name" placeholder="VD: Quy trình Kiểm tra Định kỳ An toàn PCCC (PC07)" />
-              </div>
             </div>
 
-            <!-- 3 Core Approval Milestones: Department + Specific Approver Person -->
-            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-              <div style="font-size: 12.5px; font-weight: 700; color: #1e3a8a; margin-bottom: 8px;">
-                📌 Cấu hình Phòng ban Phê duyệt & Người duyệt cụ thể cho Kế hoạch của Đơn vị ({{ workflowForm.unitName || 'Đơn vị' }}):
-              </div>
-              <div class="wf-form-grid-3">
-                <div class="wf-field" style="background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #dbeafe;">
-                  <label style="color: #1e3a8a; font-weight: 700;">1. Cấp Phê duyệt Kế hoạch Kiểm tra</label>
-                  <span style="font-size: 11px; color: #64748b;">Phòng ban / Bộ phận duyệt kế hoạch:</span>
-                  <input type="text" class="cids-input" [(ngModel)]="workflowForm.planApprovalDept" list="deptSuggestions" placeholder="VD: Ban Chỉ huy Phòng PC07" />
-                  <span style="font-size: 11px; color: #64748b; margin-top: 4px;">Người duyệt kế hoạch cụ thể:</span>
-                  <input type="text" class="cids-input" [(ngModel)]="workflowForm.planApproverName" list="approverSuggestions" placeholder="VD: Đại tá Lê Minh Hải (Trưởng phòng PC07)" />
-                </div>
-
-                <div class="wf-field" style="background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                  <label style="color: #1e3a8a; font-weight: 700;">2. Cấp Duyệt Thành lập Đoàn Kiểm tra</label>
-                  <span style="font-size: 11px; color: #64748b;">Phòng ban trình / duyệt thành lập đoàn:</span>
-                  <input type="text" class="cids-input" [(ngModel)]="workflowForm.teamEstablishDept" list="deptSuggestions" placeholder="VD: Ban Chỉ huy Phòng PC07 & Đội Tham mưu" />
-                  <span style="font-size: 11px; color: #64748b; margin-top: 4px;">Người ký QĐ thành lập đoàn:</span>
-                  <input type="text" class="cids-input" [(ngModel)]="workflowForm.teamApproverName" list="approverSuggestions" placeholder="VD: Thượng tá Nguyễn Văn Bình (Phó phòng PC07)" />
-                </div>
-
-                <div class="wf-field" style="background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #dbeafe;">
-                  <label style="color: #172554; font-weight: 700;">3. Cấp Nghiệm thu Kết quả Kiểm tra</label>
-                  <span style="font-size: 11px; color: #64748b;">Phòng ban nghiệm thu kết luận:</span>
-                  <input type="text" class="cids-input" [(ngModel)]="workflowForm.resultAcceptanceDept" list="deptSuggestions" placeholder="VD: Ban Chỉ huy Phòng PC07" />
-                  <span style="font-size: 11px; color: #64748b; margin-top: 4px;">Người duyệt nghiệm thu kết quả:</span>
-                  <input type="text" class="cids-input" [(ngModel)]="workflowForm.resultApproverName" list="approverSuggestions" placeholder="VD: Đại tá Lê Minh Hải (Trưởng phòng PC07)" />
-                </div>
-              </div>
-            </div>
-
-            <!-- Datalist suggestions for quick selection or custom input -->
             <datalist id="unitNameSuggestions">
               <option value="Phòng Cảnh sát PCCC & CNCH (PC07)"></option>
               <option value="Phòng Cảnh sát Kinh tế / An ninh Kinh tế (PC04 / PA04)"></option>
               <option value="Phòng Cảnh sát QLHC về TTXH (PC06)"></option>
               <option value="Công an / UBND Phường"></option>
-              <option value="Ban Chỉ đạo / Đoàn Kiểm tra Liên ngành"></option>
-            </datalist>
-            <datalist id="deptSuggestions">
-              <option value="Ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)"></option>
-              <option value="Trực ban Chỉ huy Phòng Cảnh sát PCCC & CNCH (PC07)"></option>
-              <option value="Đội Công tác Phòng cháy - Phòng PC07"></option>
-              <option value="Đội Tham mưu & Pháp chế - Phòng PC07"></option>
-              <option value="Ban Chỉ huy Phòng Cảnh sát Kinh tế (PC04)"></option>
-              <option value="Đội Nghiệp vụ Kinh tế Thương mại - Phòng PC04"></option>
-              <option value="Đội Tham mưu Tổng hợp - Phòng PC04"></option>
-              <option value="Ban Chỉ huy Phòng Cảnh sát QLHC về TTXH (PC06)"></option>
-              <option value="Đội Quản lý Ngành nghề KD có điều kiện - Phòng PC06"></option>
-              <option value="Ban Chỉ huy Công an Phường / Lãnh đạo UBND Phường"></option>
-              <option value="Lãnh đạo Ban Chỉ đạo Kiểm tra Liên ngành (PC04 - PC07 - PC06)"></option>
-            </datalist>
-            <datalist id="approverSuggestions">
-              <option value="Đại tá Lê Minh Hải (Trưởng phòng PC07)"></option>
-              <option value="Thượng tá Nguyễn Văn Bình (Phó Trưởng phòng PC07)"></option>
-              <option value="Trung tá Nguyễn Thị Mai (Đội trưởng Đội Tham mưu PC07)"></option>
-              <option value="Thiếu tá Hoàng Văn Sơn (Đội trưởng Đội Phòng cháy PC07)"></option>
-              <option value="Đại tá Trần Quốc Tuấn (Trưởng phòng PC04/PA04)"></option>
-              <option value="Thượng tá Vũ Minh Đức (Phó Trưởng phòng PC04/PA04)"></option>
-              <option value="Trung tá Đỗ Quang Huy (Đội trưởng Nghiệp vụ PC04/PA04)"></option>
-              <option value="Đại tá Phạm Hồng Quân (Trưởng phòng PC06)"></option>
-              <option value="Thượng tá Đặng Văn Hòa (Phó Trưởng phòng PC06)"></option>
-              <option value="Trung tá Nguyễn Hoàng Nam (Trưởng Công an Phường)"></option>
-              <option value="Thiếu tá Lê Văn Cường (Phó Trưởng Công an Phường)"></option>
+              <option value="Đoàn Kiểm tra Liên ngành"></option>
             </datalist>
 
             <div class="wf-steps-editor">
-              <div class="steps-head">
-                <label>Cấu hình Luồng các bước phê duyệt & thực hiện động (Chỉ định rõ Phòng ban duyệt & Người duyệt cho từng bước):</label>
-                <button mat-stroked-button color="primary" type="button" (click)="addWorkflowStep()">
-                  <mat-icon>add</mat-icon> + Thêm bước quy trình động
+              <div class="steps-head" style="margin-bottom: 8px;">
+                <label style="font-weight: 600; font-size: 12.5px;">Các bước thực hiện ({{ workflowForm.steps.length }} bước):</label>
+                <button mat-stroked-button type="button" (click)="addWorkflowStep()" style="font-size: 12px;">
+                  <mat-icon>add</mat-icon> Thêm bước
                 </button>
               </div>
 
-              <div class="step-edit-row" *ngFor="let st of workflowForm.steps; let idx = index" style="flex-wrap: wrap; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                <span class="step-num">Bước {{ idx + 1 }}</span>
-                <select class="cids-select" style="width: 155px; height: 34px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px;" [(ngModel)]="st.stepType">
-                  <option value="create">1. Lập & Trình KH</option>
-                  <option value="review">2. Phòng ban Thẩm định</option>
-                  <option value="approve_plan">3. Phê duyệt Kế hoạch</option>
-                  <option value="establish_team">4. Duyệt Thành lập Đoàn</option>
-                  <option value="inspect">5. Kiểm tra thực địa</option>
-                  <option value="accept_result">6. Nghiệm thu kết quả</option>
-                </select>
+              <div class="step-edit-row" *ngFor="let st of workflowForm.steps; let idx = index" style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+                <span class="step-num" style="min-width: 56px; font-size: 12px; font-weight: 600; color: #1e3a8a;">Bước {{ idx + 1 }}</span>
                 <input
                   type="text"
                   class="cids-input"
-                  style="flex: 1.4; min-width: 220px;"
+                  style="flex: 1.5;"
                   [(ngModel)]="st.name"
-                  placeholder="Tên bước (VD: Phê duyệt Kế hoạch Kiểm tra Định kỳ PCCC...)" />
+                  placeholder="Tên bước (VD: Lập danh sách, Phê duyệt, Kiểm tra...)" />
                 <input
                   type="text"
                   class="cids-input"
-                  style="flex: 1.1; min-width: 190px;"
+                  style="flex: 1;"
                   [(ngModel)]="st.approvingDept"
-                  list="deptSuggestions"
-                  placeholder="🏢 Phòng ban duyệt (VD: Ban Chỉ huy Phòng PC07)" />
-                <input
-                  type="text"
-                  class="cids-input"
-                  style="flex: 1.1; min-width: 190px;"
-                  [(ngModel)]="st.approverName"
-                  list="approverSuggestions"
-                  placeholder="👤 Người duyệt (VD: Đại tá Lê Minh Hải - Trưởng phòng)" />
-                <div style="display: flex; align-items: center; gap: 4px;">
-                  <input
-                    type="number"
-                    class="cids-input"
-                    style="width: 62px; text-align: center;"
-                    [(ngModel)]="st.slaHours"
-                    min="1"
-                    title="Thời hạn xử lý (giờ)" />
-                  <span style="font-size: 11px; color: #64748b;">giờ</span>
-                </div>
-                <label class="req-check">
-                  <input type="checkbox" [(ngModel)]="st.required" /> Bắt buộc
-                </label>
-                <button mat-icon-button color="warn" type="button" (click)="removeWorkflowStep(idx)" *ngIf="workflowForm.steps.length > 1">
+                  placeholder="Bộ phận / Người thực hiện" />
+                <button mat-icon-button type="button" (click)="removeWorkflowStep(idx)" *ngIf="workflowForm.steps.length > 1">
                   <mat-icon>delete_outline</mat-icon>
                 </button>
               </div>
             </div>
 
-            <div class="wf-editor-actions">
+            <div class="wf-editor-actions" style="margin-top: 12px;">
               <button mat-stroked-button type="button" (click)="closeWorkflowEditor()">Hủy</button>
               <button mat-flat-button class="btn-cids-primary" type="button" (click)="saveWorkflowForm()">
                 <mat-icon>save</mat-icon>
-                <span>Lưu Cấu hình Quy trình Động</span>
+                <span>Lưu Quy trình</span>
               </button>
             </div>
           </div>
