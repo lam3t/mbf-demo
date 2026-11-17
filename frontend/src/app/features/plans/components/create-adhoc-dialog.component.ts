@@ -81,7 +81,8 @@ import { BusinessObject } from '../../../core/models';
             3. Chọn Doanh nghiệp / Cơ sở kinh doanh <span class="required-star">*</span>
           </label>
 
-          <!-- Search Input -->
+          <!-- Search Input & Results (Hidden once an object is selected) -->
+          <ng-container *ngIf="!selectedObject">
           <div class="search-box">
             <mat-icon class="search-icon">search</mat-icon>
             <input
@@ -104,11 +105,11 @@ import { BusinessObject } from '../../../core/models';
           <!-- Loading State -->
           <div *ngIf="isLoading" class="loading-state">
             <mat-spinner diameter="24"></mat-spinner>
-            <span>Đang tra cứu dữ liệu & quy tắc Single Check...</span>
+            <span>Đang tra cứu dữ liệu...</span>
           </div>
 
           <!-- Search Results Dropdown List -->
-          <div *ngIf="!isLoading && searchResults.length > 0 && !selectedObject" class="results-dropdown">
+          <div *ngIf="!isLoading && searchResults.length > 0" class="results-dropdown">
             <div
               *ngFor="let obj of searchResults"
               class="result-item"
@@ -117,17 +118,16 @@ import { BusinessObject } from '../../../core/models';
               <div class="item-left">
                 <div class="item-title">
                   <strong>{{ obj.name }}</strong>
-                  <span class="type-pill">{{ obj.type === 'enterprise' ? 'Doanh nghiệp' : (obj.type === 'household' ? 'Hộ KD' : 'Cá nhân') }}</span>
                   <span class="ward-pill">{{ obj.ward }}</span>
                 </div>
                 <div class="item-meta">
-                  <span>Mã: <strong>{{ obj.taxCode || obj.idNumber }}</strong></span>
+                  <span>MST/CCCD: <strong>{{ obj.taxCode || obj.idNumber }}</strong></span>
                   <span>•</span>
-                  <span>Địa chỉ: {{ obj.address }} ({{ obj.locationCount || 1 }} địa điểm)</span>
+                  <span>{{ obj.address }}</span>
                 </div>
                 <div *ngIf="obj.hasCrossWardWarning || obj.warningReason" class="cross-ward-warning-banner">
                   <mat-icon>info</mat-icon>
-                  <span>{{ obj.warningReason }} — Cho phép kiểm tra lại theo yêu cầu nghiệp vụ / đột xuất</span>
+                  <span>{{ obj.warningReason }}</span>
                 </div>
               </div>
               <div class="item-right">
@@ -139,27 +139,27 @@ import { BusinessObject } from '../../../core/models';
             </div>
           </div>
 
-          <div *ngIf="!isLoading && searchResults.length === 0 && searchQuery.trim().length >= 2 && !selectedObject" class="empty-results-box">
+          <div *ngIf="!isLoading && searchResults.length === 0 && searchQuery.trim().length >= 2" class="empty-results-box">
             <mat-icon>search_off</mat-icon>
             <p>Không tìm thấy cơ sở kinh doanh nào phù hợp với từ khóa "{{ searchQuery }}".</p>
           </div>
+          </ng-container>
 
           <!-- Selected Object Preview Card -->
           <div *ngIf="selectedObject" class="selected-card">
             <div class="card-header">
               <div class="header-left">
-                <mat-icon class="card-icon">verified</mat-icon>
+                <mat-icon class="card-icon">check_circle</mat-icon>
                 <div>
                   <div class="card-name">{{ selectedObject.name }}</div>
-                  <div class="card-subtitle">
-                    {{ selectedObject.type === 'enterprise' ? 'Doanh nghiệp' : (selectedObject.type === 'household' ? 'Hộ kinh doanh' : 'Cá nhân') }}
-                    — Phường quản lý: <strong>{{ selectedObject.ward }}</strong>
+                  <div class="card-subtitle" style="color: #475569;">
+                    MST/CCCD: <code>{{ selectedObject.taxCode || selectedObject.idNumber }}</code> • {{ selectedObject.ward }}
                   </div>
                 </div>
               </div>
               <button type="button" class="btn-change-obj" (click)="unselectObject()">
-                <mat-icon>edit</mat-icon>
-                <span>Đổi cơ sở</span>
+                <mat-icon>close</mat-icon>
+                <span>Chọn lại</span>
               </button>
             </div>
 
