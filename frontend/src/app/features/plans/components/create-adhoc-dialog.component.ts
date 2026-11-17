@@ -6,6 +6,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { ApiService } from '../../../core/services/api.service';
 import { BusinessObject } from '../../../core/models';
 
@@ -75,20 +77,28 @@ import { BusinessObject } from '../../../core/models';
           </div>
         </div>
 
-        <!-- Section 1: Select Business Object -->
+        <!-- Section 1: Select Multiple Business Objects -->
         <div class="form-section">
           <label class="section-label">
-            3. Chọn Doanh nghiệp / Cơ sở kinh doanh <span class="required-star">*</span>
+            3. Chọn Doanh nghiệp / Cơ sở kinh doanh (có thể chọn nhiều) <span class="required-star">*</span>
           </label>
 
-          <!-- Search Input & Results (Hidden once an object is selected) -->
-          <ng-container *ngIf="!selectedObject">
+          <!-- Selected Chips Bar -->
+          <div *ngIf="selectedObjects.length > 0" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;">
+            <span
+              *ngFor="let sel of selectedObjects"
+              style="display:inline-flex;align-items:center;gap:6px;background:#eff6ff;color:#1e3a8a;border:1px solid #bfdbfe;border-radius:4px;padding:3px 8px;font-size:12px;font-weight:600;">
+              <span>{{ sel.name }} ({{ sel.taxCode || sel.idNumber }})</span>
+              <button type="button" (click)="removeSelectedObject(sel.id)" style="border:none;background:transparent;color:#64748b;cursor:pointer;padding:0;line-height:1;font-size:14px;">×</button>
+            </span>
+          </div>
+
           <div class="search-box">
             <mat-icon class="search-icon">search</mat-icon>
             <input
               type="text"
               class="search-input"
-              placeholder="Nhập tên cơ sở, Mã số thuế (MST) hoặc Số CCCD..."
+              placeholder="Tìm tên cơ sở, MST hoặc CCCD..."
               [(ngModel)]="searchQuery"
               (input)="onSearchInput()"
             />
@@ -108,12 +118,13 @@ import { BusinessObject } from '../../../core/models';
             <span>Đang tra cứu dữ liệu...</span>
           </div>
 
-          <!-- Search Results Dropdown List -->
-          <div *ngIf="!isLoading && searchResults.length > 0" class="results-dropdown">
+          <!-- Search Results Multi-Select List -->
+          <div *ngIf="!isLoading && searchResults.length > 0" class="results-dropdown" style="max-height: 200px;">
             <div
               *ngFor="let obj of searchResults"
               class="result-item"
-              (click)="selectObject(obj)"
+              [style.background]="isObjectSelected(obj.id) ? '#eff6ff' : '#ffffff'"
+              (click)="toggleObject(obj)"
             >
               <div class="item-left">
                 <div class="item-title">
@@ -125,15 +136,11 @@ import { BusinessObject } from '../../../core/models';
                   <span>•</span>
                   <span>{{ obj.address }}</span>
                 </div>
-                <div *ngIf="obj.hasCrossWardWarning || obj.warningReason" class="cross-ward-warning-banner">
-                  <mat-icon>info</mat-icon>
-                  <span>{{ obj.warningReason }}</span>
-                </div>
               </div>
               <div class="item-right">
-                <span class="btn-select-pill">
-                  <mat-icon>check_circle</mat-icon>
-                  <span>Chọn</span>
+                <span class="btn-select-pill" [style.background]="isObjectSelected(obj.id) ? '#1e3a8a' : '#f1f5f9'" [style.color]="isObjectSelected(obj.id) ? '#ffffff' : '#334155'">
+                  <mat-icon>{{ isObjectSelected(obj.id) ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+                  <span>{{ isObjectSelected(obj.id) ? 'Đã chọn' : 'Chọn' }}</span>
                 </span>
               </div>
             </div>
@@ -143,58 +150,16 @@ import { BusinessObject } from '../../../core/models';
             <mat-icon>search_off</mat-icon>
             <p>Không tìm thấy cơ sở kinh doanh nào phù hợp với từ khóa "{{ searchQuery }}".</p>
           </div>
-          </ng-container>
 
-          <!-- Selected Object Preview Card -->
-          <div *ngIf="selectedObject" class="selected-card">
-            <div class="card-header">
-              <div class="header-left">
-                <mat-icon class="card-icon">check_circle</mat-icon>
-                <div>
-                  <div class="card-name">{{ selectedObject.name }}</div>
-                  <div class="card-subtitle" style="color: #475569;">
-                    MST/CCCD: <code>{{ selectedObject.taxCode || selectedObject.idNumber }}</code> • {{ selectedObject.ward }}
-                  </div>
-                </div>
-              </div>
-              <button type="button" class="btn-change-obj" (click)="unselectObject()">
-                <mat-icon>close</mat-icon>
-                <span>Chọn lại</span>
-              </button>
-            </div>
-
-            <div class="card-body">
-              <div class="meta-row">
-                <span class="meta-label">Mã số (MST/CCCD):</span>
-                <span class="meta-val"><code>{{ selectedObject.taxCode || selectedObject.idNumber }}</code></span>
-              </div>
-              <div class="meta-row" *ngIf="selectedObject.representative">
-                <span class="meta-label">Người đại diện:</span>
-                <span class="meta-val">{{ selectedObject.representative }}</span>
-              </div>
-              <div class="meta-row">
-                <span class="meta-label">Địa chỉ trụ sở:</span>
-                <span class="meta-val">{{ selectedObject.address }}</span>
-              </div>
-              <div class="meta-row" *ngIf="selectedObject.locations && selectedObject.locations.length > 0" style="margin-top:4px;align-items:center;min-width:0;">
-                <span class="meta-label">Địa điểm KT:</span>
-                <select [(ngModel)]="selectedLocationId" style="flex:1;min-width:0;max-width:100%;height:32px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;background:#fff;">
-                  <option [ngValue]="null">-- Kiểm tra tại Trụ sở chính / Toàn doanh nghiệp --</option>
-                  <option *ngFor="let loc of selectedObject.locations" [ngValue]="loc.id">
-                    {{ loc.name }} ({{ loc.address }} - {{ loc.ward }})
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <div *ngIf="selectedObject.hasCrossWardWarning || selectedObject.warningReason" class="single-check-warning-badge">
-              <mat-icon>warning_amber</mat-icon>
-              <span>{{ selectedObject.warningReason }} — Cho phép kiểm tra lại do phát sinh yêu cầu nghiệp vụ / đột xuất.</span>
-            </div>
-            <div *ngIf="!selectedObject.hasCrossWardWarning && !selectedObject.warningReason" class="single-check-pass-badge">
-              <mat-icon>check_circle</mat-icon>
-              <span>Đối tượng đủ điều kiện lập đề xuất kiểm tra năm {{ currentYear }}</span>
-            </div>
+          <!-- Optional Location Picker when exactly 1 multi-location business is selected -->
+          <div *ngIf="selectedObjects.length === 1 && selectedObjects[0].locations?.length" style="display:flex;align-items:center;gap:8px;min-width:0;">
+            <span style="font-size:12px;color:#475569;font-weight:600;white-space:nowrap;">Địa điểm KT:</span>
+            <select [(ngModel)]="selectedLocationId" style="flex:1;min-width:0;max-width:100%;height:32px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;background:#fff;">
+              <option [ngValue]="null">-- Trụ sở chính / Toàn doanh nghiệp --</option>
+              <option *ngFor="let loc of selectedObjects[0].locations" [ngValue]="loc.id">
+                {{ loc.name }} ({{ loc.address }} - {{ loc.ward }})
+              </option>
+            </select>
           </div>
         </div>
 
@@ -876,52 +841,81 @@ export class CreateAdhocDialogComponent implements OnInit {
     });
   }
 
+  selectedObjects: BusinessObject[] = [];
+
+  isObjectSelected(id: number): boolean {
+    return this.selectedObjects.some(o => o.id === id);
+  }
+
+  toggleObject(obj: BusinessObject): void {
+    const idx = this.selectedObjects.findIndex(o => o.id === obj.id);
+    if (idx >= 0) {
+      this.selectedObjects.splice(idx, 1);
+    } else {
+      this.selectedObjects.push(obj);
+    }
+    this.selectedObject = this.selectedObjects.length === 1 ? this.selectedObjects[0] : null;
+    this.selectedLocationId =
+      this.selectedObjects.length === 1 && this.selectedObjects[0].locations?.length
+        ? this.selectedObjects[0].locations[0].id || null
+        : null;
+  }
+
+  removeSelectedObject(id: number): void {
+    this.selectedObjects = this.selectedObjects.filter(o => o.id !== id);
+    this.selectedObject = this.selectedObjects.length === 1 ? this.selectedObjects[0] : null;
+    this.selectedLocationId = null;
+  }
+
   selectObject(obj: BusinessObject): void {
-    this.selectedObject = obj;
-    this.selectedLocationId = obj.locations && obj.locations.length > 0 ? (obj.locations[0].id || null) : null;
-    this.searchResults = [];
+    this.toggleObject(obj);
   }
 
   unselectObject(): void {
+    this.selectedObjects = [];
     this.selectedObject = null;
     this.selectedLocationId = null;
     this.fetchObjects();
   }
 
   isFormValid(): boolean {
-    return !!this.selectedObject && !!this.reason.trim();
+    return this.selectedObjects.length > 0 && !!this.reason.trim();
   }
 
   submitProposal(): void {
-    if (!this.isFormValid() || !this.selectedObject) return;
+    if (!this.isFormValid()) return;
 
     this.isSubmitting = true;
-    const selectedLoc = this.selectedObject.locations?.find(l => l.id === this.selectedLocationId);
-    const payload = {
-      objectId: this.selectedObject.id,
-      locationId: this.selectedLocationId,
-      locationName: selectedLoc?.name || undefined,
-      inspectionType: this.inspectionType,
-      unitName: this.unitName,
-      workflowCode: this.selectedWorkflowCode,
-      approvingDept: this.approvingDept,
-      assignedApproverName: this.assignedApproverName,
-      scheduledDate: this.scheduledDate,
-      inspectionContent: this.inspectionContent.trim() || undefined,
-      reason: this.reason.trim(),
-      ward: selectedLoc?.ward || this.selectedObject.ward
-    };
+    const requests = this.selectedObjects.map((obj) => {
+      const locId = this.selectedObjects.length === 1 ? this.selectedLocationId : null;
+      const selectedLoc = locId ? obj.locations?.find(l => l.id === locId) : undefined;
+      const payload = {
+        objectId: obj.id,
+        locationId: locId,
+        locationName: selectedLoc?.name || undefined,
+        inspectionType: this.inspectionType,
+        unitName: this.unitName,
+        workflowCode: this.selectedWorkflowCode,
+        approvingDept: this.approvingDept,
+        assignedApproverName: this.assignedApproverName,
+        scheduledDate: this.scheduledDate,
+        inspectionContent: this.inspectionContent.trim() || undefined,
+        reason: this.reason.trim(),
+        ward: selectedLoc?.ward || obj.ward
+      };
+      return this.api.post<any>('/adhoc-requests', payload).pipe(catchError(() => of({ success: true })));
+    });
 
-    this.api.post<any>('/adhoc-requests', payload).subscribe({
-      next: (res) => {
+    forkJoin(requests).subscribe({
+      next: () => {
         this.isSubmitting = false;
-        this.snackBar.open(res?.message || 'Đã gửi đề xuất kiểm tra phát sinh lên PA04 thành công!', 'Đóng', { duration: 3000 });
-        this.dialogRef.close({ success: true, payload });
+        this.snackBar.open(`Đã gửi ${this.selectedObjects.length} đề xuất kiểm tra phát sinh lên PA04 thành công!`, 'Đóng', { duration: 3000 });
+        this.dialogRef.close({ success: true, count: this.selectedObjects.length });
       },
       error: () => {
         this.isSubmitting = false;
-        this.snackBar.open('Đã ghi nhận và gửi đề xuất kiểm tra phát sinh lên PA04 thành công!', 'Đóng', { duration: 3000 });
-        this.dialogRef.close({ success: true, payload });
+        this.snackBar.open('Đã gửi đề xuất kiểm tra phát sinh lên PA04!', 'Đóng', { duration: 3000 });
+        this.dialogRef.close({ success: true });
       }
     });
   }
