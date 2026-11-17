@@ -29,8 +29,7 @@ import { BusinessObject } from '../../../core/models';
             <mat-icon>notification_important</mat-icon>
           </div>
           <div>
-            <h2>Đề xuất Kiểm tra Đột xuất / Theo Yêu cầu Nghiệp vụ</h2>
-            <p class="subtitle">Cho phép kiểm tra lại cơ sở đã được đơn vị khác kiểm tra nếu phát sinh yêu cầu nghiệp vụ hoặc kiểm tra đột xuất</p>
+            <h2>Đề xuất Kiểm tra Đột xuất / Phát sinh</h2>
           </div>
         </div>
         <button mat-icon-button (click)="dialogRef.close()" class="close-btn">
@@ -39,50 +38,41 @@ import { BusinessObject } from '../../../core/models';
       </div>
 
       <div class="dialog-content">
-        <!-- Section 0: Inspection Type Classification -->
-        <div class="form-section">
-          <label class="section-label">
-            1. Phân loại loại hình kiểm tra phát sinh <span class="required-star">*</span>
-          </label>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <label
-              style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:8px;cursor:pointer;"
-              [style.border-color]="inspectionType === 'adhoc' ? '#1e3a8a' : '#cbd5e1'"
-              [style.background]="inspectionType === 'adhoc' ? '#f1f5f9' : '#fff'"
-            >
-              <input type="radio" name="inspType" value="adhoc" [(ngModel)]="inspectionType" (change)="onInspectionTypeChange()" />
-              <div>
-                <strong style="display:block;font-size:13px;color:#1e293b;">⚡ Kiểm tra đột xuất</strong>
-                <span style="font-size:11.5px;color:#64748b;">Khi có dấu hiệu vi phạm, phản ánh nóng, sự cố ATTP/PCCC</span>
-              </div>
-            </label>
-            <label
-              style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:8px;cursor:pointer;"
-              [style.border-color]="inspectionType === 'professional_request' ? '#1e3a8a' : '#cbd5e1'"
-              [style.background]="inspectionType === 'professional_request' ? '#eff6ff' : '#fff'"
-            >
-              <input type="radio" name="inspType" value="professional_request" [(ngModel)]="inspectionType" (change)="onInspectionTypeChange()" />
-              <div>
-                <strong style="display:block;font-size:13px;color:#1e293b;">📋 Kiểm tra theo yêu cầu nghiệp vụ</strong>
-                <span style="font-size:11.5px;color:#64748b;">Theo chuyên đề ngành dọc (PC07, PC04/PA04, PC06...) hoặc yêu cầu nghiệp vụ riêng</span>
-              </div>
-            </label>
+        <!-- Top Row: Loại kiểm tra & Đơn vị / Quy trình -->
+        <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 12px; align-items: end;">
+          <div class="form-section">
+            <label class="section-label">1. Loại hình <span class="required-star">*</span></label>
+            <div style="display: flex; gap: 8px;">
+              <label
+                style="flex:1;display:flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;font-size:12.5px;"
+                [style.border-color]="inspectionType === 'adhoc' ? '#1e3a8a' : '#cbd5e1'"
+                [style.background]="inspectionType === 'adhoc' ? '#eff6ff' : '#fff'"
+              >
+                <input type="radio" name="inspType" value="adhoc" [(ngModel)]="inspectionType" (change)="onInspectionTypeChange()" />
+                <strong>Đột xuất</strong>
+              </label>
+              <label
+                style="flex:1;display:flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;font-size:12.5px;"
+                [style.border-color]="inspectionType === 'professional_request' ? '#1e3a8a' : '#cbd5e1'"
+                [style.background]="inspectionType === 'professional_request' ? '#eff6ff' : '#fff'"
+              >
+                <input type="radio" name="inspType" value="professional_request" [(ngModel)]="inspectionType" (change)="onInspectionTypeChange()" />
+                <strong>Yêu cầu NV</strong>
+              </label>
+            </div>
           </div>
-        </div>
 
-        <!-- Section 0B: Đơn vị / Quy trình thực hiện (1 dropdown gọn) -->
-        <div class="form-section">
-          <label class="section-label">
-            2. Đơn vị / Quy trình áp dụng
-          </label>
-          <select
-            [(ngModel)]="selectedWorkflowCode"
-            (change)="onWorkflowChange()"
-            style="width: 100%; height: 36px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #fff; color: #1e293b;">
-            <option *ngFor="let wf of filteredWorkflows" [value]="wf.code">
-              {{ wf.unitName }} — {{ wf.name }}
-            </option>
-          </select>
+          <div class="form-section" style="min-width: 0;">
+            <label class="section-label">2. Đơn vị / Quy trình áp dụng</label>
+            <select
+              [(ngModel)]="selectedWorkflowCode"
+              (change)="onWorkflowChange()"
+              style="width: 100%; max-width: 100%; min-width: 0; height: 36px; padding: 0 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; background: #fff; color: #1e293b;">
+              <option *ngFor="let wf of filteredWorkflows" [value]="wf.code">
+                {{ wf.unitName }} — {{ wf.name }}
+              </option>
+            </select>
+          </div>
         </div>
 
         <!-- Section 1: Select Business Object -->
@@ -186,9 +176,9 @@ import { BusinessObject } from '../../../core/models';
                 <span class="meta-label">Địa chỉ trụ sở:</span>
                 <span class="meta-val">{{ selectedObject.address }}</span>
               </div>
-              <div class="meta-row" *ngIf="selectedObject.locations && selectedObject.locations.length > 0" style="margin-top:6px;align-items:center;">
-                <span class="meta-label">Chọn cơ sở / địa điểm KT:</span>
-                <select [(ngModel)]="selectedLocationId" style="flex:1;height:32px;padding:0 8px;border:1px solid #475569;border-radius:6px;font-size:12.5px;background:#fff;">
+              <div class="meta-row" *ngIf="selectedObject.locations && selectedObject.locations.length > 0" style="margin-top:4px;align-items:center;min-width:0;">
+                <span class="meta-label">Địa điểm KT:</span>
+                <select [(ngModel)]="selectedLocationId" style="flex:1;min-width:0;max-width:100%;height:32px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;background:#fff;">
                   <option [ngValue]="null">-- Kiểm tra tại Trụ sở chính / Toàn doanh nghiệp --</option>
                   <option *ngFor="let loc of selectedObject.locations" [ngValue]="loc.id">
                     {{ loc.name }} ({{ loc.address }} - {{ loc.ward }})
@@ -223,23 +213,15 @@ import { BusinessObject } from '../../../core/models';
         <!-- Section 3: Reason for Ad-hoc Inspection -->
         <div class="form-section">
           <label class="section-label">
-            3. Căn cứ / Lý do đề xuất kiểm tra <span class="required-star">*</span>
+            4. Lý do đề xuất kiểm tra <span class="required-star">*</span>
           </label>
           <textarea
             class="reason-textarea"
-            rows="4"
+            rows="3"
             [(ngModel)]="reason"
-            placeholder="Mô tả cụ thể lý do đề xuất kiểm tra đột xuất (VD: Nhận được đơn thư phản ánh của công dân về vi phạm ATTP/PCCC, phát hiện cơ sở có dấu hiệu vi phạm điều kiện an toàn, yêu cầu kiểm tra chuyên đề đột xuất của cấp trên...)"
+            placeholder="Nhập lý do đề xuất kiểm tra..."
             required
           ></textarea>
-        </div>
-
-        <!-- Section 3: Quarter / Year context -->
-        <div class="form-section quarter-info-box">
-          <mat-icon>info</mat-icon>
-          <div>
-            <strong>Ghi chú quy trình:</strong> Đề xuất sẽ được gửi lên PA04 xét duyệt độc lập với Kế hoạch Quý chính thức. Khi được duyệt, cơ sở sẽ được đưa vào Phân hệ Giám sát thực địa với nhãn <strong>"Phát sinh"</strong> và vẫn tính vào quy tắc Single Check năm {{ currentYear }}.
-          </div>
         </div>
       </div>
 
@@ -544,7 +526,7 @@ import { BusinessObject } from '../../../core/models';
     }
 
     .selected-card {
-      background: #faf5ff;
+      background: #f8fafc;
       border: 1.5px solid #475569;
       border-radius: 8px;
       padding: 14px 16px;
@@ -553,7 +535,7 @@ import { BusinessObject } from '../../../core/models';
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        border-bottom: 1px solid #e9d5ff;
+        border-bottom: 1px solid #e2e8f0;
         padding-bottom: 10px;
         margin-bottom: 10px;
 
@@ -572,7 +554,7 @@ import { BusinessObject } from '../../../core/models';
           .card-name {
             font-size: 14.5px;
             font-weight: 700;
-            color: #4c1d95;
+            color: #1e3a8a;
           }
 
           .card-subtitle {
@@ -609,7 +591,7 @@ import { BusinessObject } from '../../../core/models';
           display: flex;
           gap: 8px;
 
-          .meta-label { color: #7e22ce; font-weight: 500; min-width: 120px; }
+          .meta-label { color: #475569; font-weight: 500; min-width: 120px; }
           .meta-val { color: #1e1b4b; }
         }
       }
@@ -620,7 +602,7 @@ import { BusinessObject } from '../../../core/models';
         gap: 6px;
         margin-top: 10px;
         padding-top: 8px;
-        border-top: 1px dashed #e9d5ff;
+        border-top: 1px dashed #e2e8f0;
         font-size: 12px;
         font-weight: 600;
         color: #1e3a8a;
