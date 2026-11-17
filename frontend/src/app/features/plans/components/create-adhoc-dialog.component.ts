@@ -70,54 +70,25 @@ import { BusinessObject } from '../../../core/models';
           </div>
         </div>
 
-        <!-- Section 0B: Dynamic Unit Workflow & Approving Department / Approver Person -->
-        <div class="form-section" style="background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 10px; padding: 12px 14px;">
-          <label class="section-label" style="color: #0369a1; display: flex; align-items: center; gap: 6px;">
-            <mat-icon style="font-size: 18px; width: 18px; height: 18px;">account_tree</mat-icon>
-            <span>Cấu hình Quy trình Động của Đơn vị (PC07, PC04, PC06, Phường) — Phòng ban duyệt & Người duyệt:</span>
+        <!-- Section 0B: Đơn vị / Quy trình thực hiện (1 dropdown gọn) -->
+        <div class="form-section">
+          <label class="section-label">
+            2. Đơn vị / Quy trình áp dụng
           </label>
-          <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 6px;">
-            <div>
-              <span style="font-size: 11.5px; font-weight: 600; color: #334155;">Chọn Quy trình Động theo Đơn vị & Loại hình:</span>
-              <select
-                [(ngModel)]="selectedWorkflowCode"
-                (change)="onWorkflowChange()"
-                style="width: 100%; height: 36px; padding: 0 10px; border: 1px solid #7dd3fc; border-radius: 6px; font-size: 12.5px; font-weight: 600; background: #fff; color: #0f172a; margin-top: 3px;">
-                <option *ngFor="let wf of filteredWorkflows" [value]="wf.code">
-                  [{{ wf.unitCode }}] {{ wf.name }} ({{ wf.unitName }})
-                </option>
-              </select>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-              <div>
-                <span style="font-size: 11.5px; font-weight: 600; color: #1e3a8a;">🏢 Phòng ban phê duyệt kế hoạch/đề xuất:</span>
-                <input
-                  type="text"
-                  [(ngModel)]="approvingDept"
-                  style="width: 100%; height: 34px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; background: #fff; margin-top: 3px; box-sizing: border-box;" />
-              </div>
-              <div>
-                <span style="font-size: 11.5px; font-weight: 600; color: #172554;">👤 Người duyệt được phân công:</span>
-                <input
-                  type="text"
-                  [(ngModel)]="assignedApproverName"
-                  style="width: 100%; height: 34px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; background: #fff; margin-top: 3px; box-sizing: border-box;" />
-              </div>
-            </div>
-          </div>
-          <div *ngIf="selectedWorkflowObj?.steps?.length" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
-            <span
-              *ngFor="let st of selectedWorkflowObj.steps; let i = index"
-              style="font-size: 11px; background: #ffffff; border: 1px solid #bae6fd; border-radius: 5px; padding: 3px 8px; color: #0c4a6e;">
-              <strong>B{{ i + 1 }}:</strong> {{ st.name }} (<em>{{ st.approvingDept }} — {{ st.approverName }}</em>)
-            </span>
-          </div>
+          <select
+            [(ngModel)]="selectedWorkflowCode"
+            (change)="onWorkflowChange()"
+            style="width: 100%; height: 36px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #fff; color: #1e293b;">
+            <option *ngFor="let wf of filteredWorkflows" [value]="wf.code">
+              {{ wf.unitName }} — {{ wf.name }}
+            </option>
+          </select>
         </div>
 
         <!-- Section 1: Select Business Object -->
         <div class="form-section">
           <label class="section-label">
-            2. Chọn Doanh nghiệp / Cơ sở kinh doanh <span class="required-star">*</span>
+            3. Chọn Doanh nghiệp / Cơ sở kinh doanh <span class="required-star">*</span>
           </label>
 
           <!-- Search Input -->
@@ -158,7 +129,6 @@ import { BusinessObject } from '../../../core/models';
                   <strong>{{ obj.name }}</strong>
                   <span class="type-pill">{{ obj.type === 'enterprise' ? 'Doanh nghiệp' : (obj.type === 'household' ? 'Hộ KD' : 'Cá nhân') }}</span>
                   <span class="ward-pill">{{ obj.ward }}</span>
-                  <span *ngIf="obj.hasForeignElement" class="ward-pill" style="background:#fef3c7;color:#b45309;">🌐 Yếu tố NN</span>
                 </div>
                 <div class="item-meta">
                   <span>Mã: <strong>{{ obj.taxCode || obj.idNumber }}</strong></span>
