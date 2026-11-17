@@ -83,14 +83,51 @@ import { BusinessObject } from '../../../core/models';
             3. Chọn Doanh nghiệp / Cơ sở kinh doanh (có thể chọn nhiều) <span class="required-star">*</span>
           </label>
 
-          <!-- Selected Chips Bar -->
-          <div *ngIf="selectedObjects.length > 0" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;">
-            <span
-              *ngFor="let sel of selectedObjects"
-              style="display:inline-flex;align-items:center;gap:6px;background:#eff6ff;color:#1e3a8a;border:1px solid #bfdbfe;border-radius:4px;padding:3px 8px;font-size:12px;font-weight:600;">
-              <span>{{ sel.name }} ({{ sel.taxCode || sel.idNumber }})</span>
-              <button type="button" (click)="removeSelectedObject(sel.id)" style="border:none;background:transparent;color:#64748b;cursor:pointer;padding:0;line-height:1;font-size:14px;">×</button>
-            </span>
+          <!-- Selected Businesses & Per-Business Location Selection -->
+          <div *ngIf="selectedEntries.length > 0" style="display:flex;flex-direction:column;gap:8px;">
+            <div style="font-size:12px;font-weight:600;color:#1e3a8a;">
+              Đã chọn {{ selectedEntries.length }} doanh nghiệp / cơ sở:
+            </div>
+            <div
+              *ngFor="let entry of selectedEntries"
+              style="border:1px solid #cbd5e1;border-radius:6px;padding:8px 10px;background:#f8fafc;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <div>
+                  <strong style="font-size:13px;color:#1e293b;">{{ entry.obj.name }}</strong>
+                  <span style="font-size:11.5px;color:#64748b;margin-left:6px;">
+                    ({{ entry.obj.taxCode || entry.obj.idNumber }} • {{ entry.obj.ward }})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  (click)="removeSelectedObject(entry.obj.id)"
+                  style="border:1px solid #cbd5e1;background:#fff;color:#475569;border-radius:4px;padding:2px 8px;font-size:11.5px;cursor:pointer;">
+                  Bỏ chọn
+                </button>
+              </div>
+
+              <!-- Per-business locations checkboxes (with "Chọn toàn bộ") -->
+              <div *ngIf="entry.obj.locations && entry.obj.locations.length > 0" style="margin-top:6px;padding-top:6px;border-top:1px dashed #e2e8f0;">
+                <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                  <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:#1e3a8a;cursor:pointer;">
+                    <input
+                      type="checkbox"
+                      [checked]="isAllLocationsSelected(entry)"
+                      (change)="toggleAllLocations(entry)" />
+                    <span>Toàn bộ ({{ entry.obj.locations.length }} cơ sở)</span>
+                  </label>
+                  <label
+                    *ngFor="let loc of entry.obj.locations"
+                    style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#334155;background:#fff;border:1px solid #e2e8f0;border-radius:4px;padding:2px 7px;cursor:pointer;">
+                    <input
+                      type="checkbox"
+                      [checked]="isLocationSelected(entry, loc.id!)"
+                      (change)="toggleLocation(entry, loc.id!)" />
+                    <span>{{ loc.name }} ({{ loc.ward }})</span>
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="search-box">
@@ -149,17 +186,6 @@ import { BusinessObject } from '../../../core/models';
           <div *ngIf="!isLoading && searchResults.length === 0 && searchQuery.trim().length >= 2" class="empty-results-box">
             <mat-icon>search_off</mat-icon>
             <p>Không tìm thấy cơ sở kinh doanh nào phù hợp với từ khóa "{{ searchQuery }}".</p>
-          </div>
-
-          <!-- Optional Location Picker when exactly 1 multi-location business is selected -->
-          <div *ngIf="selectedObjects.length === 1 && selectedObjects[0].locations?.length" style="display:flex;align-items:center;gap:8px;min-width:0;">
-            <span style="font-size:12px;color:#475569;font-weight:600;white-space:nowrap;">Địa điểm KT:</span>
-            <select [(ngModel)]="selectedLocationId" style="flex:1;min-width:0;max-width:100%;height:32px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;background:#fff;">
-              <option [ngValue]="null">-- Trụ sở chính / Toàn doanh nghiệp --</option>
-              <option *ngFor="let loc of selectedObjects[0].locations" [ngValue]="loc.id">
-                {{ loc.name }} ({{ loc.address }} - {{ loc.ward }})
-              </option>
-            </select>
           </div>
         </div>
 
@@ -841,30 +867,54 @@ export class CreateAdhocDialogComponent implements OnInit {
     });
   }
 
+  selectedEntries: Array<{ obj: BusinessObject; locationIds: number[] }> = [];
   selectedObjects: BusinessObject[] = [];
 
   isObjectSelected(id: number): boolean {
-    return this.selectedObjects.some(o => o.id === id);
+    return this.selectedEntries.some(e => e.obj.id === id);
   }
 
   toggleObject(obj: BusinessObject): void {
-    const idx = this.selectedObjects.findIndex(o => o.id === obj.id);
+    const idx = this.selectedEntries.findIndex(e => e.obj.id === obj.id);
     if (idx >= 0) {
-      this.selectedObjects.splice(idx, 1);
+      this.selectedEntries.splice(idx, 1);
     } else {
-      this.selectedObjects.push(obj);
+      const allLocIds = (obj.locations || []).map(l => l.id!).filter(Boolean);
+      this.selectedEntries.push({ obj, locationIds: allLocIds });
     }
-    this.selectedObject = this.selectedObjects.length === 1 ? this.selectedObjects[0] : null;
-    this.selectedLocationId =
-      this.selectedObjects.length === 1 && this.selectedObjects[0].locations?.length
-        ? this.selectedObjects[0].locations[0].id || null
-        : null;
+    this.selectedObjects = this.selectedEntries.map(e => e.obj);
   }
 
   removeSelectedObject(id: number): void {
-    this.selectedObjects = this.selectedObjects.filter(o => o.id !== id);
-    this.selectedObject = this.selectedObjects.length === 1 ? this.selectedObjects[0] : null;
-    this.selectedLocationId = null;
+    this.selectedEntries = this.selectedEntries.filter(e => e.obj.id !== id);
+    this.selectedObjects = this.selectedEntries.map(e => e.obj);
+  }
+
+  isAllLocationsSelected(entry: { obj: BusinessObject; locationIds: number[] }): boolean {
+    const locs = entry.obj.locations || [];
+    return locs.length > 0 && locs.every(l => entry.locationIds.includes(l.id!));
+  }
+
+  toggleAllLocations(entry: { obj: BusinessObject; locationIds: number[] }): void {
+    const locs = entry.obj.locations || [];
+    if (this.isAllLocationsSelected(entry)) {
+      entry.locationIds = [];
+    } else {
+      entry.locationIds = locs.map(l => l.id!).filter(Boolean);
+    }
+  }
+
+  isLocationSelected(entry: { obj: BusinessObject; locationIds: number[] }, locId: number): boolean {
+    return entry.locationIds.includes(locId);
+  }
+
+  toggleLocation(entry: { obj: BusinessObject; locationIds: number[] }, locId: number): void {
+    const idx = entry.locationIds.indexOf(locId);
+    if (idx >= 0) {
+      entry.locationIds.splice(idx, 1);
+    } else {
+      entry.locationIds.push(locId);
+    }
   }
 
   selectObject(obj: BusinessObject): void {
@@ -872,45 +922,70 @@ export class CreateAdhocDialogComponent implements OnInit {
   }
 
   unselectObject(): void {
+    this.selectedEntries = [];
     this.selectedObjects = [];
-    this.selectedObject = null;
     this.selectedLocationId = null;
     this.fetchObjects();
   }
 
   isFormValid(): boolean {
-    return this.selectedObjects.length > 0 && !!this.reason.trim();
+    if (this.selectedEntries.length === 0 || !this.reason.trim()) return false;
+    // Every business that has locations must have at least 1 location selected
+    return this.selectedEntries.every(e => !(e.obj.locations && e.obj.locations.length > 0) || e.locationIds.length > 0);
   }
 
   submitProposal(): void {
     if (!this.isFormValid()) return;
 
     this.isSubmitting = true;
-    const requests = this.selectedObjects.map((obj) => {
-      const locId = this.selectedObjects.length === 1 ? this.selectedLocationId : null;
-      const selectedLoc = locId ? obj.locations?.find(l => l.id === locId) : undefined;
-      const payload = {
-        objectId: obj.id,
-        locationId: locId,
-        locationName: selectedLoc?.name || undefined,
-        inspectionType: this.inspectionType,
-        unitName: this.unitName,
-        workflowCode: this.selectedWorkflowCode,
-        approvingDept: this.approvingDept,
-        assignedApproverName: this.assignedApproverName,
-        scheduledDate: this.scheduledDate,
-        inspectionContent: this.inspectionContent.trim() || undefined,
-        reason: this.reason.trim(),
-        ward: selectedLoc?.ward || obj.ward
-      };
-      return this.api.post<any>('/adhoc-requests', payload).pipe(catchError(() => of({ success: true })));
-    });
+    const payloads: any[] = [];
+
+    for (const entry of this.selectedEntries) {
+      const locs = entry.obj.locations || [];
+      if (locs.length > 0 && entry.locationIds.length > 0) {
+        for (const locId of entry.locationIds) {
+          const loc = locs.find(l => l.id === locId);
+          payloads.push({
+            objectId: entry.obj.id,
+            locationId: locId,
+            locationName: loc?.name || undefined,
+            inspectionType: this.inspectionType,
+            unitName: this.unitName,
+            workflowCode: this.selectedWorkflowCode,
+            approvingDept: this.approvingDept,
+            assignedApproverName: this.assignedApproverName,
+            scheduledDate: this.scheduledDate,
+            inspectionContent: this.inspectionContent.trim() || undefined,
+            reason: this.reason.trim(),
+            ward: loc?.ward || entry.obj.ward
+          });
+        }
+      } else {
+        payloads.push({
+          objectId: entry.obj.id,
+          locationId: null,
+          inspectionType: this.inspectionType,
+          unitName: this.unitName,
+          workflowCode: this.selectedWorkflowCode,
+          approvingDept: this.approvingDept,
+          assignedApproverName: this.assignedApproverName,
+          scheduledDate: this.scheduledDate,
+          inspectionContent: this.inspectionContent.trim() || undefined,
+          reason: this.reason.trim(),
+          ward: entry.obj.ward
+        });
+      }
+    }
+
+    const requests = payloads.map(p =>
+      this.api.post<any>('/adhoc-requests', p).pipe(catchError(() => of({ success: true })))
+    );
 
     forkJoin(requests).subscribe({
       next: () => {
         this.isSubmitting = false;
-        this.snackBar.open(`Đã gửi ${this.selectedObjects.length} đề xuất kiểm tra phát sinh lên PA04 thành công!`, 'Đóng', { duration: 3000 });
-        this.dialogRef.close({ success: true, count: this.selectedObjects.length });
+        this.snackBar.open(`Đã gửi ${payloads.length} đề xuất kiểm tra phát sinh lên PA04 thành công!`, 'Đóng', { duration: 3000 });
+        this.dialogRef.close({ success: true, count: payloads.length });
       },
       error: () => {
         this.isSubmitting = false;
