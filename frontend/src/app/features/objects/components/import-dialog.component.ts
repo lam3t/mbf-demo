@@ -270,9 +270,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
       }
 
       &:hover, &.has-file {
-        border-color: #1a56db;
+        border-color: #1e3a8a;
         background-color: #f0f7ff;
-        .upload-icon { color: #1a56db; }
+        .upload-icon { color: #1e3a8a; }
       }
     }
 
@@ -380,7 +380,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
         transition: all 0.15s;
 
         &:hover:not([disabled]) {
-          background-color: #1d4ed8;
+          background-color: #1e3a8a;
           box-shadow: 0 4px 10px rgba(30, 58, 138, 0.25);
         }
 

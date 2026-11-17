@@ -87,7 +87,7 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
               </div>
               <div>
                 <div style="font-size: 11px; color: #64748b; font-weight: 600;">PHÒNG BAN PHÊ DUYỆT KẾ HOẠCH:</div>
-                <strong style="color: #1d4ed8;">🏢 {{ $any(plan).approvingDept || $any(plan).workflowDetail?.planApprovalDept || 'Ban Chỉ huy Phòng PC07' }}</strong>
+                <strong style="color: #1e3a8a;">🏢 {{ $any(plan).approvingDept || $any(plan).workflowDetail?.planApprovalDept || 'Ban Chỉ huy Phòng PC07' }}</strong>
               </div>
               <div>
                 <div style="font-size: 11px; color: #64748b; font-weight: 600;">NGƯỜI DUYỆT ĐƯỢC PHÂN CÔNG:</div>
@@ -212,7 +212,7 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
               <h3 style="margin:0;">Điều chỉnh Kế hoạch, Thời gian, Địa điểm & Nội dung trong quá trình triển khai:</h3>
               <button
                 type="button"
-                style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;background:#eff6ff;border:1px solid #93c5fd;color:#1d4ed8;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;"
+                style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;background:#eff6ff;border:1px solid #cbd5e1;color:#1e3a8a;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;"
                 (click)="isAdjusting = !isAdjusting"
               >
                 <mat-icon style="font-size:16px;width:16px;height:16px;">edit_calendar</mat-icon>
@@ -230,7 +230,7 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
               </div>
             </div>
 
-            <div *ngIf="isAdjusting" style="background:#eff6ff;border:1.5px solid #93c5fd;border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+            <div *ngIf="isAdjusting" style="background:#eff6ff;border:1.5px solid #cbd5e1;border-radius:8px;padding:12px 14px;margin-bottom:14px;">
               <div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:10px;margin-bottom:8px;">
                 <div>
                   <label style="display:block;font-size:11.5px;font-weight:600;color:#1e3a8a;margin-bottom:3px;">Quy trình Động của Đơn vị (PC07, PC04, PC06, Phường...)</label>
@@ -282,7 +282,7 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
                 <input type="text" [(ngModel)]="adjustForm.adjustmentNote" placeholder="Nhập lý do điều chỉnh lịch, địa điểm hoặc nội dung..." style="width:100%;height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;background:#fff;box-sizing:border-box;" />
               </div>
               <div style="display:flex;justify-content:space-between;align-items:center;">
-                <button type="button" (click)="openAddMoreObjects()" style="padding:6px 12px;background:#fff;border:1px solid #2563eb;color:#2563eb;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
+                <button type="button" (click)="openAddMoreObjects()" style="padding:6px 12px;background:#fff;border:1px solid #1e3a8a;color:#1e3a8a;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
                   + Bổ sung thêm cơ sở vào kế hoạch này
                 </button>
                 <div style="display:flex;gap:8px;">
@@ -576,7 +576,7 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
           padding: 6px 12px;
           background-color: #eff6ff;
           border: 1px solid #bfdbfe;
-          color: #1d4ed8;
+          color: #1e3a8a;
           border-radius: 6px;
           font-size: 12px;
           font-weight: 600;

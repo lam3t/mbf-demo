@@ -171,7 +171,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
                 </select>
               </div>
               <div>
-                <label style="display: block; font-size: 11.5px; font-weight: 600; color: #1d4ed8; margin-bottom: 3px;">🏢 Phòng ban phê duyệt kế hoạch:</label>
+                <label style="display: block; font-size: 11.5px; font-weight: 600; color: #1e3a8a; margin-bottom: 3px;">🏢 Phòng ban phê duyệt kế hoạch:</label>
                 <input
                   type="text"
                   style="width: 100%; height: 36px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 10px; font-size: 12.5px; background: #fff; box-sizing: border-box;"
@@ -709,7 +709,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
         </div>
 
         <!-- Inline Create / Edit / Adjust Team Panel -->
-        <div id="teamEditorPanel" *ngIf="isTeamModalOpen" style="background:#ffffff;border:2px solid #3b82f6;border-radius:10px;padding:18px 20px;box-shadow:0 8px 20px rgba(0,0,0,0.08);">
+        <div id="teamEditorPanel" *ngIf="isTeamModalOpen" style="background:#ffffff;border:2px solid #1e3a8a;border-radius:10px;padding:18px 20px;box-shadow:0 8px 20px rgba(0,0,0,0.08);">
           <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:10px;margin-bottom:14px;">
             <h3 style="margin:0;font-size:15px;color:#1e3a8a;">
               {{ editingTeamId ? 'Điều chỉnh Thành phần Đoàn, Thời gian & Lịch Kiểm tra' : 'Thành lập Đoàn Kiểm tra Mới (Đơn vị / Liên ngành)' }}
@@ -781,7 +781,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:12px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
               <strong style="font-size:13px;color:#1e3a8a;">Thành phần Đoàn kiểm tra ({{ teamForm.members.length }} thành viên - Cho phép bổ sung/thay đổi linh hoạt)</strong>
-              <button type="button" (click)="addTeamMemberRow()" style="padding:4px 10px;background:#eff6ff;border:1px solid #93c5fd;color:#1d4ed8;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
+              <button type="button" (click)="addTeamMemberRow()" style="padding:4px 10px;background:#eff6ff;border:1px solid #cbd5e1;color:#1e3a8a;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
                 + Bổ sung thành viên vào đoàn
               </button>
             </div>
@@ -833,7 +833,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
               <button
                 type="button"
                 (click)="openEditTeamModal(team)"
-                style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;"
+                style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;"
               >
                 <mat-icon style="font-size:16px;width:16px;height:16px;">edit_note</mat-icon>
                 <span>Điều chỉnh thành phần / lịch đoàn</span>
@@ -916,12 +916,12 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
 
         &:hover {
           background-color: #eff6ff;
-          color: #1a56db;
-          mat-icon { color: #1a56db; }
+          color: #1e3a8a;
+          mat-icon { color: #1e3a8a; }
         }
 
         &.active {
-          background-color: #1a56db;
+          background-color: #1e3a8a;
           color: #ffffff;
           box-shadow: 0 2px 4px rgba(26, 86, 219, 0.25);
           mat-icon { color: #ffffff; }
@@ -980,15 +980,15 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
 
         &:hover {
           background-color: #f1f5f9;
-          color: #1a56db;
-          mat-icon { color: #1a56db; }
+          color: #1e3a8a;
+          mat-icon { color: #1e3a8a; }
         }
 
         &.active {
-          background-color: #eaf1ff;
-          color: #1a56db;
+          background-color: #eff6ff;
+          color: #1e3a8a;
           font-weight: 600;
-          mat-icon { color: #1a56db; }
+          mat-icon { color: #1e3a8a; }
         }
 
         .badge-pending-count {
@@ -1178,7 +1178,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
           font-size: 16px;
           width: 16px;
           height: 16px;
-          color: #1a56db;
+          color: #1e3a8a;
         }
       }
 
@@ -1280,13 +1280,13 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
               background: #eff6ff;
               border: 1px solid #bfdbfe;
               border-radius: 4px;
-              color: #1d4ed8;
+              color: #1e3a8a;
               padding: 2px 6px;
               font-size: 11px;
               cursor: pointer;
               margin-left: 6px;
 
-              mat-icon { font-size: 14px; width: 14px; height: 14px; color: #1d4ed8; }
+              mat-icon { font-size: 14px; width: 14px; height: 14px; color: #1e3a8a; }
               &:hover { background: #dbeafe; }
             }
 
@@ -1312,8 +1312,8 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
           height: 38px;
           padding: 0 16px;
           background-color: #ffffff;
-          border: 1.5px solid #1a56db;
-          color: #1a56db;
+          border: 1.5px solid #1e3a8a;
+          color: #1e3a8a;
           border-radius: 6px;
           font-size: 13px;
           font-weight: 600;
@@ -1368,7 +1368,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
       .cids-select {
         height: 36px;
         padding: 0 12px;
-        border: 1px solid #93c5fd;
+        border: 1px solid #cbd5e1;
         border-radius: 6px;
         font-size: 13px;
         font-weight: 600;
@@ -1379,7 +1379,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
 
       .ward-switcher-hint {
         font-size: 12.5px;
-        color: #3b82f6;
+        color: #1e3a8a;
         margin-left: auto;
       }
     }
@@ -1516,7 +1516,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
       padding: 3px 8px;
       background: #eff6ff;
       border: 1px solid #bfdbfe;
-      color: #1d4ed8;
+      color: #1e3a8a;
       border-radius: 4px;
       font-size: 11.5px;
       font-weight: 600;
@@ -1573,7 +1573,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
       cursor: pointer;
 
       &:hover:not([disabled]) {
-        background-color: #1d4ed8;
+        background-color: #1e3a8a;
       }
 
       &:disabled {
@@ -1827,7 +1827,7 @@ export class PlansListComponent implements OnInit {
       id: 'approve_plan',
       label: 'Phê duyệt thường',
       icon: 'task_alt',
-      color: '#1a56db',
+      color: '#1e3a8a',
       hidden: (row) => row.status !== 'pending' || (!this.isMBF && !this.isAdmin)
     },
     {

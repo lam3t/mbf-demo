@@ -110,7 +110,7 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
       code: 'TTDT',
       name: 'Trật tự đô thị',
       icon: 'location_city',
-      color: '#3b82f6',
+      color: '#1e3a8a',
       isExpanded: false,
       items: [
         { domainId: 4, criteriaCode: 'ttdt_1', criteriaName: 'Không lấn chiếm lòng lề đường, vỉa hè, hành lang an toàn', result: 'pass' },
@@ -340,7 +340,7 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
         code: 'TTDT',
         name: 'Trật tự đô thị',
         icon: 'location_city',
-        color: '#3b82f6',
+        color: '#1e3a8a',
         isExpanded: false,
         items: [
           { domainId: 4, criteriaCode: 'ttdt_1', criteriaName: 'Không lấn chiếm lòng lề đường, vỉa hè, hành lang an toàn', result: 'pass' },

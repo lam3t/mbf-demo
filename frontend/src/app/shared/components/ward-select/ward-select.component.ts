@@ -117,7 +117,7 @@ const DEFAULT_DEMO_WARDS: WardOption[] = [
       }
 
       &:focus {
-        border-color: #1a56db;
+        border-color: #1e3a8a;
         box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.15);
       }
 

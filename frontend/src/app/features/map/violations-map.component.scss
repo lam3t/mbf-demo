@@ -60,7 +60,7 @@
         font-size: 16px;
         width: 16px;
         height: 16px;
-        color: #1a56db;
+        color: #1e3a8a;
       }
     }
   }
@@ -114,7 +114,7 @@
         gap: 3px;
         background: transparent;
         border: none;
-        color: #2563eb;
+        color: #1e3a8a;
         font-size: 11px;
         font-weight: 700;
         cursor: pointer;
@@ -128,7 +128,7 @@
 
         &:hover {
           text-decoration: underline;
-          color: #1d4ed8;
+          color: #1e3a8a;
         }
       }
     }
@@ -150,7 +150,7 @@
       cursor: pointer;
 
       &:focus {
-        border-color: #2563eb;
+        border-color: #1e3a8a;
       }
     }
   }
@@ -367,7 +367,7 @@
   .gradient-bar {
     height: 8px;
     border-radius: 4px;
-    background: linear-gradient(to right, #3b82f6, #1e3a8a, #eab308, #f97316, #b91c1c);
+    background: #1e3a8a;
     margin-bottom: 4px;
   }
 
@@ -413,7 +413,7 @@
     border: 3px solid rgba(255, 255, 255, 0.85);
     box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
 
-    &.small { background: #3b82f6; width: 34px; height: 34px; }
+    &.small { background: #1e3a8a; width: 34px; height: 34px; }
     &.medium { background: #b45309; width: 40px; height: 40px; }
     &.large { background: #b91c1c; width: 46px; height: 46px; }
   }
@@ -453,7 +453,7 @@
           transition: color 0.15s ease;
 
           &:hover {
-            color: #2563eb;
+            color: #1e3a8a;
             text-decoration: underline;
           }
         }
@@ -465,7 +465,7 @@
         padding: 1px 6px;
         border-radius: 4px;
 
-        &.severity-1 { background: #eff6ff; color: #2563eb; }
+        &.severity-1 { background: #eff6ff; color: #1e3a8a; }
         &.severity-2 { background: #fef3c7; color: #b45309; }
         &.severity-3 { background: #fffbeb; color: #c2410c; }
         &.severity-4, &.severity-5 { background: #fee2e2; color: #b91c1c; }
@@ -535,7 +535,7 @@
       .popup-btn {
         background: transparent;
         border: none;
-        color: #1a56db;
+        color: #1e3a8a;
         font-weight: 700;
         font-size: 11.5px;
         cursor: pointer;
@@ -554,7 +554,7 @@
 
           &:hover {
             background: #dbeafe;
-            color: #1d4ed8;
+            color: #1e3a8a;
             text-decoration: none;
           }
         }

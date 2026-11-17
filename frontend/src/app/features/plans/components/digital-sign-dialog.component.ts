@@ -283,7 +283,7 @@ import { AuthService } from '../../../core/services/auth.service';
         font-size: 20px;
         width: 20px;
         height: 20px;
-        color: #1d4ed8;
+        color: #1e3a8a;
       }
 
       p { margin: 2px 0 0; }
@@ -351,7 +351,7 @@ import { AuthService } from '../../../core/services/auth.service';
       .btn-sign-confirm {
         height: 38px;
         padding: 0 22px;
-        background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+        background: #1e3a8a;
         color: #ffffff;
         border: none;
         border-radius: 6px;
@@ -365,7 +365,7 @@ import { AuthService } from '../../../core/services/auth.service';
         transition: all 0.15s;
 
         &:hover:not([disabled]) {
-          background: linear-gradient(135deg, #172554 0%, #1e40af 100%);
+          background: #1e3a8a;
         }
 
         &:disabled {

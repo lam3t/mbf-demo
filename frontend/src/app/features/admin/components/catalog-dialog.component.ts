@@ -173,7 +173,7 @@ export interface CatalogDialogData {
         cursor: pointer;
 
         &:hover:not([disabled]) {
-          background-color: #1d4ed8;
+          background-color: #1e3a8a;
         }
 
         &:disabled {

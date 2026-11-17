@@ -94,7 +94,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
         }
 
         &:focus {
-          border-color: #1a56db;
+          border-color: #1e3a8a;
           box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.12);
         }
       }
@@ -110,7 +110,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
         transition: color 0.15s;
 
         &:hover {
-          color: #1a56db;
+          color: #1e3a8a;
         }
       }
 
@@ -159,8 +159,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
       &:hover {
         background-color: #f9fafb;
-        color: #1a56db;
-        border-color: #93c5fd;
+        color: #1e3a8a;
+        border-color: #cbd5e1;
       }
 
       mat-icon {
@@ -192,8 +192,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
       transition: all 0.2s;
 
       &:hover {
-        background-color: #1d4ed8;
-        border-color: #1d4ed8;
+        background-color: #1e3a8a;
+        border-color: #1e3a8a;
         box-shadow: 0 4px 10px rgba(30, 58, 138, 0.25);
       }
 
@@ -214,7 +214,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
       }
 
       &.has-filter {
-        background-color: #1a56db;
+        background-color: #1e3a8a;
       }
     }
 

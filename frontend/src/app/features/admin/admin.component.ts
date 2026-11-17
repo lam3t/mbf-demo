@@ -313,7 +313,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
                 type="button"
                 *ngFor="let preset of unitPresets"
                 (click)="selectUnitPreset(preset)"
-                style="border: 1px solid #93c5fd; background: #eff6ff; color: #1d4ed8; border-radius: 5px; padding: 3px 10px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
+                style="border: 1px solid #cbd5e1; background: #eff6ff; color: #1e3a8a; border-radius: 5px; padding: 3px 10px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
                 {{ preset.unitCode }} — {{ preset.unitName }}
               </button>
             </div>
@@ -351,7 +351,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
               </div>
               <div class="wf-form-grid-3">
                 <div class="wf-field" style="background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #dbeafe;">
-                  <label style="color: #1d4ed8; font-weight: 700;">1. Cấp Phê duyệt Kế hoạch Kiểm tra</label>
+                  <label style="color: #1e3a8a; font-weight: 700;">1. Cấp Phê duyệt Kế hoạch Kiểm tra</label>
                   <span style="font-size: 11px; color: #64748b;">Phòng ban / Bộ phận duyệt kế hoạch:</span>
                   <input type="text" class="cids-input" [(ngModel)]="workflowForm.planApprovalDept" list="deptSuggestions" placeholder="VD: Ban Chỉ huy Phòng PC07" />
                   <span style="font-size: 11px; color: #64748b; margin-top: 4px;">Người duyệt kế hoạch cụ thể:</span>
@@ -508,7 +508,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
               <!-- 3 Milestones: Approving Department + Specific Approver Person -->
               <div class="wf-authorities-strip" style="background: #f8fafc; border: 1px solid #e2e8f0;">
                 <div style="border-right: 1px solid #e2e8f0; padding-right: 8px;">
-                  <div style="font-size: 11px; font-weight: 700; color: #1d4ed8; text-transform: uppercase;">1. Duyệt Kế hoạch Kiểm tra</div>
+                  <div style="font-size: 11px; font-weight: 700; color: #1e3a8a; text-transform: uppercase;">1. Duyệt Kế hoạch Kiểm tra</div>
                   <div style="margin-top: 2px;">🏢 <strong>Phòng ban:</strong> {{ wf.planApprovalDept || wf.unitName }}</div>
                   <div>👤 <strong>Người duyệt:</strong> <span style="color: #0f172a; font-weight: 700;">{{ wf.planApproverName || wf.planApprovalRole }}</span></div>
                 </div>
@@ -875,15 +875,15 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
 
         &:hover {
           background-color: #f1f5f9;
-          color: #1a56db;
-          mat-icon { color: #1a56db; }
+          color: #1e3a8a;
+          mat-icon { color: #1e3a8a; }
         }
 
         &.active {
-          background-color: #eaf1ff;
-          color: #1a56db;
+          background-color: #eff6ff;
+          color: #1e3a8a;
           font-weight: 600;
-          mat-icon { color: #1a56db; }
+          mat-icon { color: #1e3a8a; }
         }
       }
     }
@@ -999,7 +999,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
             gap: 8px;
 
             mat-icon {
-              color: #1a56db;
+              color: #1e3a8a;
               font-size: 20px;
               width: 20px;
               height: 20px;
@@ -1047,7 +1047,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
         background-color: #ffffff;
 
         &:focus {
-          border-color: #1a56db;
+          border-color: #1e3a8a;
           outline: none;
           box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.15);
         }
@@ -1080,7 +1080,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
           background-color: #ffffff;
 
           &:focus {
-            border-color: #1a56db;
+            border-color: #1e3a8a;
             outline: none;
             box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.15);
           }
@@ -1102,7 +1102,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
           font-size: 18px;
           width: 18px;
           height: 18px;
-          color: #2563eb;
+          color: #1e3a8a;
           flex-shrink: 0;
         }
       }
@@ -1156,7 +1156,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
         padding: 14px 16px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 
-        &.stage-plan { border-top-color: #2563eb; }
+        &.stage-plan { border-top-color: #1e3a8a; }
         &.stage-team { border-top-color: #1e3a8a; }
         &.stage-accept { border-top-color: #1e3a8a; }
 
@@ -1238,7 +1238,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
           font-size: 20px;
           width: 20px;
           height: 20px;
-          color: #1a56db;
+          color: #1e3a8a;
         }
       }
 
@@ -1465,7 +1465,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
               width: 20px;
               height: 20px;
               border-radius: 50%;
-              background: #1d4ed8;
+              background: #1e3a8a;
               color: #ffffff;
               font-size: 11px;
               font-weight: 700;

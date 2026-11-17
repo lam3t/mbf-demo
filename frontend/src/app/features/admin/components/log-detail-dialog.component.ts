@@ -134,7 +134,7 @@ import { AuditLog } from '../../../core/models';
 
         .json-content {
           background: #0f172a;
-          color: #38bdf8;
+          color: #475569;
           padding: 12px 16px;
           border-radius: 6px;
           font-family: 'Courier New', Courier, monospace;

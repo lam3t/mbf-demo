@@ -465,7 +465,7 @@ export interface ObjectDetailResult {
       padding: 5px 10px;
       background: #eff6ff;
       border: 1px solid #bfdbfe;
-      color: #1d4ed8;
+      color: #1e3a8a;
       border-radius: 6px;
       font-size: 12px;
       font-weight: 600;
@@ -476,7 +476,7 @@ export interface ObjectDetailResult {
 
     .inline-location-form {
       background: #f8fafc;
-      border: 1px solid #93c5fd;
+      border: 1px solid #cbd5e1;
       border-radius: 8px;
       padding: 12px;
       margin-bottom: 12px;
@@ -533,8 +533,8 @@ export interface ObjectDetailResult {
         cursor: pointer;
         transition: all 0.15s;
 
-        &:hover { border-color: #93c5fd; background: #ffffff; }
-        &.active-loc { border-color: #1d4ed8; background: #eff6ff; box-shadow: 0 0 0 1px #1d4ed8; }
+        &:hover { border-color: #cbd5e1; background: #ffffff; }
+        &.active-loc { border-color: #1e3a8a; background: #eff6ff; box-shadow: 0 0 0 1px #1e3a8a; }
 
         .loc-card-top {
           display: flex;
@@ -690,7 +690,7 @@ export interface ObjectDetailResult {
 
           &.avatar-enterprise {
             background-color: #eff6ff;
-            color: #1a56db;
+            color: #1e3a8a;
           }
 
           &.avatar-household {
@@ -764,7 +764,7 @@ export interface ObjectDetailResult {
 
     /* Hero Banner */
     .hero-banner {
-      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+      background: #1e3a8a;
       border-radius: 10px;
       padding: 16px 20px;
       color: #ffffff;
@@ -967,7 +967,7 @@ export interface ObjectDetailResult {
 
             &.text-green { color: #1e3a8a; }
             &.text-gray { color: #94a3b8; }
-            &.text-blue { color: #2563eb; }
+            &.text-blue { color: #1e3a8a; }
           }
         }
 
@@ -1179,7 +1179,7 @@ export interface ObjectDetailResult {
             background-color: #f8fafc;
             padding: 6px 10px;
             border-radius: 6px;
-            border-left: 3px solid #3b82f6;
+            border-left: 3px solid #1e3a8a;
           }
         }
       }
@@ -1314,9 +1314,9 @@ export interface ObjectDetailResult {
         }
 
         &.item-approved .timeline-marker {
-          border-color: #2563eb;
+          border-color: #1e3a8a;
           background-color: #eff6ff;
-          mat-icon { color: #2563eb; }
+          mat-icon { color: #1e3a8a; }
         }
 
         &.item-pending .timeline-marker {
@@ -1469,7 +1469,7 @@ export interface ObjectDetailResult {
                 font-size: 14px;
                 width: 14px;
                 height: 14px;
-                color: #3b82f6;
+                color: #1e3a8a;
                 margin-top: 2px;
               }
             }
@@ -1516,7 +1516,7 @@ export interface ObjectDetailResult {
         padding: 0 14px;
         background: #ffffff;
         border: 1px solid #bfdbfe;
-        color: #1a56db;
+        color: #1e3a8a;
         border-radius: 6px;
         font-size: 13px;
         font-weight: 600;
@@ -1557,7 +1557,7 @@ export interface ObjectDetailResult {
         transition: all 0.15s;
 
         &:hover:not([disabled]) {
-          background-color: #1d4ed8;
+          background-color: #1e3a8a;
           box-shadow: 0 4px 10px rgba(30, 58, 138, 0.25);
         }
 

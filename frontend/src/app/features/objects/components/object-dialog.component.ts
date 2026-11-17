@@ -397,7 +397,7 @@ export interface ObjectDialogData {
         .foreign-input {
           width: 100%;
           padding: 8px 10px;
-          border: 1px solid #93c5fd;
+          border: 1px solid #cbd5e1;
           border-radius: 6px;
           font-size: 12.5px;
           background: #ffffff;
@@ -441,7 +441,7 @@ export interface ObjectDialogData {
           padding: 5px 10px;
           background: #eff6ff;
           border: 1px solid #bfdbfe;
-          color: #1d4ed8;
+          color: #1e3a8a;
           border-radius: 6px;
           font-size: 12px;
           font-weight: 600;
@@ -633,7 +633,7 @@ export interface ObjectDialogData {
       margin-bottom: 16px;
 
       mat-icon {
-        color: #2563eb;
+        color: #1e3a8a;
         font-size: 18px;
         width: 18px;
         height: 18px;
@@ -697,7 +697,7 @@ export interface ObjectDialogData {
         transition: all 0.15s;
 
         &:hover:not([disabled]) {
-          background-color: #1d4ed8;
+          background-color: #1e3a8a;
           box-shadow: 0 4px 10px rgba(30, 58, 138, 0.25);
         }
 

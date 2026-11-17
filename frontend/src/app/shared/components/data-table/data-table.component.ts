@@ -267,7 +267,7 @@ export interface TableAction {
             cursor: pointer;
             &:hover {
               background-color: #f1f5f9;
-              color: #1a56db;
+              color: #1e3a8a;
             }
           }
 
@@ -358,8 +358,8 @@ export interface TableAction {
       transition: all 0.15s ease;
 
       &:hover {
-        background-color: #eaf1ff;
-        color: #1a56db;
+        background-color: #eff6ff;
+        color: #1e3a8a;
         border-color: #bfdbfe;
       }
 

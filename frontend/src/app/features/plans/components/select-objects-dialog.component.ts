@@ -165,7 +165,7 @@ import { BusinessObject } from '../../../core/models';
         outline: none;
 
         &:focus {
-          border-color: #1a56db;
+          border-color: #1e3a8a;
           box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.15);
         }
       }
@@ -354,7 +354,7 @@ import { BusinessObject } from '../../../core/models';
           cursor: pointer;
 
           &:hover:not([disabled]) {
-            background-color: #1d4ed8;
+            background-color: #1e3a8a;
           }
 
           &:disabled {

@@ -237,7 +237,7 @@ export interface UserDialogData {
         transition: all 0.15s;
 
         &:hover:not([disabled]) {
-          background-color: #1d4ed8;
+          background-color: #1e3a8a;
           box-shadow: 0 4px 10px rgba(30, 58, 138, 0.25);
         }
 

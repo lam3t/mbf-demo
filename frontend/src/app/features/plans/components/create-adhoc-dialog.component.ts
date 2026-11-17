@@ -58,7 +58,7 @@ import { BusinessObject } from '../../../core/models';
             </label>
             <label
               style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:8px;cursor:pointer;"
-              [style.border-color]="inspectionType === 'professional_request' ? '#1d4ed8' : '#cbd5e1'"
+              [style.border-color]="inspectionType === 'professional_request' ? '#1e3a8a' : '#cbd5e1'"
               [style.background]="inspectionType === 'professional_request' ? '#eff6ff' : '#fff'"
             >
               <input type="radio" name="inspType" value="professional_request" [(ngModel)]="inspectionType" (change)="onInspectionTypeChange()" />
@@ -90,7 +90,7 @@ import { BusinessObject } from '../../../core/models';
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
               <div>
-                <span style="font-size: 11.5px; font-weight: 600; color: #1d4ed8;">🏢 Phòng ban phê duyệt kế hoạch/đề xuất:</span>
+                <span style="font-size: 11.5px; font-weight: 600; color: #1e3a8a;">🏢 Phòng ban phê duyệt kế hoạch/đề xuất:</span>
                 <input
                   type="text"
                   [(ngModel)]="approvingDept"
@@ -218,7 +218,7 @@ import { BusinessObject } from '../../../core/models';
               </div>
               <div class="meta-row" *ngIf="selectedObject.locations && selectedObject.locations.length > 0" style="margin-top:6px;align-items:center;">
                 <span class="meta-label">Chọn cơ sở / địa điểm KT:</span>
-                <select [(ngModel)]="selectedLocationId" style="flex:1;height:32px;padding:0 8px;border:1px solid #c084fc;border-radius:6px;font-size:12.5px;background:#fff;">
+                <select [(ngModel)]="selectedLocationId" style="flex:1;height:32px;padding:0 8px;border:1px solid #475569;border-radius:6px;font-size:12.5px;background:#fff;">
                   <option [ngValue]="null">-- Kiểm tra tại Trụ sở chính / Toàn doanh nghiệp --</option>
                   <option *ngFor="let loc of selectedObject.locations" [ngValue]="loc.id">
                     {{ loc.name }} ({{ loc.address }} - {{ loc.ward }})
@@ -575,7 +575,7 @@ import { BusinessObject } from '../../../core/models';
 
     .selected-card {
       background: #faf5ff;
-      border: 1.5px solid #c084fc;
+      border: 1.5px solid #475569;
       border-radius: 8px;
       padding: 14px 16px;
 

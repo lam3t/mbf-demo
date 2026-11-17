@@ -206,7 +206,7 @@ import { AuthService } from '../../core/services/auth.service';
         width: 68px;
         height: 68px;
         margin: 0 auto 14px;
-        background: linear-gradient(135deg, #1e3a8a, #2563eb);
+        background: #1e3a8a;
         border: 2px solid rgba(255, 255, 255, 0.25);
         border-radius: 50%;
         display: flex;
@@ -218,7 +218,7 @@ import { AuthService } from '../../core/services/auth.service';
           font-size: 38px;
           width: 38px;
           height: 38px;
-          color: #93c5fd;
+          color: #cbd5e1;
         }
       }
 
@@ -243,7 +243,7 @@ import { AuthService } from '../../core/services/auth.service';
         border: 1px solid rgba(255, 255, 255, 0.2);
         padding: 2px 10px;
         border-radius: 20px;
-        color: #93c5fd;
+        color: #cbd5e1;
         letter-spacing: 0.5px;
       }
     }
@@ -316,7 +316,7 @@ import { AuthService } from '../../core/services/auth.service';
           transition: all 0.15s ease;
 
           &:focus {
-            border-color: #1a56db;
+            border-color: #1e3a8a;
             outline: none;
             box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.15);
           }
@@ -365,7 +365,7 @@ import { AuthService } from '../../core/services/auth.service';
       margin-top: 4px;
 
       &:hover:not([disabled]) {
-        background-color: #1d4ed8;
+        background-color: #1e3a8a;
         box-shadow: 0 6px 16px rgba(30, 58, 138, 0.4);
       }
 
@@ -467,12 +467,12 @@ import { AuthService } from '../../core/services/auth.service';
 
           &.admin .acc-icon-box { background: #fee2e2; color: #b91c1c; }
           &.leader .acc-icon-box { background: #f3e8ff; color: #1e3a8a; }
-          &.officer .acc-icon-box { background: #eff6ff; color: #2563eb; }
+          &.officer .acc-icon-box { background: #eff6ff; color: #1e3a8a; }
           &.ward .acc-icon-box { background: #eff6ff; color: #1e3a8a; }
 
           &:hover {
             background-color: #ffffff;
-            border-color: #1a56db;
+            border-color: #1e3a8a;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
             transform: translateY(-1px);
           }

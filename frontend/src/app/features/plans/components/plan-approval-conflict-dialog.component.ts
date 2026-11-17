@@ -224,7 +224,7 @@ export interface ConflictResolutionResult {
           width: 44px;
           height: 44px;
           border-radius: 10px;
-          background: linear-gradient(135deg, #fef3c7, #fde68a);
+          background: #1e3a8a;
           color: #b45309;
           display: flex;
           align-items: center;
@@ -326,7 +326,7 @@ export interface ConflictResolutionResult {
 
           &.current {
             background: #dbeafe;
-            color: #1d4ed8;
+            color: #1e3a8a;
           }
 
           &.other {
@@ -363,9 +363,9 @@ export interface ConflictResolutionResult {
         }
 
         &.active {
-          border-color: #2563eb;
+          border-color: #1e3a8a;
           background: #f8faff;
-          box-shadow: 0 0 0 1px #2563eb;
+          box-shadow: 0 0 0 1px #1e3a8a;
         }
 
         .option-header {
@@ -439,7 +439,7 @@ export interface ConflictResolutionResult {
                 font-size: 12.5px;
                 outline: none;
 
-                &:focus { border-color: #2563eb; }
+                &:focus { border-color: #1e3a8a; }
               }
 
               .participating-chips {

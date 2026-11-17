@@ -10,7 +10,7 @@
   --primary-800: #1e3a8a;
   --primary-700: #1e40af;
   --primary-600: #1e3a8a;
-  --primary-500: #2563eb;
+  --primary-500: #1e3a8a;
   --primary-100: #dbeafe;
   --primary-50: #f1f5f9;
 
@@ -74,6 +74,25 @@ body {
   height: 100vh;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Global Minimalist Overrides: 1 Primary (#1e3a8a) + Clean Borders */
+.mat-mdc-card {
+  box-shadow: none !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+}
+
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-flat-button.mat-primary,
+.mat-mdc-unelevated-button.mat-primary {
+  --mdc-filled-button-container-color: #1e3a8a;
+  --mdc-filled-button-label-text-color: #ffffff;
+}
+
+.mat-mdc-stroked-button.mat-primary {
+  --mdc-outlined-button-label-text-color: #1e3a8a;
+  --mdc-outlined-button-outline-color: #cbd5e1;
 }
 
 /* Custom Scrollbars */

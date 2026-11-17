@@ -89,7 +89,7 @@ import { MatIconModule } from '@angular/material/icon';
         gap: 10px;
 
         .header-icon {
-          color: #1a56db;
+          color: #1e3a8a;
           font-size: 26px;
           width: 26px;
           height: 26px;
@@ -119,7 +119,7 @@ import { MatIconModule } from '@angular/material/icon';
           gap: 4px;
           font-size: 12.5px;
           font-weight: 600;
-          color: #1a56db;
+          color: #1e3a8a;
           text-decoration: none;
           padding: 4px 10px;
           border-radius: 6px;
@@ -199,7 +199,7 @@ import { MatIconModule } from '@angular/material/icon';
           align-items: center;
           gap: 6px;
           padding: 8px 16px;
-          background-color: #1a56db;
+          background-color: #1e3a8a;
           color: #ffffff;
           text-decoration: none;
           border-radius: 6px;

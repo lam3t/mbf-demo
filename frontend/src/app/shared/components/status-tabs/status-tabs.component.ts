@@ -86,7 +86,7 @@ export interface StatusTabItem {
 
       /* Active State */
       &.active {
-        background: #1a56db;
+        background: #1e3a8a;
         color: #ffffff !important;
         font-weight: 600;
         box-shadow: 0 2px 6px rgba(26, 86, 219, 0.35);
@@ -102,7 +102,7 @@ export interface StatusTabItem {
           color: #1e3a8a;
         }
         &.color-blue {
-          color: #2563eb;
+          color: #1e3a8a;
         }
         &.color-orange {
           color: #b45309;

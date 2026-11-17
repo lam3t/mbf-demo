@@ -93,8 +93,8 @@ export interface PageHeaderAction {
       transition: all 0.15s ease;
 
       &:hover:not([disabled]) {
-        background-color: #1d4ed8;
-        border-color: #1d4ed8;
+        background-color: #1e3a8a;
+        border-color: #1e3a8a;
         box-shadow: 0 4px 10px rgba(30, 58, 138, 0.25);
       }
 

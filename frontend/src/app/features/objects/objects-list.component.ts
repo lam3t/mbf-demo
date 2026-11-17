@@ -149,7 +149,7 @@ import { BusinessObject } from '../../core/models';
           outline: none;
 
           &:focus {
-            border-color: #1a56db;
+            border-color: #1e3a8a;
           }
         }
       }

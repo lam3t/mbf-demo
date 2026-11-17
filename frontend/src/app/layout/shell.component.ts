@@ -353,7 +353,7 @@ interface NavSubItem {
           width: 34px;
           height: 34px;
           border-radius: 8px;
-          background: linear-gradient(135deg, #1e3a8a, #2563eb);
+          background: #1e3a8a;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -474,21 +474,21 @@ interface NavSubItem {
 
         &:hover:not(.active) {
           background-color: #f8fafc;
-          color: #1a56db;
+          color: #1e3a8a;
 
           .menu-icon {
-            color: #1a56db;
+            color: #1e3a8a;
           }
         }
 
-        /* Active Item Style (CIDS #EAF1FF background, #1A56DB text) */
+        /* Active Item Style (CIDS #eff6ff background, #1e3a8a text) */
         &.active {
-          background-color: #eaf1ff;
-          color: #1a56db;
+          background-color: #eff6ff;
+          color: #1e3a8a;
           font-weight: 600;
 
           .menu-icon {
-            color: #1a56db;
+            color: #1e3a8a;
           }
         }
       }
@@ -533,20 +533,20 @@ interface NavSubItem {
           }
 
           &:hover {
-            color: #1a56db;
+            color: #1e3a8a;
             background-color: #f1f5f9;
             .submenu-icon {
-              color: #1a56db;
+              color: #1e3a8a;
             }
           }
 
           &.active {
-            background-color: #eaf1ff;
-            color: #1a56db;
+            background-color: #eff6ff;
+            color: #1e3a8a;
             font-weight: 600;
 
             .submenu-icon {
-              color: #1a56db;
+              color: #1e3a8a;
             }
           }
         }
@@ -574,7 +574,7 @@ interface NavSubItem {
           font-size: 14px;
           width: 14px;
           height: 14px;
-          color: #1a56db;
+          color: #1e3a8a;
         }
       }
     }
@@ -619,11 +619,11 @@ interface NavSubItem {
           transition: color 0.15s ease;
 
           &:hover {
-            color: #1a56db;
+            color: #1e3a8a;
           }
 
           &.active-tab {
-            color: #1a56db;
+            color: #1e3a8a;
 
             &::after {
               content: '';
@@ -632,7 +632,7 @@ interface NavSubItem {
               left: 0;
               right: 0;
               height: 3px;
-              background-color: #1a56db;
+              background-color: #1e3a8a;
               border-radius: 3px 3px 0 0;
             }
           }
@@ -806,7 +806,7 @@ interface NavSubItem {
 
       .mark-read {
         font-size: 11.5px;
-        color: #1a56db;
+        color: #1e3a8a;
         text-decoration: none;
         &:hover { text-decoration: underline; }
       }
@@ -879,7 +879,7 @@ interface NavSubItem {
       width: 100%;
       font-size: 12.5px;
       font-weight: 600;
-      color: #1a56db;
+      color: #1e3a8a;
       text-decoration: none;
       padding: 6px 12px;
       border-radius: 6px;
@@ -1036,7 +1036,7 @@ export class ShellComponent implements OnInit {
     switch (severity) {
       case 'critical': return '#b91c1c';
       case 'warning': return '#b45309';
-      default: return '#3b82f6';
+      default: return '#1e3a8a';
     }
   }
 
