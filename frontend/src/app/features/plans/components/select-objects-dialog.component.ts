@@ -53,6 +53,17 @@ import { BusinessObject } from '../../../core/models';
           <p>Không tìm thấy cơ sở nào phù hợp hoặc tất cả đã được thêm vào kế hoạch.</p>
         </div>
 
+        <div *ngIf="!isLoading && filteredList.length > 0" style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:8px;font-size:12.5px;">
+          <mat-checkbox
+            [checked]="isAllFilteredSelected()"
+            (change)="toggleSelectAll()"
+            color="primary"
+          >
+            <strong>Chọn tất cả ({{ filteredList.length }} cơ sở)</strong>
+          </mat-checkbox>
+          <span style="color:#64748b;">Đã chọn: <strong>{{ selectedIds.length }}</strong></span>
+        </div>
+
         <div *ngIf="!isLoading && filteredList.length > 0" class="objects-list">
           <div
             class="object-row"
@@ -69,23 +80,14 @@ import { BusinessObject } from '../../../core/models';
             <div class="obj-info">
               <div class="obj-title">
                 <strong>{{ obj.name }}</strong>
-                <span class="type-badge">{{ obj.type === 'enterprise' ? 'Doanh nghiệp' : (obj.type === 'household' ? 'Hộ KD' : 'Cá nhân') }}</span>
-                <span *ngIf="obj.hasForeignElement" class="warning-badge" style="background:#e0f2fe;color:#0369a1;border-color:#7dd3fc;">
-                  🌐 Yếu tố NN
-                </span>
                 <span *ngIf="obj.hasCrossWardWarning || obj.warningReason" class="warning-badge" [title]="obj.crossWardWarning || obj.warningReason || ''">
-                  <mat-icon>warning_amber</mat-icon>
-                  Cảnh báo trùng (Không chặn)
+                  Trùng kế hoạch
                 </span>
               </div>
               <div class="obj-meta">
-                <span>Mã: {{ obj.taxCode || obj.idNumber }}</span>
+                <span>MST/CCCD: {{ obj.taxCode || obj.idNumber || '—' }}</span>
                 <span>•</span>
-                <span>Địa chỉ: {{ obj.address }} ({{ obj.locationCount || 1 }} cơ sở/địa điểm)</span>
-              </div>
-              <div *ngIf="(obj.hasCrossWardWarning || obj.warningReason) && (obj.crossWardWarning || obj.warningReason)" class="warning-reason-text">
-                <mat-icon>info</mat-icon>
-                <span>{{ obj.crossWardWarning || obj.warningReason }} — Vẫn cho phép chọn lập kế hoạch nếu có yêu cầu nghiệp vụ.</span>
+                <span>{{ obj.address }}</span>
               </div>
             </div>
           </div>
@@ -116,9 +118,10 @@ import { BusinessObject } from '../../../core/models';
   styles: [`
     .dialog-container {
       padding: 20px;
-      min-width: 580px;
+      width: 100%;
       max-width: 680px;
       background: #ffffff;
+      box-sizing: border-box;
     }
 
     .dialog-header {
@@ -378,6 +381,21 @@ export class SelectObjectsDialogComponent implements OnInit {
   allAvailable: BusinessObject[] = [];
   filteredList: BusinessObject[] = [];
   selectedIds: number[] = [];
+
+  isAllFilteredSelected(): boolean {
+    return this.filteredList.length > 0 && this.filteredList.every(o => this.selectedIds.includes(o.id));
+  }
+
+  toggleSelectAll(): void {
+    if (this.isAllFilteredSelected()) {
+      const filteredSet = new Set(this.filteredList.map(o => o.id));
+      this.selectedIds = this.selectedIds.filter(id => !filteredSet.has(id));
+    } else {
+      const set = new Set(this.selectedIds);
+      this.filteredList.forEach(o => set.add(o.id));
+      this.selectedIds = Array.from(set);
+    }
+  }
 
   constructor(
     public dialogRef: MatDialogRef<SelectObjectsDialogComponent>,
