@@ -224,6 +224,28 @@ export interface ObjectDialogData {
             </mat-form-field>
           </div>
 
+          <!-- Foreign Element Section (Yếu tố nước ngoài) -->
+          <div class="foreign-element-box">
+            <label class="foreign-checkbox-label">
+              <input
+                type="checkbox"
+                [(ngModel)]="formData.hasForeignElement"
+                name="hasForeignElement"
+              />
+              <mat-icon class="foreign-icon">public</mat-icon>
+              <span>Doanh nghiệp / Dịch vụ có yếu tố nước ngoài (Vốn FDI, lao động nước ngoài, dịch vụ xuyên biên giới...)</span>
+            </label>
+            <div *ngIf="formData.hasForeignElement" class="foreign-detail-row">
+              <input
+                type="text"
+                class="foreign-input"
+                [(ngModel)]="formData.foreignElementDetail"
+                name="foreignElementDetail"
+                placeholder="Nhập chi tiết yếu tố nước ngoài (VD: Vốn đầu tư Nhật Bản 100%, có chuyên gia nước ngoài lưu trú/làm việc...)"
+              />
+            </div>
+          </div>
+
           <!-- Multi-Location Management Section (Trụ sở, Chi nhánh, Cơ sở, Địa điểm KD) -->
           <div class="locations-section">
             <div class="locations-header">
