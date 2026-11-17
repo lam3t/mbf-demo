@@ -77,10 +77,6 @@ export interface ObjectDetailResult {
                   <mat-icon>location_on</mat-icon>
                   {{ object.ward }}
                 </span>
-                <span class="foreign-pill" *ngIf="object.hasForeignElement">
-                  <mat-icon>public</mat-icon>
-                  Có yếu tố nước ngoài
-                </span>
               </div>
             </div>
           </div>
@@ -89,42 +85,20 @@ export interface ObjectDetailResult {
           <div class="section-card">
             <div class="section-header">
               <mat-icon class="section-icon">badge</mat-icon>
-              <h3>Thông tin Định danh & Pháp lý</h3>
+              <h3>Thông tin cơ sở (Phụ lục 02)</h3>
             </div>
             <div class="info-grid">
               <div class="info-item">
-                <span class="label">{{ object.type === 'enterprise' ? 'Mã số thuế (MST):' : 'Số CCCD chủ cơ sở:' }}</span>
+                <span class="label">MST / CCCD:</span>
                 <span class="value code-val">{{ object.taxCode || object.idNumber || '—' }}</span>
               </div>
-              <div class="info-item" *ngIf="object.type === 'household' && object.taxCode">
-                <span class="label">Mã số thuế hộ KD:</span>
-                <span class="value code-val">{{ object.taxCode }}</span>
-              </div>
               <div class="info-item">
-                <span class="label">{{ object.type === 'enterprise' ? 'Người đại diện pháp luật:' : 'Chủ hộ / Cá nhân đại diện:' }}</span>
+                <span class="label">Người đại diện / Chủ hộ:</span>
                 <span class="value font-semibold">{{ object.representative || 'Chưa cập nhật' }}</span>
               </div>
-              <div class="info-item" *ngIf="object.field">
-                <span class="label">Lĩnh vực hoạt động:</span>
-                <span class="value">{{ object.field }}</span>
-              </div>
-              <div class="info-item full-width" *ngIf="object.hasForeignElement">
-                <span class="label">🌐 Thông tin yếu tố nước ngoài:</span>
-                <span class="value font-semibold" style="color: #b45309; background: #fffbeb; padding: 6px 10px; border-radius: 6px; border: 1px solid #fde68a;">
-                  {{ object.foreignElementDetail || 'Doanh nghiệp / Dịch vụ có yếu tố nước ngoài (FDI, chuyên gia nước ngoài, dịch vụ xuyên biên giới)' }}
-                </span>
-              </div>
               <div class="info-item full-width">
-                <span class="label">Địa chỉ trụ sở / Hoạt động kinh doanh:</span>
+                <span class="label">Địa chỉ:</span>
                 <span class="value">{{ object.address }}, {{ object.ward }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">Cán bộ phụ trách khởi tạo:</span>
-                <span class="value">{{ object.createdByName || 'Quản trị viên hệ thống' }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">Thời điểm ghi nhận hồ sơ:</span>
-                <span class="value">{{ formatDateTime(object.createdAt) }}</span>
               </div>
             </div>
           </div>

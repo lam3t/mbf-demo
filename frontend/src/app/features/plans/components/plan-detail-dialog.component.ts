@@ -65,54 +65,16 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
             </div>
           </div>
 
-          <!-- DYNAMIC WORKFLOW & APPROVER ASSIGNMENT SECTION -->
-          <div style="background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <mat-icon style="color: #1e3a8a; font-size: 20px; width: 20px; height: 20px;">account_tree</mat-icon>
-                <strong style="font-size: 13.5px; color: #0c4a6e;">
-                  Quy trình Động & Phân công Phòng ban / Người duyệt Kế hoạch:
-                </strong>
-              </div>
-              <span style="background: #1e3a8a; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px;">
-                {{ $any(plan).unitName || $any(plan).workflowDetail?.unitName || 'Phòng Cảnh sát PCCC & CNCH (PC07)' }}
-              </span>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 10px; background: #ffffff; padding: 10px 12px; border-radius: 8px; border: 1px solid #e0f2fe; font-size: 12.5px; margin-bottom: 10px;">
+          <!-- ĐƠN VỊ & NỘI DUNG KẾ HOẠCH (PHỤ LỤC 02) -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
               <div>
-                <div style="font-size: 11px; color: #64748b; font-weight: 600;">QUY TRÌNH ÁP DỤNG:</div>
-                <strong style="color: #0f172a;">{{ $any(plan).workflowName || $any(plan).workflowDetail?.name || 'Quy trình Kiểm tra Định kỳ (PC07)' }}</strong>
-                <div style="font-size: 11px; color: #1e3a8a; font-family: monospace;">Mã QT: {{ $any(plan).workflowCode || $any(plan).workflowDetail?.code || 'WF_PC07_PLANNED' }}</div>
+                <div style="font-size: 11.5px; color: #64748b; font-weight: 600;">Đơn vị chủ trì:</div>
+                <strong style="color: #1e293b;">{{ $any(plan).unitName || plan.ward }}</strong>
               </div>
               <div>
-                <div style="font-size: 11px; color: #64748b; font-weight: 600;">PHÒNG BAN PHÊ DUYỆT KẾ HOẠCH:</div>
-                <strong style="color: #1e3a8a;">🏢 {{ $any(plan).approvingDept || $any(plan).workflowDetail?.planApprovalDept || 'Ban Chỉ huy Phòng PC07' }}</strong>
-              </div>
-              <div>
-                <div style="font-size: 11px; color: #64748b; font-weight: 600;">NGƯỜI DUYỆT ĐƯỢC PHÂN CÔNG:</div>
-                <strong style="color: #172554;">👤 {{ $any(plan).assignedApproverName || $any(plan).workflowDetail?.planApproverName || 'Đại tá Lê Minh Hải (Trưởng phòng PC07)' }}</strong>
-              </div>
-            </div>
-
-            <!-- Dynamic Workflow Steps Timeline -->
-            <div *ngIf="$any(plan).workflowDetail?.steps?.length" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px;">
-              <div
-                *ngFor="let st of $any(plan).workflowDetail.steps; let idx = index"
-                style="background: #ffffff; border: 1px solid #bae6fd; border-radius: 6px; padding: 7px 10px; font-size: 11.5px;"
-                [style.border-left]="isStepCompleted(idx, plan.status) ? '4px solid #1e3a8a' : '4px solid #1e3a8a'">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                  <span style="font-weight: 800; color: #0369a1;">Bước {{ idx + 1 }}</span>
-                  <span
-                    style="font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 999px;"
-                    [style.background]="isStepCompleted(idx, plan.status) ? '#eff6ff' : '#fef3c7'"
-                    [style.color]="isStepCompleted(idx, plan.status) ? '#15803d' : '#b45309'">
-                    {{ isStepCompleted(idx, plan.status) ? '✓ Đã duyệt' : '⏳ Theo quy trình' }}
-                  </span>
-                </div>
-                <div style="font-weight: 600; color: #0f172a; margin-bottom: 3px;">{{ st.name }}</div>
-                <div style="color: #1e40af; font-size: 11px;">🏢 {{ st.approvingDept || $any(plan).approvingDept }}</div>
-                <div style="color: #172554; font-weight: 700; font-size: 11px;">👤 {{ st.approverName || st.role }}</div>
+                <div style="font-size: 11.5px; color: #64748b; font-weight: 600;">Đơn vị phê duyệt:</div>
+                <strong style="color: #1e3a8a;">{{ $any(plan).approvingDept || 'PA04 / Lãnh đạo CATP' }}</strong>
               </div>
             </div>
           </div>
