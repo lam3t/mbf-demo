@@ -1357,8 +1357,8 @@ export class AdminComponent implements OnInit {
   userStatusTabs: StatusTabItem[] = [
     { key: 'all', label: 'Tất cả', count: 4, color: 'gray' },
     { key: 'admin', label: 'Quản trị viên', count: 1, color: 'red' },
-    { key: 'leader_mbf', label: 'Lãnh đạo MBF', count: 1, color: 'purple' },
-    { key: 'officer_mbf', label: 'Cán bộ MBF', count: 1, color: 'blue' },
+    { key: 'leader_mbf', label: 'Lãnh đạo PA04', count: 1, color: 'purple' },
+    { key: 'officer_mbf', label: 'Cán bộ PA04', count: 1, color: 'blue' },
     { key: 'officer_ward', label: 'Cán bộ Phường', count: 1, color: 'green' }
   ];
 
@@ -1373,8 +1373,8 @@ export class AdminComponent implements OnInit {
       width: '18%',
       badgeMapping: {
         admin: { label: 'Quản trị viên', cssClass: 'badge-danger' },
-        leader_mbf: { label: 'Lãnh đạo MBF', cssClass: 'badge-approved' },
-        officer_mbf: { label: 'Cán bộ MBF', cssClass: 'badge-in_progress' },
+        leader_mbf: { label: 'Lãnh đạo PA04', cssClass: 'badge-approved' },
+        officer_mbf: { label: 'Cán bộ PA04', cssClass: 'badge-in_progress' },
         officer_ward: { label: 'Cán bộ Phường', cssClass: 'badge-new' }
       }
     },

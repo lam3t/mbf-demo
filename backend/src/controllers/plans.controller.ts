@@ -885,7 +885,7 @@ export class PlansController {
       const { id } = req.params;
       const userId = req.user?.id || null;
       const userRole = req.user?.role || 'leader_mbf';
-      const userFullName = req.user?.fullName || 'Lãnh đạo MBF';
+      const userFullName = req.user?.fullName || 'Lãnh đạo PA04';
       const { resolutionMode = 'standard', jointDate, participatingWards, leaderComment } = req.body || {};
 
       const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(id) as Plan | undefined;

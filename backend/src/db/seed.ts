@@ -19,8 +19,8 @@ export function runSeed(skipInit: boolean = false) {
 
   const users = [
     { id: 1, username: 'admin', fullName: 'Quản trị viên Hệ thống', role: 'admin', unit: 'MBF - Quản trị' },
-    { id: 2, username: 'leader', fullName: 'Nguyễn Văn An - Lãnh đạo MBF', role: 'leader_mbf', unit: 'Phòng MBF' },
-    { id: 3, username: 'officer1', fullName: 'Trần Thị Bình - Cán bộ MBF', role: 'officer_mbf', unit: 'Phòng MBF' },
+    { id: 2, username: 'leader', fullName: 'Nguyễn Văn An - Lãnh đạo PA04', role: 'leader_mbf', unit: 'Phòng MBF' },
+    { id: 3, username: 'officer1', fullName: 'Trần Thị Bình - Cán bộ PA04', role: 'officer_mbf', unit: 'Phòng MBF' },
     { id: 4, username: 'ward1', fullName: 'Lê Văn Cường - Cán bộ Phường Hoàn Kiếm', role: 'officer_ward', unit: 'Phường Hoàn Kiếm' }
   ];
 
@@ -689,7 +689,7 @@ export function runSeed(skipInit: boolean = false) {
 
   insertAudit.run(1, 1, 'SEED_DATABASE', 'SYSTEM', 0, JSON.stringify({ message: 'Khởi tạo dữ liệu mẫu hệ thống demo MBF' }), 'Toàn thành phố');
   insertAudit.run(2, 4, 'CREATE_PLAN', 'PLANS', 1, JSON.stringify({ quarter: 'Q2/2026', ward: 'Phường Hoàn Kiếm' }), 'Phường Hoàn Kiếm');
-  insertAudit.run(3, 2, 'APPROVE_PLAN', 'PLANS', 1, JSON.stringify({ approvedBy: 'Nguyễn Văn An - Lãnh đạo MBF', itemsCount: 8 }), 'Phường Hoàn Kiếm');
+  insertAudit.run(3, 2, 'APPROVE_PLAN', 'PLANS', 1, JSON.stringify({ approvedBy: 'Nguyễn Văn An - Lãnh đạo PA04', itemsCount: 8 }), 'Phường Hoàn Kiếm');
   insertAudit.run(4, 4, 'CREATE_ADHOC_REQUEST', 'ADHOC_REQUESTS', 1, JSON.stringify({ objectId: 30, reason: 'Phản ánh vệ sinh ATTP' }), 'Phường Hoàn Kiếm');
   console.log('✅ Seeded audit logs');
 

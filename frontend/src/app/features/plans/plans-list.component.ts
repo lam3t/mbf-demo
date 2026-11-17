@@ -123,7 +123,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
             (click)="switchView('matrix')"
           >
             <mat-icon>fact_check</mat-icon>
-            <span>3. Ma trận Phê duyệt (MBF)</span>
+            <span>3. Ma trận Phê duyệt (PA04)</span>
             <span class="badge-pending-count" *ngIf="pendingGridList.length > 0">{{ pendingGridList.length }}</span>
           </button>
         </div>
@@ -280,7 +280,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
               [matTooltip]="getSubmitTooltip()"
             >
               <mat-icon>send</mat-icon>
-              <span>Trình duyệt Kế hoạch lên MBF</span>
+              <span>Trình duyệt Kế hoạch lên PA04</span>
             </button>
           </div>
 
@@ -377,7 +377,7 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
         <!-- VIEW 3: APPROVAL MATRIX (FOR MBF LEADERS & OFFICERS) -->
         <div class="view-container" *ngIf="activeView === 'matrix'">
           <app-page-header
-            title="Ma trận Phê duyệt Kế hoạch (MBF)"
+            title="Ma trận Phê duyệt Kế hoạch (PA04)"
             [subtitle]="'Đang có ' + pendingGridList.length + ' cơ sở kiểm tra thuộc các phường chờ phê duyệt'"
             [actions]="matrixHeaderActions"
             (actionClick)="handleMatrixHeaderAction($event)"
@@ -1749,7 +1749,7 @@ export class PlansListComponent implements OnInit {
     },
     {
       id: 'submit_plan',
-      label: 'Trình duyệt lên MBF',
+      label: 'Trình duyệt lên PA04',
       icon: 'send',
       color: '#1e3a8a',
       hidden: (row) => row.status !== 'draft'
@@ -2793,7 +2793,7 @@ export class PlansListComponent implements OnInit {
     }).subscribe({
       next: (res) => {
         if (res.success) {
-          this.snackBar.open(`Đã trình duyệt Kế hoạch Quý II/2026 theo quy trình [${pAny.workflowCode || 'WF_PC07_PLANNED'}] lên ${pAny.approvingDept || 'MBF'} thành công!`, 'Đóng', { duration: 3500 });
+          this.snackBar.open(`Đã trình duyệt Kế hoạch Quý II/2026 theo quy trình [${pAny.workflowCode || 'WF_PC07_PLANNED'}] lên ${pAny.approvingDept || 'PA04'} thành công!`, 'Đóng', { duration: 3500 });
           this.selectedFile = null;
           this.loadCartPlan();
           this.loadPlans();

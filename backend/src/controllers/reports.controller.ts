@@ -79,7 +79,7 @@ export class ReportsController {
       const items = db.prepare(query).all(...params) as any[];
 
       const workbook = new ExcelJS.Workbook();
-      workbook.creator = 'MBF - Hệ thống Quản lý Kiểm tra';
+      workbook.creator = 'CATP Hà Nội - Hệ thống Quản lý Kiểm tra';
       workbook.created = new Date();
 
       const worksheet = workbook.addWorksheet('Báo cáo Kiến nghị');
@@ -246,7 +246,7 @@ export class ReportsController {
       const items = db.prepare(query).all(...params) as any[];
 
       const workbook = new ExcelJS.Workbook();
-      workbook.creator = 'MBF - Hệ thống Quản lý Kiểm tra';
+      workbook.creator = 'CATP Hà Nội - Hệ thống Quản lý Kiểm tra';
       const worksheet = workbook.addWorksheet('Tổng kết Quý');
 
       // Title
@@ -474,7 +474,7 @@ export class ReportsController {
       const items = db.prepare(query).all(...params) as any[];
 
       const workbook = new ExcelJS.Workbook();
-      workbook.creator = 'MBF - Hệ thống Quản lý Kiểm tra';
+      workbook.creator = 'CATP Hà Nội - Hệ thống Quản lý Kiểm tra';
       const worksheet = workbook.addWorksheet('Giải trình Chưa kiểm tra');
 
       worksheet.mergeCells('A1:J1');

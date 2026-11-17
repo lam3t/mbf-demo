@@ -66,12 +66,12 @@ function runDigitalSignatureTests() {
     wardUser = { id: Number(res.lastInsertRowid), username: 'test_ward', fullName: 'Cán bộ Phường Test', role: 'officer_ward', unit: 'Phường Test' };
   }
   if (!officerUser) {
-    const res = db.prepare("INSERT INTO users (username, passwordHash, fullName, role, unit) VALUES ('test_officer', 'hash', 'Cán bộ MBF Test', 'officer_mbf', 'PA04 MBF')").run();
-    officerUser = { id: Number(res.lastInsertRowid), username: 'test_officer', fullName: 'Cán bộ MBF Test', role: 'officer_mbf', unit: 'PA04 MBF' };
+    const res = db.prepare("INSERT INTO users (username, passwordHash, fullName, role, unit) VALUES ('test_officer', 'hash', 'Cán bộ PA04 Test', 'officer_mbf', 'Phòng PA04 - CATP')").run();
+    officerUser = { id: Number(res.lastInsertRowid), username: 'test_officer', fullName: 'Cán bộ PA04 Test', role: 'officer_mbf', unit: 'Phòng PA04 - CATP' };
   }
   if (!leaderUser) {
-    const res = db.prepare("INSERT INTO users (username, passwordHash, fullName, role, unit) VALUES ('test_leader', 'hash', 'Trưởng phòng MBF Test', 'leader_mbf', 'PA04 MBF')").run();
-    leaderUser = { id: Number(res.lastInsertRowid), username: 'test_leader', fullName: 'Trưởng phòng MBF Test', role: 'leader_mbf', unit: 'PA04 MBF' };
+    const res = db.prepare("INSERT INTO users (username, passwordHash, fullName, role, unit) VALUES ('test_leader', 'hash', 'Trưởng phòng MBF Test', 'leader_mbf', 'Phòng PA04 - CATP')").run();
+    leaderUser = { id: Number(res.lastInsertRowid), username: 'test_leader', fullName: 'Trưởng phòng MBF Test', role: 'leader_mbf', unit: 'Phòng PA04 - CATP' };
   }
 
   // Setup: Create test business object and test draft plan
