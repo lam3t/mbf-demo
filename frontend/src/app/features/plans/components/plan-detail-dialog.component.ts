@@ -601,23 +601,23 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
       display: flex;
       align-items: flex-start;
       gap: 10px;
-      padding: 12px 14px;
-      background-color: #fffbeb;
-      border: 1.5px solid #fde68a;
+      padding: 10px 14px;
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
       border-radius: 8px;
-      color: #92400e;
+      color: #334155;
       margin-bottom: 14px;
       font-size: 12.5px;
 
       mat-icon {
-        font-size: 22px;
-        width: 22px;
-        height: 22px;
-        color: #b45309;
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        color: #1e3a8a;
       }
 
-      strong { font-weight: 700; color: #78350f; }
-      p { margin: 3px 0 0; font-size: 12px; line-height: 1.4; color: #92400e; }
+      strong { font-weight: 700; color: #1e3a8a; }
+      p { margin: 3px 0 0; font-size: 12px; line-height: 1.4; color: #475569; }
     }
 
     .objects-section {
@@ -635,7 +635,7 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
         max-height: 280px;
 
         .cross-ward-row {
-          background-color: #fffdf5;
+          background-color: #f8fafc;
         }
 
         .joint-badge {
@@ -645,8 +645,9 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
           margin-top: 3px;
           padding: 1px 6px;
           border-radius: 4px;
-          background: #fef3c7;
-          color: #b45309;
+          background: #f1f5f9;
+          color: #334155;
+          border: 1px solid #cbd5e1;
           font-size: 10.5px;
           font-weight: 600;
 
@@ -658,8 +659,8 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
         }
 
         .cross-ward-note {
-          font-size: 11px;
-          color: #b45309;
+          font-size: 11.5px;
+          color: #475569;
           font-weight: 500;
         }
 
@@ -678,12 +679,13 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
         }
 
         .type-pill {
-          background-color: #e0f2fe;
-          color: #1e3a8a;
+          background-color: #f1f5f9;
+          color: #334155;
           font-size: 11px;
           font-weight: 600;
-          padding: 1px 6px;
+          padding: 2px 6px;
           border-radius: 4px;
+          white-space: nowrap;
         }
       }
     }

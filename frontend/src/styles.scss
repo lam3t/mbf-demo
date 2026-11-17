@@ -258,46 +258,26 @@ body {
   white-space: nowrap;
 
   &.badge-new,
-  &.badge-moi {
-    background-color: #e6f7ec;
-    color: #10b981;
-    border: 1px solid #d1fae5;
+  &.badge-moi,
+  &.badge-approved,
+  &.badge-phe_duyet,
+  &.badge-da_phe_duyet,
+  &.badge-won,
+  &.badge-trung {
+    background-color: #eff6ff;
+    color: #1e3a8a;
+    border: 1px solid #bfdbfe;
   }
 
   &.badge-in_progress,
-  &.badge-dang_thuc_hien {
-    background-color: #e0f2fe;
-    color: #0284c7;
-    border: 1px solid #bae6fd;
-  }
-
+  &.badge-dang_thuc_hien,
   &.badge-pending,
-  &.badge-cho_phe_duyet {
-    background-color: #fef3c7;
-    color: #d97706;
-    border: 1px solid #fde68a;
-  }
-
-  &.badge-approved,
-  &.badge-phe_duyet,
-  &.badge-da_phe_duyet {
-    background-color: #ede9fe;
-    color: #7c3aed;
-    border: 1px solid #ddd6fe;
-  }
-
-  &.badge-won,
-  &.badge-trung {
-    background-color: #ecfdf5;
-    color: #059669;
-    border: 1px solid #a7f3d0;
-  }
-
+  &.badge-cho_phe_duyet,
   &.badge-closed,
   &.badge-dong,
   &.badge-huy {
     background-color: #f1f5f9;
-    color: #64748b;
+    color: #334155;
     border: 1px solid #e2e8f0;
   }
 
@@ -305,7 +285,7 @@ body {
   &.badge-vi_pham,
   &.badge-cham_tien_do {
     background-color: #fef2f2;
-    color: #dc2626;
+    color: #b91c1c;
     border: 1px solid #fecaca;
   }
 }

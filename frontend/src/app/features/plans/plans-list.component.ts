@@ -1103,8 +1103,8 @@ import { Plan, BusinessObject, AdhocInspectionRequest, InspectionTeam, UnitWorkf
       display: flex;
       align-items: flex-start;
       gap: 6px;
-      background: #faf5ff;
-      border: 1px solid #e9d5ff;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
       padding: 6px 8px;
       border-radius: 6px;
       font-size: 12.5px;

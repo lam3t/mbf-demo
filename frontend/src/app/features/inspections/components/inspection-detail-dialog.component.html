@@ -162,10 +162,14 @@
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <span
-              *ngFor="let step of workflowSteps"
-              style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:4px;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;"
+              *ngFor="let step of workflowSteps; let idx = index"
+              style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;padding:4px 9px;border-radius:4px;background:#f8fafc;color:#1e293b;border:1px solid #e2e8f0;"
             >
-              <strong>B{{ step.stepOrder }}:</strong> {{ step.stepName }} <em style="color:#64748b;">({{ step.unitRole }})</em>
+              <strong style="color:#1e3a8a;">Bước {{ step.stepOrder || step.order || (idx + 1) }}:</strong>
+              <span>{{ step.stepName || step.name || step.title || 'Thực hiện kiểm tra' }}</span>
+              <em *ngIf="step.unitRole || step.approvingDept || step.role" style="color:#64748b;">
+                ({{ step.unitRole || step.approvingDept || step.role }})
+              </em>
             </span>
           </div>
         </div>
