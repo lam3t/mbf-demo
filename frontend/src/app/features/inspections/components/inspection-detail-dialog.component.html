@@ -73,6 +73,20 @@
 
     <!-- Scrollable Modal Body -->
     <div class="modal-body">
+      <div class="dialog-tabs-bar">
+        <button type="button" class="dialog-tab-btn" [class.active]="activeTab === 0" (click)="activeTab = 0">
+          Thông tin &amp; Đoàn KT
+        </button>
+        <button type="button" class="dialog-tab-btn" [class.active]="activeTab === 1" (click)="activeTab = 1">
+          Kết quả &amp; Vi phạm (Phụ lục 01)
+        </button>
+        <button type="button" class="dialog-tab-btn" [class.active]="activeTab === 2" (click)="activeTab = 2">
+          Chưa KT (Phụ lục 03) &amp; Nghiệm thu
+        </button>
+      </div>
+
+      <!-- TAB 0: THÔNG TIN & ĐOÀN KT -->
+      <ng-container *ngIf="activeTab === 0">
       <!-- 0. Object Summary Card -->
       <div class="info-strip">
         <div class="info-item">
@@ -157,6 +171,10 @@
         </div>
       </div>
 
+      </ng-container>
+
+      <!-- TAB 2: CHƯA KT / NGHIỆM THU -->
+      <ng-container *ngIf="activeTab === 2">
       <!-- SECTION 6: Báo cáo & Giải trình đối với cơ sở chưa được kiểm tra theo kế hoạch (#6) -->
       <div *ngIf="inspection.status !== 'completed'" class="section-card" style="margin-bottom: 14px; background: #fffbeb; border: 1.5px solid #fcd34d;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -213,6 +231,10 @@
         </div>
       </div>
 
+      </ng-container>
+
+      <!-- TAB 1: KẾT QUẢ & VI PHẠM -->
+      <ng-container *ngIf="activeTab === 1">
       <!-- SECTION 1: Checklist tiêu chuẩn phân loại theo 5 Lĩnh vực -->
       <div class="section-card domain-checklist-section">
         <div class="section-header">
@@ -561,6 +583,7 @@
           </div>
         </div>
       </div>
+      </ng-container>
     </div>
 
     <!-- Modal Footer -->

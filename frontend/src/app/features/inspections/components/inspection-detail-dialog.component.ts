@@ -64,6 +64,9 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
   @Output() saved = new EventEmitter<Inspection>();
   @Output() completed = new EventEmitter<Inspection>();
 
+  // Dialog Section Tab (0: Thông tin & Đoàn KT, 1: Kết quả & Vi phạm, 2: Chưa KT / Nghiệm thu)
+  activeTab = 0;
+
   // Active Domain Tab Filter (0: All, 1: PCCC, 2: ATTP, 3: MOI_TRUONG, 4: TTDT, 5: THUE)
   activeDomainTab = 0;
 

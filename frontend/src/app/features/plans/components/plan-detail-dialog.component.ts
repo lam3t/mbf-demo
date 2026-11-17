@@ -44,6 +44,16 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
         </div>
 
         <div *ngIf="!isLoading && plan" class="plan-info-body">
+          <div class="dialog-tabs-bar">
+            <button type="button" class="dialog-tab-btn" [class.active]="activeTab === 0" (click)="activeTab = 0">
+              Thông tin &amp; Phê duyệt
+            </button>
+            <button type="button" class="dialog-tab-btn" [class.active]="activeTab === 1" (click)="activeTab = 1">
+              Danh sách cơ sở ({{ plan.items?.length || 0 }})
+            </button>
+          </div>
+
+          <ng-container *ngIf="activeTab === 0">
           <div class="meta-grid">
             <div class="meta-item">
               <span class="label">Trạng thái:</span>
@@ -255,7 +265,11 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
                 </div>
               </div>
             </div>
+          </div>
+          </ng-container>
 
+          <ng-container *ngIf="activeTab === 1">
+          <div class="objects-section">
             <h3>Danh sách cơ sở kiểm tra ({{ plan.items?.length || 0 }} đối tượng):</h3>
             <table class="items-table">
               <thead>
@@ -293,6 +307,7 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
               </tbody>
             </table>
           </div>
+          </ng-container>
         </div>
       </div>
 
@@ -697,6 +712,7 @@ import { SelectObjectsDialogComponent } from './select-objects-dialog.component'
   `]
 })
 export class PlanDetailDialogComponent implements OnInit {
+  activeTab = 0;
   isLoading = true;
   plan: Plan | null = null;
   availableWorkflows: any[] = [];

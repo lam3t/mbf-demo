@@ -61,6 +61,21 @@ export interface ObjectDetailResult {
         </div>
 
         <div *ngIf="!isLoading && object" class="detail-body">
+          <!-- Minimalist Dialog Tabs -->
+          <div class="dialog-tabs-bar">
+            <button type="button" class="dialog-tab-btn" [class.active]="activeTab === 0" (click)="activeTab = 0">
+              Thông tin chung
+            </button>
+            <button type="button" class="dialog-tab-btn" [class.active]="activeTab === 1" (click)="activeTab = 1">
+              Địa điểm / Chi nhánh ({{ locations.length }})
+            </button>
+            <button type="button" class="dialog-tab-btn" [class.active]="activeTab === 2" (click)="activeTab = 2">
+              Lịch sử kiểm tra &amp; Vi phạm
+            </button>
+          </div>
+
+          <!-- TAB 0: THÔNG TIN CHUNG -->
+          <ng-container *ngIf="activeTab === 0">
           <!-- Hero Banner -->
           <div class="hero-banner">
             <div class="hero-main">
@@ -102,7 +117,10 @@ export interface ObjectDetailResult {
               </div>
             </div>
           </div>
+          </ng-container>
 
+          <!-- TAB 1: ĐỊA ĐIỂM / CHI NHÁNH -->
+          <ng-container *ngIf="activeTab === 1">
           <!-- Section 1: Quản lý chi tiết Trụ sở, Chi nhánh, Cơ sở & Địa điểm kinh doanh -->
           <div class="section-card">
             <div class="section-header space-between">
@@ -189,7 +207,10 @@ export interface ObjectDetailResult {
               </div>
             </div>
           </div>
+          </ng-container>
 
+          <!-- TAB 2: LỊCH SỬ KIỂM TRA & VI PHẠM -->
+          <ng-container *ngIf="activeTab === 2">
           <!-- Section 5: Lịch sử Vi phạm của Doanh nghiệp & Từng Địa điểm -->
           <div class="section-card">
             <div class="section-header space-between">
@@ -383,6 +404,7 @@ export interface ObjectDetailResult {
               </div>
             </div>
           </div>
+          </ng-container>
         </div>
       </div>
 
@@ -1550,6 +1572,7 @@ export interface ObjectDetailResult {
   `]
 })
 export class ObjectDetailDialogComponent implements OnInit {
+  activeTab = 0;
   isLoading = true;
   object: BusinessObject | null = null;
   locations: BusinessLocation[] = [];
