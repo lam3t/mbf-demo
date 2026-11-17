@@ -152,76 +152,44 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
       <!-- TAB 2: ROLE & PERMISSION MATRIX + 3-STAGE AUTHORITY + CUSTOM UNIT WORKFLOWS -->
       <div class="tab-view-container" *ngIf="activeTab === 'roles'">
         <app-page-header
-          title="Phân quyền Nghiệp vụ, Thẩm quyền 3 Cấp & Cấu hình Quy trình theo Đơn vị"
-          subtitle="Phân định thẩm quyền Phê duyệt KH - Thành lập đoàn - Nghiệm thu kết quả, phân quyền chi tiết và cấu hình quy trình riêng từng đơn vị nghiệp vụ/ngành dọc"
+          title="Phân quyền &amp; Quy trình nghiệp vụ"
+          subtitle="Quản lý quyền hạn theo vai trò và cấu hình quy trình xử lý theo từng đơn vị"
         ></app-page-header>
 
-        <!-- SECTION A: PHÂN ĐỊNH RÕ 3 THẨM QUYỀN CỐT LÕI -->
-        <div class="authority-3-grid" *ngIf="authoritySeparation">
-          <div class="auth-stage-card stage-plan">
-            <div class="stage-head">
-              <span class="stage-badge">THẨM QUYỀN CẤP 1</span>
-              <mat-icon>fact_check</mat-icon>
-            </div>
-            <h4>{{ authoritySeparation.planApproval?.title }}</h4>
-            <p class="stage-desc">{{ authoritySeparation.planApproval?.description }}</p>
-            <div class="stage-roles">
-              <span class="role-chip" *ngFor="let r of authoritySeparation.planApproval?.roles">{{ r }}</span>
-            </div>
-          </div>
-
-          <div class="auth-stage-card stage-team">
-            <div class="stage-head">
-              <span class="stage-badge">THẨM QUYỀN CẤP 2</span>
-              <mat-icon>groups</mat-icon>
-            </div>
-            <h4>{{ authoritySeparation.teamEstablishment?.title }}</h4>
-            <p class="stage-desc">{{ authoritySeparation.teamEstablishment?.description }}</p>
-            <div class="stage-roles">
-              <span class="role-chip" *ngFor="let r of authoritySeparation.teamEstablishment?.roles">{{ r }}</span>
-            </div>
-          </div>
-
-          <div class="auth-stage-card stage-accept">
-            <div class="stage-head">
-              <span class="stage-badge">THẨM QUYỀN CẤP 3</span>
-              <mat-icon>verified</mat-icon>
-            </div>
-            <h4>{{ authoritySeparation.resultAcceptance?.title }}</h4>
-            <p class="stage-desc">{{ authoritySeparation.resultAcceptance?.description }}</p>
-            <div class="stage-roles">
-              <span class="role-chip" *ngFor="let r of authoritySeparation.resultAcceptance?.roles">{{ r }}</span>
-            </div>
-          </div>
+        <div class="dialog-tabs-bar">
+          <button type="button" class="dialog-tab-btn" [class.active]="rolesSubTab === 0" (click)="rolesSubTab = 0">
+            Ma trận Phân quyền
+          </button>
+          <button type="button" class="dialog-tab-btn" [class.active]="rolesSubTab === 1" (click)="rolesSubTab = 1">
+            Quy trình theo Đơn vị ({{ unitWorkflows.length }})
+          </button>
         </div>
 
-        <!-- SECTION B: MA TRẬN PHÂN QUYỀN CHI TIẾT THEO ĐƠN VỊ & VAI TRÒ -->
-        <div class="matrix-card">
+        <!-- SUB-TAB 0: MA TRẬN PHÂN QUYỀN -->
+        <div class="matrix-card" *ngIf="rolesSubTab === 0">
           <div class="section-bar">
             <div>
               <h3 class="sec-title">
                 <mat-icon>admin_panel_settings</mat-icon>
-                Ma trận Phân quyền Chi tiết theo Đơn vị & Chức trách Nghiệp vụ
+                Phân quyền theo Vai trò
               </h3>
-              <p class="sec-sub">
-                Cấu hình quyền lập/sửa/duyệt/điều chỉnh kế hoạch, thêm/cập nhật doanh nghiệp & cơ sở, thành lập đoàn và nghiệm thu kết quả (Click vào ô để bật/tắt quyền)
-              </p>
+              <p class="sec-sub">Tích chọn để bật/tắt quyền cho từng nhóm người dùng</p>
             </div>
             <button mat-flat-button class="btn-cids-primary" (click)="savePermissionMatrix()">
               <mat-icon>save</mat-icon>
-              <span>Lưu Cấu hình Phân quyền</span>
+              <span>Lưu Phân quyền</span>
             </button>
           </div>
 
           <table class="role-matrix-table">
             <thead>
               <tr>
-                <th style="width: 18%;">Nhóm nghiệp vụ</th>
-                <th style="width: 34%;">Chức năng / Quyền hạn cụ thể</th>
-                <th class="text-center">Quản trị Hệ thống</th>
-                <th class="text-center">Lãnh đạo Phòng Nghiệp vụ / Chỉ huy</th>
-                <th class="text-center">Trưởng / Cán bộ Đơn vị (Phường/Đội)</th>
-                <th class="text-center">Cán bộ Kiểm tra / Thành viên Đoàn</th>
+                <th style="width: 18%;">Nhóm</th>
+                <th style="width: 34%;">Chức năng</th>
+                <th class="text-center">Quản trị</th>
+                <th class="text-center">Lãnh đạo</th>
+                <th class="text-center">Đơn vị / Phường</th>
+                <th class="text-center">Cán bộ KT</th>
               </tr>
             </thead>
             <tbody>
@@ -231,7 +199,6 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
                 </td>
                 <td>
                   <strong>{{ perm.name }}</strong>
-                  <span class="perm-desc">Mã quyền: {{ perm.code }}</span>
                 </td>
                 <td class="text-center">
                   <input type="checkbox" class="perm-checkbox" [(ngModel)]="perm.admin" />
@@ -250,8 +217,8 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
           </table>
         </div>
 
-        <!-- SECTION C: CẤU HÌNH QUY TRÌNH ĐỘNG THEO TỪNG ĐƠN VỊ (PC07, PC04, PC06, PHƯỜNG...) & LOẠI KẾ HOẠCH -->
-        <div class="matrix-card">
+        <!-- SUB-TAB 1: CẤU HÌNH QUY TRÌNH THEO ĐƠN VỊ -->
+        <div class="matrix-card" *ngIf="rolesSubTab === 1">
           <div class="section-bar">
             <div>
               <h3 class="sec-title">
@@ -1555,6 +1522,7 @@ export class AdminComponent implements OnInit {
   ];
 
   // 2. Role Matrix & Unit Workflows State (Requirement 7: Dynamic Workflows by Unit & Plan Type)
+  rolesSubTab = 0;
   authoritySeparation: any = null;
   detailedPermissions: any[] = [];
   unitWorkflows: any[] = [];
