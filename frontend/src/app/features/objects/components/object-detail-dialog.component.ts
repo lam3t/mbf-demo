@@ -220,7 +220,7 @@ export interface ObjectDetailResult {
           <div class="section-card">
             <div class="section-header space-between">
               <div class="header-left">
-                <mat-icon class="section-icon" style="color: #dc2626;">gavel</mat-icon>
+                <mat-icon class="section-icon" style="color: #b91c1c;">gavel</mat-icon>
                 <h3>Lịch sử Vi phạm & Chấp hành theo Cơ sở / Địa điểm ({{ filteredViolationHistory.length }})</h3>
               </div>
               <select [(ngModel)]="selectedLocationId" class="loc-filter-select">
@@ -230,7 +230,7 @@ export interface ObjectDetailResult {
             </div>
 
             <div *ngIf="filteredViolationHistory.length === 0" class="empty-inspection-box">
-              <mat-icon class="empty-icon" style="color: #16a34a;">verified_user</mat-icon>
+              <mat-icon class="empty-icon" style="color: #1e3a8a;">verified_user</mat-icon>
               <div class="empty-text">
                 <strong>Không ghi nhận vi phạm hành chính</strong>
                 <p>Doanh nghiệp / cơ sở được chọn chấp hành tốt quy định pháp luật trong các đợt kiểm tra.</p>
@@ -550,9 +550,9 @@ export interface ObjectDetailResult {
             background: #e0e7ff;
             color: #1e40af;
             &.loc-type-headquarters { background: #dbeafe; color: #1e3a8a; }
-            &.loc-type-branch { background: #ede9fe; color: #6d28d9; }
+            &.loc-type-branch { background: #e2e8f0; color: #1e3a8a; }
             &.loc-type-facility { background: #fef3c7; color: #b45309; }
-            &.loc-type-business_location { background: #dcfce7; color: #15803d; }
+            &.loc-type-business_location { background: #eff6ff; color: #15803d; }
           }
 
           .btn-icon-xs {
@@ -589,8 +589,8 @@ export interface ObjectDetailResult {
             padding: 1px 6px;
             border-radius: 4px;
             &.insp { background: #f1f5f9; color: #334155; }
-            &.viol { background: #fee2e2; color: #dc2626; }
-            &.clean { background: #dcfce7; color: #15803d; }
+            &.viol { background: #fee2e2; color: #b91c1c; }
+            &.clean { background: #eff6ff; color: #15803d; }
           }
         }
       }
@@ -614,7 +614,7 @@ export interface ObjectDetailResult {
       .violation-history-item {
         background: #fff5f5;
         border: 1px solid #fecaca;
-        border-left: 3px solid #dc2626;
+        border-left: 3px solid #b91c1c;
         border-radius: 8px;
         padding: 10px 12px;
         font-size: 12px;
@@ -644,7 +644,7 @@ export interface ObjectDetailResult {
           flex-wrap: wrap;
           margin-bottom: 4px;
           .vh-label { font-weight: 600; color: #991b1b; }
-          .chip-violation-mini { background: #fee2e2; color: #dc2626; padding: 1px 6px; border-radius: 4px; font-weight: 600; border: 1px solid #fca5a5; font-size: 11px; }
+          .chip-violation-mini { background: #fee2e2; color: #b91c1c; padding: 1px 6px; border-radius: 4px; font-weight: 600; border: 1px solid #fca5a5; font-size: 11px; }
         }
 
         .vh-note { color: #334155; font-size: 11.5px; }
@@ -695,7 +695,7 @@ export interface ObjectDetailResult {
 
           &.avatar-household {
             background-color: #f0fdf4;
-            color: #16a34a;
+            color: #1e3a8a;
           }
 
           &.avatar-individual {
@@ -804,7 +804,7 @@ export interface ObjectDetailResult {
           }
 
           &.pill-household {
-            background-color: #dcfce7;
+            background-color: #eff6ff;
             color: #15803d;
           }
 
@@ -965,7 +965,7 @@ export interface ObjectDetailResult {
             width: 20px;
             height: 20px;
 
-            &.text-green { color: #16a34a; }
+            &.text-green { color: #1e3a8a; }
             &.text-gray { color: #94a3b8; }
             &.text-blue { color: #2563eb; }
           }
@@ -1029,7 +1029,7 @@ export interface ObjectDetailResult {
         }
 
         &.locked {
-          border-left: 3px solid #7c3aed;
+          border-left: 3px solid #1e3a8a;
         }
 
         .insp-header {
@@ -1074,9 +1074,9 @@ export interface ObjectDetailResult {
               align-items: center;
               gap: 2px;
               font-size: 11px;
-              color: #7c3aed;
+              color: #1e3a8a;
               font-weight: 600;
-              background-color: #ede9fe;
+              background-color: #e2e8f0;
               padding: 2px 6px;
               border-radius: 4px;
 
@@ -1150,7 +1150,7 @@ export interface ObjectDetailResult {
               gap: 4px;
               background-color: #fef2f2;
               border: 1px solid #fecaca;
-              color: #dc2626;
+              color: #b91c1c;
               font-size: 11px;
               font-weight: 600;
               padding: 2px 8px;
@@ -1224,7 +1224,7 @@ export interface ObjectDetailResult {
         color: #92400e;
 
         .alert-icon-wrap mat-icon {
-          color: #d97706;
+          color: #b45309;
           font-size: 22px;
           width: 22px;
           height: 22px;
@@ -1239,7 +1239,7 @@ export interface ObjectDetailResult {
         color: #166534;
 
         .alert-icon-wrap mat-icon {
-          color: #16a34a;
+          color: #1e3a8a;
           font-size: 22px;
           width: 22px;
           height: 22px;
@@ -1308,9 +1308,9 @@ export interface ObjectDetailResult {
         }
 
         &.item-completed .timeline-marker {
-          border-color: #16a34a;
-          background-color: #dcfce7;
-          mat-icon { color: #16a34a; }
+          border-color: #1e3a8a;
+          background-color: #eff6ff;
+          mat-icon { color: #1e3a8a; }
         }
 
         &.item-approved .timeline-marker {
@@ -1320,15 +1320,15 @@ export interface ObjectDetailResult {
         }
 
         &.item-pending .timeline-marker {
-          border-color: #d97706;
+          border-color: #b45309;
           background-color: #fef3c7;
-          mat-icon { color: #d97706; }
+          mat-icon { color: #b45309; }
         }
 
         &.item-rejected .timeline-marker {
-          border-color: #dc2626;
+          border-color: #b91c1c;
           background-color: #fee2e2;
-          mat-icon { color: #dc2626; }
+          mat-icon { color: #b91c1c; }
         }
 
         .timeline-card {
@@ -1384,7 +1384,7 @@ export interface ObjectDetailResult {
               font-size: 16px;
               width: 16px;
               height: 16px;
-              color: #dc2626;
+              color: #b91c1c;
             }
           }
 
@@ -1447,7 +1447,7 @@ export interface ObjectDetailResult {
 
               .chip-violation-mini {
                 background-color: #fee2e2;
-                color: #dc2626;
+                color: #b91c1c;
                 padding: 1px 6px;
                 border-radius: 4px;
                 font-weight: 600;

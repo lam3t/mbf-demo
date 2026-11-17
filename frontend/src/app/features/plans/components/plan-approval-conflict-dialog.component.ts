@@ -285,7 +285,7 @@ export interface ConflictResolutionResult {
           font-size: 18px;
           width: 18px;
           height: 18px;
-          color: #d97706;
+          color: #b45309;
         }
       }
 
@@ -390,7 +390,7 @@ export interface ConflictResolutionResult {
               .badge-recommended {
                 font-size: 10.5px;
                 font-weight: 700;
-                background: #dcfce7;
+                background: #eff6ff;
                 color: #15803d;
                 border: 1px solid #86efac;
                 padding: 1px 6px;
@@ -510,7 +510,7 @@ export interface ConflictResolutionResult {
         }
 
         &.btn-single {
-          background: #d97706;
+          background: #b45309;
           &:hover { background: #b45309; }
         }
 

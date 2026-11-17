@@ -347,7 +347,7 @@ export interface ObjectDialogData {
       margin-bottom: 14px;
 
       .alert-icon-box mat-icon {
-        color: #d97706;
+        color: #b45309;
         font-size: 22px;
         width: 22px;
         height: 22px;
@@ -387,7 +387,7 @@ export interface ObjectDialogData {
           font-size: 18px;
           width: 18px;
           height: 18px;
-          color: #0284c7;
+          color: #1e3a8a;
         }
       }
 
@@ -496,7 +496,7 @@ export interface ObjectDialogData {
           .btn-remove-loc {
             background: #fef2f2;
             border: 1px solid #fecaca;
-            color: #dc2626;
+            color: #b91c1c;
             border-radius: 5px;
             width: 30px;
             height: 30px;
@@ -598,7 +598,7 @@ export interface ObjectDialogData {
       margin-bottom: 16px;
 
       .alert-icon-box mat-icon {
-        color: #dc2626;
+        color: #b91c1c;
         font-size: 22px;
         width: 22px;
         height: 22px;

@@ -74,7 +74,7 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
       code: 'PCCC',
       name: 'Phòng cháy chữa cháy',
       icon: 'local_fire_department',
-      color: '#ef4444',
+      color: '#b91c1c',
       isExpanded: false,
       items: [
         { domainId: 1, criteriaCode: 'pccc_1', criteriaName: 'Trang bị bình chữa cháy còn hạn & tiêu lệnh PCCC', result: 'pass' },
@@ -86,7 +86,7 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
       code: 'ATTP',
       name: 'An toàn thực phẩm',
       icon: 'restaurant',
-      color: '#f59e0b',
+      color: '#b45309',
       isExpanded: false,
       items: [
         { domainId: 2, criteriaCode: 'attp_1', criteriaName: 'Giấy chứng nhận cơ sở đủ điều kiện ATTP / Cam kết ATTP', result: 'pass' },
@@ -98,7 +98,7 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
       code: 'MOI_TRUONG',
       name: 'Bảo vệ môi trường',
       icon: 'eco',
-      color: '#10b981',
+      color: '#1e3a8a',
       isExpanded: false,
       items: [
         { domainId: 3, criteriaCode: 'env_1', criteriaName: 'Thu gom, phân loại & xử lý rác thải / nước thải đúng quy định', result: 'pass' },
@@ -122,7 +122,7 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
       code: 'THUE',
       name: 'Thuế & Nghĩa vụ tài chính',
       icon: 'receipt_long',
-      color: '#8b5cf6',
+      color: '#334155',
       isExpanded: false,
       items: [
         { domainId: 5, criteriaCode: 'tax_1', criteriaName: 'Đăng ký kinh doanh & niêm yết giá công khai', result: 'pass' },
@@ -304,7 +304,7 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
         code: 'PCCC',
         name: 'Phòng cháy chữa cháy',
         icon: 'local_fire_department',
-        color: '#ef4444',
+        color: '#b91c1c',
         isExpanded: false,
         items: [
           { domainId: 1, criteriaCode: 'pccc_1', criteriaName: 'Trang bị bình chữa cháy còn hạn & tiêu lệnh PCCC', result: 'pass' },
@@ -316,7 +316,7 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
         code: 'ATTP',
         name: 'An toàn thực phẩm',
         icon: 'restaurant',
-        color: '#f59e0b',
+        color: '#b45309',
         isExpanded: false,
         items: [
           { domainId: 2, criteriaCode: 'attp_1', criteriaName: 'Giấy chứng nhận cơ sở đủ điều kiện ATTP / Cam kết ATTP', result: 'pass' },
@@ -328,7 +328,7 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
         code: 'MOI_TRUONG',
         name: 'Bảo vệ môi trường',
         icon: 'eco',
-        color: '#10b981',
+        color: '#1e3a8a',
         isExpanded: false,
         items: [
           { domainId: 3, criteriaCode: 'env_1', criteriaName: 'Thu gom, phân loại & xử lý rác thải / nước thải đúng quy định', result: 'pass' },
@@ -352,7 +352,7 @@ export class InspectionDetailDialogComponent implements OnInit, OnChanges {
         code: 'THUE',
         name: 'Thuế & Nghĩa vụ tài chính',
         icon: 'receipt_long',
-        color: '#8b5cf6',
+        color: '#334155',
         isExpanded: false,
         items: [
           { domainId: 5, criteriaCode: 'tax_1', criteriaName: 'Đăng ký kinh doanh & niêm yết giá công khai', result: 'pass' },

@@ -206,7 +206,7 @@ import { BusinessObject } from '../../../core/models';
           &.selected { background-color: #eff6ff; }
           &.blocked-row {
             background-color: #fef2f2;
-            border-left: 3px solid #ef4444;
+            border-left: 3px solid #b91c1c;
             cursor: not-allowed;
             &:hover { background-color: #fee2e2; }
           }
@@ -230,7 +230,7 @@ import { BusinessObject } from '../../../core/models';
               .type-badge {
                 font-size: 10.5px;
                 background-color: #e0f2fe;
-                color: #0284c7;
+                color: #1e3a8a;
                 padding: 1px 6px;
                 border-radius: 4px;
                 font-weight: 600;
@@ -284,7 +284,7 @@ import { BusinessObject } from '../../../core/models';
 
             .blocked-reason-text {
               font-size: 11px;
-              color: #dc2626;
+              color: #b91c1c;
               font-weight: 500;
               margin-top: 2px;
             }
@@ -294,7 +294,7 @@ import { BusinessObject } from '../../../core/models';
               align-items: center;
               gap: 4px;
               font-size: 11px;
-              color: #d97706;
+              color: #b45309;
               font-weight: 500;
               margin-top: 2px;
 

@@ -130,7 +130,7 @@
 
         <!-- KPI 2: Tỷ lệ hoàn thành nhiệm vụ -->
         <div class="core-kpi-card card-progress">
-          <div class="kpi-icon-wrap" style="background-color: #ecfdf5; color: #10b981;">
+          <div class="kpi-icon-wrap" style="background-color: #eff6ff; color: #1e3a8a;">
             <mat-icon>task_alt</mat-icon>
           </div>
           <div class="kpi-info">
@@ -144,7 +144,7 @@
 
         <!-- KPI 3: Nhiệm vụ quá hạn -->
         <div class="core-kpi-card card-overdue">
-          <div class="kpi-icon-wrap" style="background-color: #fef2f2; color: #ef4444;">
+          <div class="kpi-icon-wrap" style="background-color: #fef2f2; color: #b91c1c;">
             <mat-icon>alarm_on</mat-icon>
           </div>
           <div class="kpi-info">
@@ -160,7 +160,7 @@
 
         <!-- KPI 4: Cảnh báo chưa xử lý / cần thông báo -->
         <div class="core-kpi-card card-alert">
-          <div class="kpi-icon-wrap" style="background-color: #fffbeb; color: #f59e0b;">
+          <div class="kpi-icon-wrap" style="background-color: #fffbeb; color: #b45309;">
             <mat-icon>notification_important</mat-icon>
           </div>
           <div class="kpi-info">
@@ -545,7 +545,7 @@
               </div>
               <div class="criteria-chips-wrap">
                 <span *ngFor="let f of item.failItems" class="crit-chip fail-chip" [title]="f.notes || ''">
-                  <span class="domain-tag" [style.background-color]="f.domainColor ? f.domainColor + '22' : '#fee2e2'" [style.color]="f.domainColor || '#dc2626'">
+                  <span class="domain-tag" [style.background-color]="f.domainColor ? f.domainColor + '22' : '#fee2e2'" [style.color]="f.domainColor || '#b91c1c'">
                     {{ f.domainCode }}
                   </span>
                   <span>{{ f.criteriaName }}</span>

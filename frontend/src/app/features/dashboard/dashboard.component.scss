@@ -13,8 +13,8 @@
 
   .btn-back-city {
     font-weight: 700;
-    border-color: #ef4444;
-    color: #dc2626;
+    border-color: #b91c1c;
+    color: #b91c1c;
     background: #fef2f2;
     border-radius: 6px;
 
@@ -321,8 +321,8 @@
 
         &.in-progress { background: #eff6ff; color: #2563eb; }
         &.not-started { background: #f1f5f9; color: #64748b; }
-        &.completed { background: #ecfdf5; color: #059669; }
-        &.suspended { background: #fef2f2; color: #dc2626; }
+        &.completed { background: #eff6ff; color: #1e3a8a; }
+        &.suspended { background: #fef2f2; color: #b91c1c; }
         &.wards { background: #faf5ff; color: #9333ea; }
       }
 
@@ -473,16 +473,16 @@
 
         &.active.btn-slowest {
           background: #ffffff;
-          color: #dc2626;
+          color: #b91c1c;
           box-shadow: 0 1px 3px rgba(220, 38, 38, 0.12);
-          mat-icon { color: #dc2626; }
+          mat-icon { color: #b91c1c; }
         }
 
         &.active.btn-fastest {
           background: #ffffff;
-          color: #059669;
+          color: #1e3a8a;
           box-shadow: 0 1px 3px rgba(5, 150, 105, 0.12);
-          mat-icon { color: #059669; }
+          mat-icon { color: #1e3a8a; }
         }
       }
     }
@@ -523,7 +523,7 @@
         padding: 2px 7px;
         border-radius: 4px;
         background: #fee2e2;
-        color: #dc2626;
+        color: #b91c1c;
       }
 
       .medal-badge {
@@ -532,12 +532,12 @@
         font-weight: 700;
         padding: 2px 7px;
         border-radius: 4px;
-        background: #ecfdf5;
-        color: #059669;
+        background: #eff6ff;
+        color: #1e3a8a;
 
         &.medal-1 { background: #fef3c7; color: #b45309; font-weight: 800; }
         &.medal-2 { background: #f1f5f9; color: #475569; font-weight: 800; }
-        &.medal-3 { background: #ffedd5; color: #c2410c; font-weight: 800; }
+        &.medal-3 { background: #fffbeb; color: #c2410c; font-weight: 800; }
       }
     }
 
@@ -586,8 +586,8 @@
           height: 100%;
           border-radius: 3px;
 
-          &.red { background: #ef4444; }
-          &.green { background: #10b981; }
+          &.red { background: #b91c1c; }
+          &.green { background: #1e3a8a; }
         }
       }
     }
@@ -599,9 +599,9 @@
       font-size: 10.5px;
       font-weight: 600;
 
-      &.pill-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
-      &.pill-warning { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
-      &.pill-success { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+      &.pill-danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+      &.pill-warning { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+      &.pill-success { background: #eff6ff; color: #1e3a8a; border: 1px solid #bfdbfe; }
     }
   }
 }
@@ -775,8 +775,8 @@
           gap: 4px;
 
           mat-icon { font-size: 13px; width: 13px; height: 13px; }
-          &.pass mat-icon { color: #059669; }
-          &.fail mat-icon { color: #dc2626; }
+          &.pass mat-icon { color: #1e3a8a; }
+          &.fail mat-icon { color: #b91c1c; }
           &.total { color: #64748b; font-size: 10.5px; }
         }
       }
@@ -958,7 +958,7 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            mat-icon { font-size: 14px; width: 14px; height: 14px; color: #f59e0b; }
+            mat-icon { font-size: 14px; width: 14px; height: 14px; color: #b45309; }
           }
 
           .insp-issue-footer {
@@ -989,7 +989,7 @@
         padding: 30px;
         text-align: center;
         gap: 8px;
-        color: #059669;
+        color: #1e3a8a;
         font-size: 13px;
         mat-icon { font-size: 36px; width: 36px; height: 36px; }
       }
@@ -1212,7 +1212,7 @@
       }
     }
 
-    &.completed .stat-icon mat-icon { color: #059669; }
+    &.completed .stat-icon mat-icon { color: #1e3a8a; }
     &.in-progress .stat-icon mat-icon { color: #2563eb; }
     &.not-started .stat-icon mat-icon { color: #64748b; }
   }
@@ -1229,7 +1229,7 @@
     height: 100%;
     transition: width 0.5s ease;
 
-    &.completed { background: #10b981; }
+    &.completed { background: #1e3a8a; }
     &.in-progress { background: #3b82f6; }
     &.not-started { background: #cbd5e1; }
   }
@@ -1292,8 +1292,8 @@
     }
 
     &.total .metric-icon-wrap { background: #eff6ff; color: #1e3a8a; }
-    &.in-progress .metric-icon-wrap { background: #fffbeb; color: #d97706; }
-    &.overdue .metric-icon-wrap { background: #fef2f2; color: #dc2626; }
+    &.in-progress .metric-icon-wrap { background: #fffbeb; color: #b45309; }
+    &.overdue .metric-icon-wrap { background: #fef2f2; color: #b91c1c; }
     &.suspended .metric-icon-wrap { background: #faf5ff; color: #9333ea; }
   }
 }
@@ -1499,7 +1499,7 @@
 
   &.top-low {
     background: #fee2e2;
-    color: #dc2626;
+    color: #b91c1c;
   }
 }
 
@@ -1525,9 +1525,9 @@
       height: 100%;
       border-radius: 3px;
 
-      &.bar-danger { background: #ef4444; }
-      &.bar-warning { background: #f59e0b; }
-      &.bar-success { background: #10b981; }
+      &.bar-danger { background: #b91c1c; }
+      &.bar-warning { background: #b45309; }
+      &.bar-success { background: #1e3a8a; }
     }
   }
 }
@@ -1539,15 +1539,15 @@
   font-size: 11px;
   font-weight: 600;
 
-  &.status-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
-  &.status-warning { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+  &.status-danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+  &.status-warning { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
   &.status-normal { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
-  &.status-success { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+  &.status-success { background: #eff6ff; color: #1e3a8a; border: 1px solid #bfdbfe; }
 }
 
-.text-success { color: #059669; }
-.text-danger { color: #dc2626; }
-.text-warning { color: #d97706; }
+.text-success { color: #1e3a8a; }
+.text-danger { color: #b91c1c; }
+.text-warning { color: #b45309; }
 .font-bold { font-weight: 700; }
 
 /* =========================================================================
@@ -1718,8 +1718,8 @@
           gap: 3px;
 
           mat-icon { font-size: 13px; width: 13px; height: 13px; }
-          &.pass mat-icon { color: #059669; }
-          &.fail mat-icon { color: #dc2626; }
+          &.pass mat-icon { color: #1e3a8a; }
+          &.fail mat-icon { color: #b91c1c; }
           &.total { color: #64748b; font-size: 10.5px; }
         }
       }
@@ -1876,11 +1876,11 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 
     &.fastest-card {
-      border-top: 4px solid #10b981;
+      border-top: 4px solid #1e3a8a;
     }
 
     &.slowest-card {
-      border-top: 4px solid #ef4444;
+      border-top: 4px solid #b91c1c;
     }
 
     .table-card-header {
@@ -1913,7 +1913,7 @@
 
           mat-icon { font-size: 18px; width: 18px; height: 18px; }
 
-          &.green { background: #dcfce7; color: #15803d; }
+          &.green { background: #eff6ff; color: #15803d; }
           &.red { background: #fee2e2; color: #b91c1c; }
         }
 
@@ -1934,7 +1934,7 @@
       .badge-fastest {
         font-size: 11px;
         font-weight: 700;
-        background: #dcfce7;
+        background: #eff6ff;
         color: #15803d;
         border: 1px solid #bbf7d0;
         padding: 3px 8px;
@@ -2005,7 +2005,7 @@
 
       &.medal-1 { background: #fef08a; color: #854d0e; border: 1.5px solid #facc15; }
       &.medal-2 { background: #e2e8f0; color: #334155; border: 1.5px solid #94a3b8; }
-      &.medal-3 { background: #fed7aa; color: #9a3412; border: 1.5px solid #fb923c; }
+      &.medal-3 { background: #fde68a; color: #9a3412; border: 1.5px solid #fb923c; }
     }
 
     .warn-badge {
@@ -2018,7 +2018,7 @@
       font-size: 11px;
       font-weight: 800;
       background: #fee2e2;
-      color: #dc2626;
+      color: #b91c1c;
       border: 1px solid #fecaca;
     }
 
@@ -2043,8 +2043,8 @@
           height: 100%;
           border-radius: 3px;
 
-          &.green { background: #10b981; }
-          &.red { background: #ef4444; }
+          &.green { background: #1e3a8a; }
+          &.red { background: #b91c1c; }
         }
       }
     }
@@ -2056,9 +2056,9 @@
       font-size: 11px;
       font-weight: 700;
 
-      &.pill-success { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
-      &.pill-warning { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
-      &.pill-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+      &.pill-success { background: #eff6ff; color: #1e3a8a; border: 1px solid #bfdbfe; }
+      &.pill-warning { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+      &.pill-danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
     }
 
     .empty-state {
@@ -2300,7 +2300,7 @@
       .insp-issue-card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
-        border-left: 4px solid #ef4444;
+        border-left: 4px solid #b91c1c;
         border-radius: 8px;
         padding: 12px 14px;
         display: flex;
@@ -2413,7 +2413,7 @@
 
       .alert-heading-icon {
         background: #fff7ed;
-        color: #ea580c;
+        color: #b45309;
       }
 
       .heading-title-row {
@@ -2515,7 +2515,7 @@
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      background: #dcfce7;
+      background: #eff6ff;
       color: #15803d;
       display: flex;
       align-items: center;
@@ -2581,8 +2581,8 @@
         }
 
         &.fail-btn.active {
-          color: #dc2626;
-          mat-icon { color: #dc2626; }
+          color: #b91c1c;
+          mat-icon { color: #b91c1c; }
         }
 
         &.pass-btn.active {
@@ -2620,7 +2620,7 @@
     }
 
     &.notice-sent {
-      border-left: 4px solid #10b981;
+      border-left: 4px solid #1e3a8a;
     }
 
     &.card-clean-pass {
@@ -2686,9 +2686,9 @@
           }
 
           &.badge-sent {
-            background: #ecfdf5;
-            color: #059669;
-            border: 1px solid #a7f3d0;
+            background: #eff6ff;
+            color: #1e3a8a;
+            border: 1px solid #bfdbfe;
           }
 
           &.badge-all-pass {
@@ -2731,7 +2731,7 @@
 
           mat-icon { font-size: 14px; width: 14px; height: 14px; }
 
-          &.fail-label { color: #dc2626; }
+          &.fail-label { color: #b91c1c; }
           &.pass-label { color: #166534; }
         }
 
@@ -2769,7 +2769,7 @@
               .domain-tag-pass {
                 font-size: 9.5px;
                 font-weight: 700;
-                color: #16a34a;
+                color: #1e3a8a;
               }
             }
           }
@@ -2795,14 +2795,14 @@
           padding: 2px 8px;
           border-radius: 4px;
 
-          &.pass-count { background: #dcfce7; color: #15803d; }
+          &.pass-count { background: #eff6ff; color: #15803d; }
           &.fail-count { background: #fee2e2; color: #b91c1c; }
         }
       }
 
       .footer-actions-right {
         .btn-mark-sent {
-          background: #ea580c;
+          background: #b45309;
           color: #ffffff;
           font-size: 11.5px;
           font-weight: 700;
@@ -2824,11 +2824,11 @@
 }
 
 .notice-modal-header {
-  border-top: 5px solid #ea580c;
+  border-top: 5px solid #b45309;
 
   .notice-icon-wrap {
     background: #fff7ed;
-    color: #ea580c;
+    color: #b45309;
   }
 }
 
@@ -2901,9 +2901,9 @@
   }
 
   .alert-success-banner {
-    background: #ecfdf5;
-    border: 1px solid #a7f3d0;
-    color: #059669;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e3a8a;
     padding: 10px 14px;
     border-radius: 8px;
     font-size: 12.5px;
@@ -2917,7 +2917,7 @@
 }
 
 .btn-submit-notice {
-  background: #ea580c !important;
+  background: #b45309 !important;
   color: #ffffff !important;
   font-weight: 700;
 

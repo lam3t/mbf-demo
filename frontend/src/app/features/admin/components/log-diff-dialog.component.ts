@@ -247,8 +247,8 @@ import { AuditLog, AuditDiffResponse, DiffItem } from '../../../core/models';
           display: inline-flex;
           align-items: center;
           gap: 3px;
-          background: #ecfdf5;
-          color: #065f46;
+          background: #eff6ff;
+          color: #1e293b;
           font-weight: 600;
           padding: 2px 8px;
           border-radius: 4px;
@@ -286,9 +286,9 @@ import { AuditLog, AuditDiffResponse, DiffItem } from '../../../core/models';
       }
 
       &.banner-create {
-        background-color: #ecfdf5;
-        border: 1px solid #a7f3d0;
-        color: #065f46;
+        background-color: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e293b;
       }
 
       &.banner-delete {
@@ -322,7 +322,7 @@ import { AuditLog, AuditDiffResponse, DiffItem } from '../../../core/models';
       }
 
       .count-tag {
-        background: #f59e0b;
+        background: #b45309;
         color: #ffffff;
         font-size: 12px;
         font-weight: 700;
@@ -369,7 +369,7 @@ import { AuditLog, AuditDiffResponse, DiffItem } from '../../../core/models';
 
         .col-field {
           background-color: #fef08a;
-          border-left: 4px solid #f59e0b;
+          border-left: 4px solid #b45309;
         }
 
         .val-highlight-old {
@@ -395,7 +395,7 @@ import { AuditLog, AuditDiffResponse, DiffItem } from '../../../core/models';
           font-size: 16px;
           width: 16px;
           height: 16px;
-          color: #d97706;
+          color: #b45309;
           margin-top: 2px;
           flex-shrink: 0;
         }
@@ -429,7 +429,7 @@ import { AuditLog, AuditDiffResponse, DiffItem } from '../../../core/models';
 
       .badge-changed-pill {
         display: inline-block;
-        background: #f59e0b;
+        background: #b45309;
         color: #ffffff;
         font-size: 10.5px;
         font-weight: 700;

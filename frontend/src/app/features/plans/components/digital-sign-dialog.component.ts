@@ -192,7 +192,7 @@ import { AuthService } from '../../../core/services/auth.service';
         margin-bottom: 12px;
 
         .cert-shield {
-          color: #059669;
+          color: #1e3a8a;
           font-size: 28px;
           width: 28px;
           height: 28px;
@@ -218,9 +218,9 @@ import { AuthService } from '../../../core/services/auth.service';
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          background: #ecfdf5;
-          color: #047857;
-          border: 1px solid #a7f3d0;
+          background: #eff6ff;
+          color: #172554;
+          border: 1px solid #bfdbfe;
           padding: 4px 10px;
           border-radius: 9999px;
           font-size: 11.5px;
@@ -229,7 +229,7 @@ import { AuthService } from '../../../core/services/auth.service';
           .dot-online {
             width: 7px;
             height: 7px;
-            background-color: #10b981;
+            background-color: #1e3a8a;
             border-radius: 50%;
             display: inline-block;
           }
@@ -311,17 +311,17 @@ import { AuthService } from '../../../core/services/auth.service';
       align-items: center;
       gap: 10px;
       padding: 12px 14px;
-      background: #ecfdf5;
-      border: 1px solid #a7f3d0;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
       border-radius: 8px;
-      color: #065f46;
+      color: #1e293b;
       font-size: 13px;
 
       mat-icon {
         font-size: 22px;
         width: 22px;
         height: 22px;
-        color: #059669;
+        color: #1e3a8a;
       }
       p { margin: 2px 0 0; font-size: 12px; }
     }

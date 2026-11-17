@@ -403,10 +403,10 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
             max: 1.5,
             gradient: {
               0.2: '#3b82f6',
-              0.4: '#10b981',
+              0.4: '#1e3a8a',
               0.6: '#eab308',
               0.8: '#f97316',
-              1.0: '#dc2626'
+              1.0: '#b91c1c'
             }
           });
         } catch (e) {
@@ -418,7 +418,7 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
         // SVG/Circle Heatmap fallback layer
         const circleGroup = LeafletLib.layerGroup();
         heatPoints.forEach(([lat, lng, intensity]) => {
-          const color = intensity > 1.2 ? '#dc2626' : (intensity > 0.8 ? '#f97316' : (intensity > 0.5 ? '#eab308' : '#3b82f6'));
+          const color = intensity > 1.2 ? '#b91c1c' : (intensity > 0.8 ? '#f97316' : (intensity > 0.5 ? '#eab308' : '#3b82f6'));
           LeafletLib.circle([lat as number, lng as number], {
             radius: 280 * (intensity as number),
             color: color,
@@ -444,7 +444,7 @@ export class ViolationsMapComponent implements OnInit, AfterViewInit, OnDestroy 
       this.points.forEach(pt => {
         if (pt.lat && pt.lng) {
           const isSevere = pt.severity >= 4;
-          const markerColor = isSevere ? '#dc2626' : (pt.severity >= 2 ? '#f59e0b' : '#3b82f6');
+          const markerColor = isSevere ? '#b91c1c' : (pt.severity >= 2 ? '#b45309' : '#3b82f6');
 
           const iconHtml = `
             <div class="custom-violation-pin" style="background: ${markerColor};">

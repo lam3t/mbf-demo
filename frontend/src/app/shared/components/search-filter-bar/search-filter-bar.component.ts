@@ -204,7 +204,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
       }
 
       .filter-badge {
-        background-color: #ef4444;
+        background-color: #b91c1c;
         color: #ffffff;
         font-size: 11px;
         font-weight: 700;

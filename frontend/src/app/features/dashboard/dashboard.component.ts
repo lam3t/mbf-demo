@@ -98,18 +98,18 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Domain Statistics (CR-03 / Prompt 11)
   domainStats: DomainStats[] = [
-    { domainId: 1, domainCode: 'PCCC', domainName: 'Phòng cháy chữa cháy', icon: 'local_fire_department', color: '#ef4444', totalChecked: 73, totalPass: 39, totalFail: 34, passRate: 53.4, failRate: 46.6, completionRate: 53.4 },
-    { domainId: 2, domainCode: 'ATTP', domainName: 'An toàn thực phẩm', icon: 'restaurant', color: '#f59e0b', totalChecked: 73, totalPass: 61, totalFail: 12, passRate: 83.6, failRate: 16.4, completionRate: 83.6 },
-    { domainId: 3, domainCode: 'MOI_TRUONG', domainName: 'Bảo vệ môi trường', icon: 'eco', color: '#10b981', totalChecked: 73, totalPass: 60, totalFail: 13, passRate: 82.2, failRate: 17.8, completionRate: 82.2 },
+    { domainId: 1, domainCode: 'PCCC', domainName: 'Phòng cháy chữa cháy', icon: 'local_fire_department', color: '#b91c1c', totalChecked: 73, totalPass: 39, totalFail: 34, passRate: 53.4, failRate: 46.6, completionRate: 53.4 },
+    { domainId: 2, domainCode: 'ATTP', domainName: 'An toàn thực phẩm', icon: 'restaurant', color: '#b45309', totalChecked: 73, totalPass: 61, totalFail: 12, passRate: 83.6, failRate: 16.4, completionRate: 83.6 },
+    { domainId: 3, domainCode: 'MOI_TRUONG', domainName: 'Bảo vệ môi trường', icon: 'eco', color: '#1e3a8a', totalChecked: 73, totalPass: 60, totalFail: 13, passRate: 82.2, failRate: 17.8, completionRate: 82.2 },
     { domainId: 4, domainCode: 'TTDT', domainName: 'Trật tự đô thị', icon: 'location_city', color: '#3b82f6', totalChecked: 66, totalPass: 59, totalFail: 7, passRate: 89.4, failRate: 10.6, completionRate: 89.4 },
-    { domainId: 5, domainCode: 'THUE', domainName: 'Thuế & Nghĩa vụ tài chính', icon: 'receipt_long', color: '#8b5cf6', totalChecked: 66, totalPass: 52, totalFail: 14, passRate: 78.8, failRate: 21.2, completionRate: 78.8 }
+    { domainId: 5, domainCode: 'THUE', domainName: 'Thuế & Nghĩa vụ tài chính', icon: 'receipt_long', color: '#334155', totalChecked: 66, totalPass: 52, totalFail: 14, passRate: 78.8, failRate: 21.2, completionRate: 78.8 }
   ];
   domainsList: InspectionDomain[] = [
-    { id: 1, code: 'PCCC', name: 'Phòng cháy chữa cháy', icon: 'local_fire_department', color: '#ef4444' },
-    { id: 2, code: 'ATTP', name: 'An toàn thực phẩm', icon: 'restaurant', color: '#f59e0b' },
-    { id: 3, code: 'MOI_TRUONG', name: 'Bảo vệ môi trường', icon: 'eco', color: '#10b981' },
+    { id: 1, code: 'PCCC', name: 'Phòng cháy chữa cháy', icon: 'local_fire_department', color: '#b91c1c' },
+    { id: 2, code: 'ATTP', name: 'An toàn thực phẩm', icon: 'restaurant', color: '#b45309' },
+    { id: 3, code: 'MOI_TRUONG', name: 'Bảo vệ môi trường', icon: 'eco', color: '#1e3a8a' },
     { id: 4, code: 'TTDT', name: 'Trật tự đô thị', icon: 'location_city', color: '#3b82f6' },
-    { id: 5, code: 'THUE', name: 'Thuế & Nghĩa vụ tài chính', icon: 'receipt_long', color: '#8b5cf6' }
+    { id: 5, code: 'THUE', name: 'Thuế & Nghĩa vụ tài chính', icon: 'receipt_long', color: '#334155' }
   ];
   selectedDomainForDetails: DomainStats | null = null;
   failedInspectionsForDomain: any[] = [];
@@ -663,7 +663,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const colors = this.complianceGroups.length > 0
       ? this.complianceGroups.map(g => g.color)
-      : ['#10B981', '#F59E0B', '#EF4444'];
+      : ['#1e3a8a', '#b45309', '#b91c1c'];
 
     this.complianceChart = new Chart(ctx, {
       type: 'doughnut',

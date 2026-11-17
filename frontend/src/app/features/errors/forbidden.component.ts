@@ -70,7 +70,7 @@ import { User } from '../../core/models';
       align-items: center;
       justify-content: center;
       margin: 0 auto 16px;
-      &.bg-danger { background: #fef2f2; color: #dc2626; }
+      &.bg-danger { background: #fef2f2; color: #b91c1c; }
       mat-icon { font-size: 36px; width: 36px; height: 36px; }
     }
     .error-title {
@@ -97,7 +97,7 @@ import { User } from '../../core/models';
       justify-content: center;
       gap: 12px;
       .btn-home { background: #1e3a8a; color: #ffffff; mat-icon { margin-right: 4px; } }
-      .btn-logout { color: #dc2626; border-color: #fca5a5; mat-icon { margin-right: 4px; } }
+      .btn-logout { color: #b91c1c; border-color: #fca5a5; mat-icon { margin-right: 4px; } }
     }
   `]
 })

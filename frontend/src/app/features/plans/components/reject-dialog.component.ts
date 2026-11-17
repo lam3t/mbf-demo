@@ -88,7 +88,7 @@ import { MatIconModule } from '@angular/material/icon';
         gap: 8px;
 
         .header-icon {
-          color: #dc2626;
+          color: #b91c1c;
           font-size: 24px;
           width: 24px;
           height: 24px;
@@ -136,7 +136,7 @@ import { MatIconModule } from '@angular/material/icon';
       .btn-reject {
         height: 38px;
         padding: 0 18px;
-        background-color: #dc2626;
+        background-color: #b91c1c;
         color: #ffffff;
         border: none;
         border-radius: 6px;

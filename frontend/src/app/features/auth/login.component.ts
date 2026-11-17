@@ -465,10 +465,10 @@ import { AuthService } from '../../core/services/auth.service';
             }
           }
 
-          &.admin .acc-icon-box { background: #fee2e2; color: #dc2626; }
-          &.leader .acc-icon-box { background: #f3e8ff; color: #7c3aed; }
+          &.admin .acc-icon-box { background: #fee2e2; color: #b91c1c; }
+          &.leader .acc-icon-box { background: #f3e8ff; color: #1e3a8a; }
           &.officer .acc-icon-box { background: #eff6ff; color: #2563eb; }
-          &.ward .acc-icon-box { background: #ecfdf5; color: #059669; }
+          &.ward .acc-icon-box { background: #eff6ff; color: #1e3a8a; }
 
           &:hover {
             background-color: #ffffff;

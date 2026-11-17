@@ -99,22 +99,22 @@ export interface StatusTabItem {
       /* Semantic Color Themes for Inactive States */
       &:not(.active) {
         &.color-green {
-          color: #059669;
+          color: #1e3a8a;
         }
         &.color-blue {
           color: #2563eb;
         }
         &.color-orange {
-          color: #d97706;
+          color: #b45309;
         }
         &.color-purple {
-          color: #7c3aed;
+          color: #1e3a8a;
         }
         &.color-emerald {
-          color: #047857;
+          color: #172554;
         }
         &.color-red {
-          color: #dc2626;
+          color: #b91c1c;
         }
         &.color-gray {
           color: #4b5563;

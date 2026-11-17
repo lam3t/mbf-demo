@@ -47,8 +47,8 @@ import { BusinessObject } from '../../../core/models';
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <label
               style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:8px;cursor:pointer;"
-              [style.border-color]="inspectionType === 'adhoc' ? '#7c3aed' : '#cbd5e1'"
-              [style.background]="inspectionType === 'adhoc' ? '#f5f3ff' : '#fff'"
+              [style.border-color]="inspectionType === 'adhoc' ? '#1e3a8a' : '#cbd5e1'"
+              [style.background]="inspectionType === 'adhoc' ? '#f1f5f9' : '#fff'"
             >
               <input type="radio" name="inspType" value="adhoc" [(ngModel)]="inspectionType" (change)="onInspectionTypeChange()" />
               <div>
@@ -97,7 +97,7 @@ import { BusinessObject } from '../../../core/models';
                   style="width: 100%; height: 34px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; background: #fff; margin-top: 3px; box-sizing: border-box;" />
               </div>
               <div>
-                <span style="font-size: 11.5px; font-weight: 600; color: #047857;">👤 Người duyệt được phân công:</span>
+                <span style="font-size: 11.5px; font-weight: 600; color: #172554;">👤 Người duyệt được phân công:</span>
                 <input
                   type="text"
                   [(ngModel)]="assignedApproverName"
@@ -322,7 +322,7 @@ import { BusinessObject } from '../../../core/models';
           height: 42px;
           border-radius: 50%;
           background-color: #f3e8ff;
-          color: #7c3aed;
+          color: #1e3a8a;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -373,7 +373,7 @@ import { BusinessObject } from '../../../core/models';
         color: #1e293b;
 
         .required-star {
-          color: #dc2626;
+          color: #b91c1c;
         }
       }
     }
@@ -403,7 +403,7 @@ import { BusinessObject } from '../../../core/models';
         transition: all 0.15s;
 
         &:focus {
-          border-color: #7c3aed;
+          border-color: #1e3a8a;
           box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
         }
       }
@@ -453,7 +453,7 @@ import { BusinessObject } from '../../../core/models';
         transition: background 0.15s;
 
         &:last-child { border-bottom: none; }
-        &:hover:not(.blocked-item) { background-color: #f5f3ff; }
+        &:hover:not(.blocked-item) { background-color: #f1f5f9; }
 
         &.blocked-item {
           background-color: #fff1f2;
@@ -518,7 +518,7 @@ import { BusinessObject } from '../../../core/models';
             margin-top: 4px;
             font-size: 11.5px;
             font-weight: 600;
-            color: #d97706;
+            color: #b45309;
 
             mat-icon { font-size: 14px; width: 14px; height: 14px; }
           }
@@ -531,8 +531,8 @@ import { BusinessObject } from '../../../core/models';
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            background: #ede9fe;
-            color: #7c3aed;
+            background: #e2e8f0;
+            color: #1e3a8a;
             padding: 4px 10px;
             border-radius: 6px;
             font-size: 12px;
@@ -593,7 +593,7 @@ import { BusinessObject } from '../../../core/models';
           gap: 10px;
 
           .card-icon {
-            color: #7c3aed;
+            color: #1e3a8a;
             font-size: 28px;
             width: 28px;
             height: 28px;
@@ -617,7 +617,7 @@ import { BusinessObject } from '../../../core/models';
           gap: 4px;
           background: #ffffff;
           border: 1px solid #d8b4fe;
-          color: #7c3aed;
+          color: #1e3a8a;
           padding: 4px 10px;
           border-radius: 6px;
           font-size: 12px;
@@ -653,9 +653,9 @@ import { BusinessObject } from '../../../core/models';
         border-top: 1px dashed #e9d5ff;
         font-size: 12px;
         font-weight: 600;
-        color: #059669;
+        color: #1e3a8a;
 
-        mat-icon { font-size: 16px; width: 16px; height: 16px; color: #059669; }
+        mat-icon { font-size: 16px; width: 16px; height: 16px; color: #1e3a8a; }
       }
 
       .single-check-warning-badge {
@@ -669,7 +669,7 @@ import { BusinessObject } from '../../../core/models';
         font-weight: 600;
         color: #b45309;
 
-        mat-icon { font-size: 16px; width: 16px; height: 16px; color: #d97706; }
+        mat-icon { font-size: 16px; width: 16px; height: 16px; color: #b45309; }
       }
     }
 
@@ -687,7 +687,7 @@ import { BusinessObject } from '../../../core/models';
       transition: all 0.15s;
 
       &:focus {
-        border-color: #7c3aed;
+        border-color: #1e3a8a;
         box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
       }
     }
@@ -738,7 +738,7 @@ import { BusinessObject } from '../../../core/models';
       .btn-submit {
         height: 40px;
         padding: 0 22px;
-        background-color: #7c3aed;
+        background-color: #1e3a8a;
         color: #ffffff;
         border: none;
         border-radius: 6px;
@@ -752,7 +752,7 @@ import { BusinessObject } from '../../../core/models';
         transition: all 0.15s;
 
         &:hover:not([disabled]) {
-          background-color: #6d28d9;
+          background-color: #1e3a8a;
         }
 
         &:disabled {

@@ -222,13 +222,13 @@ import { MatIconModule } from '@angular/material/icon';
         align-items: center;
         gap: 6px;
         font-size: 12px;
-        color: #059669;
+        color: #1e3a8a;
 
         mat-icon {
           font-size: 16px;
           width: 16px;
           height: 16px;
-          color: #059669;
+          color: #1e3a8a;
         }
       }
 

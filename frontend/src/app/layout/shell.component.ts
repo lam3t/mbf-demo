@@ -174,7 +174,7 @@ interface NavSubItem {
               [matMenuTriggerFor]="alertMenu"
               matTooltip="Cảnh báo & Quá hạn hệ thống"
             >
-              <mat-icon [style.color]="((unreadAlertsCount$ | async) ?? 0) > 0 ? '#ef4444' : '#64748b'">warning_amber</mat-icon>
+              <mat-icon [style.color]="((unreadAlertsCount$ | async) ?? 0) > 0 ? '#b91c1c' : '#64748b'">warning_amber</mat-icon>
               <span class="noti-badge-pill alert-badge" *ngIf="((unreadAlertsCount$ | async) ?? 0) > 0">
                 {{ unreadAlertsCount$ | async }}
               </span>
@@ -183,7 +183,7 @@ interface NavSubItem {
             <mat-menu #alertMenu="matMenu" class="cids-dropdown-menu alert-dropdown-menu">
               <div class="dropdown-header">
                 <div style="display: flex; align-items: center; gap: 6px;">
-                  <mat-icon style="color: #ef4444; font-size: 18px; width: 18px; height: 18px;">warning</mat-icon>
+                  <mat-icon style="color: #b91c1c; font-size: 18px; width: 18px; height: 18px;">warning</mat-icon>
                   <strong>Cảnh báo quá hạn ({{ (unreadAlertsCount$ | async) || 0 }})</strong>
                 </div>
                 <a href="javascript:void(0)" class="mark-read" (click)="markAllAlertsRead($event)">Đã đọc tất cả</a>
@@ -193,7 +193,7 @@ interface NavSubItem {
               <div class="alerts-list-container">
                 <ng-container *ngIf="(recentAlerts$ | async) as alerts">
                   <div *ngIf="alerts.length === 0" class="empty-alerts-p">
-                    <mat-icon style="color: #10b981; font-size: 20px; width: 20px; height: 20px;">check_circle</mat-icon>
+                    <mat-icon style="color: #1e3a8a; font-size: 20px; width: 20px; height: 20px;">check_circle</mat-icon>
                     <span>Không có cảnh báo quá hạn nào!</span>
                   </div>
                   <button mat-menu-item *ngFor="let alert of alerts" (click)="handleAlertClick(alert)" class="alert-menu-item" [class.alert-unread]="!alert.isRead">
@@ -243,7 +243,7 @@ interface NavSubItem {
                 <span>Kế hoạch kiểm tra P. Khương Mai đã duyệt</span>
               </button>
               <button mat-menu-item routerLink="/objects">
-                <mat-icon style="color: #10b981;">store</mat-icon>
+                <mat-icon style="color: #1e3a8a;">store</mat-icon>
                 <span>5 cơ sở kinh doanh mới đăng ký</span>
               </button>
             </mat-menu>
@@ -281,8 +281,8 @@ interface NavSubItem {
               </button>
               <mat-divider></mat-divider>
               <button mat-menu-item (click)="logout()" class="logout-btn">
-                <mat-icon style="color: #dc2626;">logout</mat-icon>
-                <span style="color: #dc2626; font-weight: 600;">Đăng xuất</span>
+                <mat-icon style="color: #b91c1c;">logout</mat-icon>
+                <span style="color: #b91c1c; font-weight: 600;">Đăng xuất</span>
               </button>
             </mat-menu>
           </div>
@@ -678,7 +678,7 @@ interface NavSubItem {
             position: absolute;
             top: 2px;
             right: 2px;
-            background-color: #f59e0b;
+            background-color: #b45309;
             color: #ffffff;
             font-size: 10px;
             font-weight: 700;
@@ -689,7 +689,7 @@ interface NavSubItem {
             border: 1.5px solid #ffffff;
 
             &.alert-badge {
-              background-color: #ef4444;
+              background-color: #b91c1c;
             }
           }
         }
@@ -711,7 +711,7 @@ interface NavSubItem {
             width: 34px;
             height: 34px;
             border-radius: 50%;
-            background-color: #10b981;
+            background-color: #1e3a8a;
             color: #ffffff;
             font-weight: 700;
             font-size: 13px;
@@ -767,7 +767,7 @@ interface NavSubItem {
         width: 42px;
         height: 42px;
         border-radius: 50%;
-        background-color: #10b981;
+        background-color: #1e3a8a;
         color: #ffffff;
         font-weight: 700;
         font-size: 16px;
@@ -813,7 +813,7 @@ interface NavSubItem {
     }
 
     .alert-badge {
-      background-color: #ef4444 !important;
+      background-color: #b91c1c !important;
       color: #ffffff;
       font-weight: 700;
     }
@@ -1034,8 +1034,8 @@ export class ShellComponent implements OnInit {
 
   getAlertSeverityColor(severity: string): string {
     switch (severity) {
-      case 'critical': return '#ef4444';
-      case 'warning': return '#f59e0b';
+      case 'critical': return '#b91c1c';
+      case 'warning': return '#b45309';
       default: return '#3b82f6';
     }
   }

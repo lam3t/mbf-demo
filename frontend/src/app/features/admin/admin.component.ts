@@ -113,7 +113,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
           [class.active]="activeTab === 'alerts'"
           (click)="switchTab('alerts')"
         >
-          <mat-icon style="color: #ef4444;">crisis_alert</mat-icon>
+          <mat-icon style="color: #b91c1c;">crisis_alert</mat-icon>
           <span>6. Cảnh báo hệ thống</span>
         </button>
       </div>
@@ -358,16 +358,16 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
                   <input type="text" class="cids-input" [(ngModel)]="workflowForm.planApproverName" list="approverSuggestions" placeholder="VD: Đại tá Lê Minh Hải (Trưởng phòng PC07)" />
                 </div>
 
-                <div class="wf-field" style="background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #ede9fe;">
-                  <label style="color: #6d28d9; font-weight: 700;">2. Cấp Duyệt Thành lập Đoàn Kiểm tra</label>
+                <div class="wf-field" style="background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                  <label style="color: #1e3a8a; font-weight: 700;">2. Cấp Duyệt Thành lập Đoàn Kiểm tra</label>
                   <span style="font-size: 11px; color: #64748b;">Phòng ban trình / duyệt thành lập đoàn:</span>
                   <input type="text" class="cids-input" [(ngModel)]="workflowForm.teamEstablishDept" list="deptSuggestions" placeholder="VD: Ban Chỉ huy Phòng PC07 & Đội Tham mưu" />
                   <span style="font-size: 11px; color: #64748b; margin-top: 4px;">Người ký QĐ thành lập đoàn:</span>
                   <input type="text" class="cids-input" [(ngModel)]="workflowForm.teamApproverName" list="approverSuggestions" placeholder="VD: Thượng tá Nguyễn Văn Bình (Phó phòng PC07)" />
                 </div>
 
-                <div class="wf-field" style="background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #d1fae5;">
-                  <label style="color: #047857; font-weight: 700;">3. Cấp Nghiệm thu Kết quả Kiểm tra</label>
+                <div class="wf-field" style="background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #dbeafe;">
+                  <label style="color: #172554; font-weight: 700;">3. Cấp Nghiệm thu Kết quả Kiểm tra</label>
                   <span style="font-size: 11px; color: #64748b;">Phòng ban nghiệm thu kết luận:</span>
                   <input type="text" class="cids-input" [(ngModel)]="workflowForm.resultAcceptanceDept" list="deptSuggestions" placeholder="VD: Ban Chỉ huy Phòng PC07" />
                   <span style="font-size: 11px; color: #64748b; margin-top: 4px;">Người duyệt nghiệm thu kết quả:</span>
@@ -486,8 +486,8 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
                     <span class="wf-unit-tag" style="background: #1e3a8a; color: #ffffff; font-weight: 800;">🏢 {{ wf.unitCode || 'UNIT' }} — {{ wf.unitName }}</span>
                     <span
                       style="font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 4px;"
-                      [style.background]="wf.inspectionType === 'adhoc' ? '#fef2f2' : wf.inspectionType === 'professional_request' ? '#f3e8ff' : '#ecfdf5'"
-                      [style.color]="wf.inspectionType === 'adhoc' ? '#dc2626' : wf.inspectionType === 'professional_request' ? '#7c3aed' : '#059669'">
+                      [style.background]="wf.inspectionType === 'adhoc' ? '#fef2f2' : wf.inspectionType === 'professional_request' ? '#f3e8ff' : '#eff6ff'"
+                      [style.color]="wf.inspectionType === 'adhoc' ? '#b91c1c' : wf.inspectionType === 'professional_request' ? '#1e3a8a' : '#1e3a8a'">
                       {{ wf.inspectionType === 'adhoc' ? '⚡ Quy trình Kiểm tra Đột xuất' : wf.inspectionType === 'professional_request' ? '🎯 Quy trình Yêu cầu Nghiệp vụ' : '📅 Quy trình Kiểm tra Định kỳ / Theo kế hoạch' }}
                     </span>
                     <span class="wf-code-tag">Mã: {{ wf.code }}</span>
@@ -513,12 +513,12 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
                   <div>👤 <strong>Người duyệt:</strong> <span style="color: #0f172a; font-weight: 700;">{{ wf.planApproverName || wf.planApprovalRole }}</span></div>
                 </div>
                 <div style="border-right: 1px solid #e2e8f0; padding-right: 8px;">
-                  <div style="font-size: 11px; font-weight: 700; color: #6d28d9; text-transform: uppercase;">2. Duyệt Thành lập Đoàn Kiểm tra</div>
+                  <div style="font-size: 11px; font-weight: 700; color: #1e3a8a; text-transform: uppercase;">2. Duyệt Thành lập Đoàn Kiểm tra</div>
                   <div style="margin-top: 2px;">🏢 <strong>Phòng ban:</strong> {{ wf.teamEstablishDept || wf.unitName }}</div>
                   <div>👤 <strong>Người duyệt:</strong> <span style="color: #0f172a; font-weight: 700;">{{ wf.teamApproverName || wf.teamEstablishRole }}</span></div>
                 </div>
                 <div>
-                  <div style="font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase;">3. Nghiệm thu Kết quả Kiểm tra</div>
+                  <div style="font-size: 11px; font-weight: 700; color: #172554; text-transform: uppercase;">3. Nghiệm thu Kết quả Kiểm tra</div>
                   <div style="margin-top: 2px;">🏢 <strong>Phòng ban:</strong> {{ wf.resultAcceptanceDept || wf.unitName }}</div>
                   <div>👤 <strong>Người duyệt:</strong> <span style="color: #0f172a; font-weight: 700;">{{ wf.resultApproverName || wf.resultAcceptanceRole }}</span></div>
                 </div>
@@ -937,7 +937,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
           height: 20px;
 
           &.active-perm {
-            color: #059669;
+            color: #1e3a8a;
           }
         }
       }
@@ -1157,8 +1157,8 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 
         &.stage-plan { border-top-color: #2563eb; }
-        &.stage-team { border-top-color: #7c3aed; }
-        &.stage-accept { border-top-color: #059669; }
+        &.stage-team { border-top-color: #1e3a8a; }
+        &.stage-accept { border-top-color: #1e3a8a; }
 
         .stage-head {
           display: flex;
@@ -1262,7 +1262,7 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
     .perm-checkbox {
       width: 17px;
       height: 17px;
-      accent-color: #059669;
+      accent-color: #1e3a8a;
       cursor: pointer;
     }
 
@@ -1423,8 +1423,8 @@ import { User, AuditLog, ViolationCatalog, RecommendationTagCatalog, QuotaConfig
             font-weight: 700;
             padding: 2px 8px;
             border-radius: 4px;
-            background: #ede9fe;
-            color: #6d28d9;
+            background: #e2e8f0;
+            color: #1e3a8a;
           }
 
           .wf-title {
@@ -1647,7 +1647,7 @@ export class AdminComponent implements OnInit {
 
   catalogRowActions: TableAction[] = [
     { id: 'edit', label: 'Sửa danh mục', icon: 'edit' },
-    { id: 'delete', label: 'Xóa danh mục', icon: 'delete', color: '#dc2626', dividerBefore: true }
+    { id: 'delete', label: 'Xóa danh mục', icon: 'delete', color: '#b91c1c', dividerBefore: true }
   ];
 
   // 4. Config State (Quota & Cutoff & Deadline)

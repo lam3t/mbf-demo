@@ -296,7 +296,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
           font-size: 26px;
           width: 26px;
           height: 26px;
-          color: #16a34a;
+          color: #1e3a8a;
         }
 
         strong { font-size: 13.5px; }
@@ -307,7 +307,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
         .error-title {
           font-size: 12.5px;
           font-weight: 700;
-          color: #dc2626;
+          color: #b91c1c;
           margin-bottom: 6px;
           display: block;
         }
@@ -337,7 +337,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
             border-bottom: 1px solid #fef2f2;
           }
 
-          .text-danger { color: #dc2626; }
+          .text-danger { color: #b91c1c; }
           .text-center { text-align: center; }
         }
       }
