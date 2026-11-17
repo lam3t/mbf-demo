@@ -215,7 +215,7 @@ export interface ObjectDetailResult {
           <div class="section-card">
             <div class="section-header space-between">
               <div class="header-left">
-                <mat-icon class="section-icon" style="color: #b91c1c;">gavel</mat-icon>
+                <mat-icon class="section-icon" style="color: #1e3a8a;">gavel</mat-icon>
                 <h3>Lịch sử Vi phạm & Chấp hành theo Cơ sở / Địa điểm ({{ filteredViolationHistory.length }})</h3>
               </div>
               <select [(ngModel)]="selectedLocationId" class="loc-filter-select">
@@ -449,8 +449,8 @@ export interface ObjectDetailResult {
       border-radius: 20px;
       font-size: 11.5px;
       font-weight: 700;
-      background-color: #fef3c7;
-      color: #b45309;
+      background-color: #f1f5f9;
+      color: #334155;
       mat-icon { font-size: 14px; width: 14px; height: 14px; }
     }
 
@@ -467,7 +467,7 @@ export interface ObjectDetailResult {
       font-weight: 600;
       cursor: pointer;
       mat-icon { font-size: 16px; width: 16px; height: 16px; }
-      &:hover { background: #dbeafe; }
+      &:hover { background: #eff6ff; }
     }
 
     .inline-location-form {
@@ -544,10 +544,10 @@ export interface ObjectDetailResult {
             padding: 2px 7px;
             border-radius: 4px;
             background: #eff6ff;
-            color: #1e40af;
-            &.loc-type-headquarters { background: #dbeafe; color: #1e3a8a; }
+            color: #1e3a8a;
+            &.loc-type-headquarters { background: #eff6ff; color: #1e3a8a; }
             &.loc-type-branch { background: #e2e8f0; color: #1e3a8a; }
-            &.loc-type-facility { background: #fef3c7; color: #b45309; }
+            &.loc-type-facility { background: #f1f5f9; color: #334155; }
             &.loc-type-business_location { background: #eff6ff; color: #1e3a8a; }
           }
 
@@ -649,7 +649,7 @@ export interface ObjectDetailResult {
     .loc-mini-tag {
       font-size: 11px;
       font-weight: 600;
-      color: #1e40af;
+      color: #1e3a8a;
       background: #eff6ff;
       padding: 1px 6px;
       border-radius: 4px;
@@ -694,8 +694,8 @@ export interface ObjectDetailResult {
           }
 
           &.avatar-individual {
-            background-color: #faf5ff;
-            color: #9333ea;
+            background-color: #f8fafc;
+            color: #1e3a8a;
           }
         }
 
@@ -805,7 +805,7 @@ export interface ObjectDetailResult {
 
           &.pill-individual {
             background-color: #f1f5f9;
-            color: #7e22ce;
+            color: #1e3a8a;
           }
         }
 
@@ -1125,8 +1125,8 @@ export interface ObjectDetailResult {
               color: #1e3a8a;
             }
             &.sev-2 {
-              background-color: #fffbeb;
-              color: #b45309;
+              background-color: #f8fafc;
+              color: #334155;
             }
             &.sev-3 {
               background-color: #fef2f2;
@@ -1214,18 +1214,18 @@ export interface ObjectDetailResult {
       margin-bottom: 14px;
 
       &.warning {
-        background-color: #fffbeb;
-        border: 1px solid #fde68a;
-        color: #92400e;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #334155;
 
         .alert-icon-wrap mat-icon {
-          color: #b45309;
+          color: #334155;
           font-size: 22px;
           width: 22px;
           height: 22px;
         }
 
-        strong { color: #b45309; }
+        strong { color: #334155; }
       }
 
       &.ready {
@@ -1315,9 +1315,9 @@ export interface ObjectDetailResult {
         }
 
         &.item-pending .timeline-marker {
-          border-color: #b45309;
-          background-color: #fef3c7;
-          mat-icon { color: #b45309; }
+          border-color: #334155;
+          background-color: #f1f5f9;
+          mat-icon { color: #334155; }
         }
 
         &.item-rejected .timeline-marker {
