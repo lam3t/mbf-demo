@@ -95,6 +95,49 @@ body {
   --mdc-outlined-button-outline-color: #cbd5e1;
 }
 
+/* Global Clean Table / Grid Alignment */
+.w-100 {
+  width: 100%;
+}
+
+.mat-mdc-table {
+  width: 100%;
+  background: #ffffff !important;
+  border-collapse: collapse;
+
+  .mat-mdc-header-row {
+    background: #f8fafc !important;
+    height: auto !important;
+  }
+
+  .mat-mdc-header-cell {
+    background: #f8fafc !important;
+    color: #334155 !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    padding: 10px 12px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    line-height: 1.35 !important;
+    vertical-align: middle !important;
+  }
+
+  .mat-mdc-row {
+    height: auto !important;
+    &:hover {
+      background: #f8fafc !important;
+    }
+  }
+
+  .mat-mdc-cell {
+    color: #1e293b !important;
+    font-size: 13px !important;
+    padding: 10px 12px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    line-height: 1.4 !important;
+    vertical-align: middle !important;
+  }
+}
+
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 5px;

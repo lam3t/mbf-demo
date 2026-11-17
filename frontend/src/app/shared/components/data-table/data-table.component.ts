@@ -256,11 +256,13 @@ export interface TableAction {
         border-bottom: 1px solid #e5e7eb;
 
         tr th {
-          padding: 12px 14px;
+          padding: 11px 12px;
           font-weight: 600;
           color: #374151;
-          font-size: 13px;
-          white-space: nowrap;
+          font-size: 12.5px;
+          line-height: 1.35;
+          white-space: normal;
+          vertical-align: middle;
           user-select: none;
 
           &.sortable {
